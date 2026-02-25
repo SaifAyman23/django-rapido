@@ -1,63 +1,70 @@
-# ===========================
-# Multi-stage Build - Builder Stage
-# ===========================
-FROM python:3.11-slim as builder
+# Dockerfile (Updated for Django 6.0, Python 3.13, Feb 2026)
+FROM python:3.13-slim
 
 WORKDIR /app
 
-# Install system dependencies for building
-RUN apt-get update && apt-get install -y \
-    gcc \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements
-COPY requirements.txt .
-
-# Install Python dependencies to a directory
-RUN pip install --no-cache-dir --user -r requirements.txt
-
-# ===========================
-# Final Stage - Runtime
-# ===========================
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y \
-    postgresql-client \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy only necessary files from builder
-COPY --from=builder /root/.local /root/.local
-
-# Set PATH to use local pip packages
-ENV PATH=/root/.local/bin:$PATH \
-    PYTHONUNBUFFERED=1 \
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
     DJANGO_SETTINGS_MODULE=project.settings
 
-# Copy application code
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-client \
+    gcc \
+    python3-dev \
+    libpq-dev \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create application user for security
+RUN useradd -m -u 1000 appuser
+
+# Upgrade pip, setuptools, and wheel
+RUN pip install --upgrade pip setuptools wheel
+
+# Copy requirements files
+COPY requirements/ /tmp/requirements/
+
+# Install Python dependencies
+RUN pip install -r /tmp/requirements/base.txt
+
+# Copy project files
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p /app/staticfiles /app/media /app/logs
+RUN mkdir -p /app/logs /app/staticfiles /app/media && \
+    chown -R appuser:appuser /app
 
-# Create non-root user for security
-RUN useradd -m -u 1000 django && \
-    chown -R django:django /app
+# Collect static files
+RUN python manage.py collectstatic --noinput || true
 
-# Switch to non-root user
-USER django
+# Create superuser environment variables
+ENV DJANGO_SUPERUSER_USERNAME=admin \
+    DJANGO_SUPERUSER_EMAIL=admin@example.com \
+    DJANGO_SUPERUSER_PASSWORD=admin123
+
+# Switch to non-root user for security
+USER appuser
+
+EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
-# Expose port
-EXPOSE 8000
-
-# Run gunicorn
-CMD ["gunicorn", "project.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "sync"]
+# Run Gunicorn
+CMD ["gunicorn", \
+     "project.wsgi:application", \
+     "--bind", "0.0.0.0:8000", \
+     "--workers", "4", \
+     "--worker-class", "sync", \
+     "--max-requests", "1000", \
+     "--max-requests-jitter", "50", \
+     "--timeout", "120", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "--log-level", "info"]

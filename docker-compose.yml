@@ -1,37 +1,39 @@
-version: '3.9'
+# docker-compose.yml (Updated for Django 6.0, PostgreSQL 17, Python 3.13 - Feb 2026)
+version: '3.10'
 
 services:
   # ===========================
-  # PostgreSQL Database Service
+  # PostgreSQL Database Service (v17)
   # ===========================
   db:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     container_name: project_db
     environment:
       POSTGRES_DB: ${DB_NAME:-project_db}
       POSTGRES_USER: ${DB_USER:-project_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_here}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     networks:
       - project_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-project_user}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-project_user} -d ${DB_NAME:-project_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     restart: unless-stopped
 
   # ===========================
-  # Redis Cache & Message Broker
+  # Redis Cache & Message Broker (v7)
   # ===========================
   redis:
     image: redis:7-alpine
     container_name: project_redis
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD:-redis_password}"
     volumes:
       - redis_data:/data
     ports:
@@ -43,30 +45,34 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5s
     restart: unless-stopped
 
   # ===========================
-  # Django Web Application (Gunicorn)
+  # Django Web Application (Gunicorn + Django 6.0)
   # ===========================
   web:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - PYTHON_VERSION=3.13
     container_name: project_web
     command: >
       sh -c "python manage.py migrate &&
              python manage.py createsuperuser --noinput --username admin --email admin@example.com || true &&
-             gunicorn project.wsgi:application --bind 0.0.0.0:8000 --workers 4"
+             gunicorn project.wsgi:application --bind 0.0.0.0:8000 --workers 4 --worker-class sync --max-requests 1000 --timeout 120"
     volumes:
       - .:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
+      - logs_volume:/app/logs
     ports:
       - "8000:8000"
     environment:
       - DJANGO_ENVIRONMENT=${DJANGO_ENVIRONMENT:-local}
       - DEBUG=${DEBUG:-False}
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key}
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
       - DB_ENGINE=django.db.backends.postgresql
       - DB_NAME=${DB_NAME:-project_db}
@@ -74,11 +80,13 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-secure_password_here}
       - DB_HOST=db
       - DB_PORT=5432
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      - CACHE_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/1
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
       - EMAIL_BACKEND=${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
       - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-admin123}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     depends_on:
       db:
         condition: service_healthy
@@ -87,37 +95,41 @@ services:
     networks:
       - project_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
     restart: unless-stopped
 
   # ===========================
-  # Celery Worker Service
+  # Celery Worker Service (5.6.2)
   # ===========================
   celery_worker:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - PYTHON_VERSION=3.13
     container_name: project_celery_worker
-    command: celery -A project worker --loglevel=info --concurrency=4
+    command: celery -A project worker --loglevel=info --concurrency=4 --max-tasks-per-child=100 --time-limit=1800
     volumes:
       - .:/app
+      - logs_volume:/app/logs
     environment:
       - DJANGO_ENVIRONMENT=${DJANGO_ENVIRONMENT:-local}
       - DEBUG=${DEBUG:-False}
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key}
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
       - DB_ENGINE=django.db.backends.postgresql
       - DB_NAME=${DB_NAME:-project_db}
       - DB_USER=${DB_USER:-project_user}
       - DB_PASSWORD=${DB_PASSWORD:-secure_password_here}
       - DB_HOST=db
       - DB_PORT=5432
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     depends_on:
       - redis
       - db
@@ -127,29 +139,32 @@ services:
     restart: unless-stopped
 
   # ===========================
-  # Celery Beat (Task Scheduler)
+  # Celery Beat (Task Scheduler - 2.6.0)
   # ===========================
   celery_beat:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - PYTHON_VERSION=3.13
     container_name: project_celery_beat
     command: celery -A project beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - .:/app
+      - logs_volume:/app/logs
     environment:
       - DJANGO_ENVIRONMENT=${DJANGO_ENVIRONMENT:-local}
       - DEBUG=${DEBUG:-False}
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key}
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
       - DB_ENGINE=django.db.backends.postgresql
       - DB_NAME=${DB_NAME:-project_db}
       - DB_USER=${DB_USER:-project_user}
       - DB_PASSWORD=${DB_PASSWORD:-secure_password_here}
       - DB_HOST=db
       - DB_PORT=5432
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     depends_on:
       - redis
       - db
@@ -159,23 +174,27 @@ services:
     restart: unless-stopped
 
   # ===========================
-  # Celery Flower (Monitoring)
+  # Celery Flower (Monitoring Dashboard)
   # ===========================
   flower:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - PYTHON_VERSION=3.13
     container_name: project_flower
-    command: celery -A project flower --port=5555 --broker=redis://redis:6379/0
+    command: celery -A project flower --port=5555 --broker=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
     volumes:
       - .:/app
+      - logs_volume:/app/logs
     ports:
       - "5555:5555"
     environment:
       - DJANGO_ENVIRONMENT=${DJANGO_ENVIRONMENT:-local}
       - DEBUG=${DEBUG:-False}
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     depends_on:
       - redis
       - celery_worker
@@ -184,7 +203,7 @@ services:
     restart: unless-stopped
 
   # ===========================
-  # Nginx Reverse Proxy (Optional)
+  # Nginx Reverse Proxy & Static File Serving
   # ===========================
   nginx:
     image: nginx:alpine
@@ -197,10 +216,16 @@ services:
       - ./docker/ssl:/etc/nginx/ssl:ro
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
+      - logs_volume:/var/log/nginx
     depends_on:
       - web
     networks:
       - project_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
 # ===========================
@@ -209,6 +234,9 @@ services:
 networks:
   project_network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
 # ===========================
 # Volumes
@@ -221,4 +249,6 @@ volumes:
   static_volume:
     driver: local
   media_volume:
+    driver: local
+  logs_volume:
     driver: local
