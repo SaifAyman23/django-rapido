@@ -877,7 +877,7 @@ footer a:hover { color: var(--accent); }
         <a href="#docker">Docker Setup</a>
         <a href="#local">Local Development</a>
         <a href="#structure">Project Structure</a>
-        <a href="#settings">Settings Configuration</a>
+        <a href="#settings">Settings Config</a>
       </nav>
     </div>
 
@@ -886,17 +886,17 @@ footer a:hover { color: var(--accent); }
       <nav>
         <a href="#environment">Environment Variables</a>
         <a href="#security">Security</a>
-        <a href="#celery">Celery Setup</a>
+        <a href="#celery">Celery & Tasks</a>
         <a href="#caching">Caching & Redis</a>
       </nav>
     </div>
 
     <div class="ds-nav-group">
-      <div class="ds-nav-label">Deployment & Operations</div>
+      <div class="ds-nav-label">Deployment & Ops</div>
       <nav>
         <a href="#deployment">Deployment</a>
-        <a href="#nginx">Nginx Config</a>
-        <a href="#testing">Testing</a>
+        <a href="#nginx">Nginx Proxy</a>
+        <a href="#testing">Testing & QA</a>
         <a href="#troubleshooting">Troubleshooting</a>
         <a href="#versioning">Version Updates</a>
       </nav>
@@ -905,7 +905,7 @@ footer a:hover { color: var(--accent); }
     <div class="ds-nav-group">
       <div class="ds-nav-label">Reference</div>
       <nav>
-        <a href="#commands">Common Commands</a>
+        <a href="#commands">Commands</a>
         <a href="#resources">Resources</a>
       </nav>
     </div>
@@ -1223,7 +1223,7 @@ $ celery -A project flower --port=5555</span></code></pre>
       <div class="two-col">
         <div class="card">
           <h4>macOS (with Homebrew)</h4>
-          <pre><code>brew install python@3.13 postgresql@17 redis docker
+          <pre><code>brew install <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bcccc5c8d4d3d2fc8f928d8f">[email&#160;protected]</a> postgresql@17 redis docker
 brew services start postgresql@17
 brew services start redis
 docker --version  # verify Docker</code></pre>
@@ -1703,12 +1703,9 @@ $ make type-check</span></code></pre>
 │   ├── admin.py
 │   └── tests.py
 │
-├── api/                          <span class="cm"># Main API app</span>
-│   ├── v1/                      <span class="cm"># API v1 (support multiple API versions)</span>
-│   │   ├── urls.py              <span class="cm"># API endpoints</span>
-│   │   ├── views.py
-│   │   └── serializers.py
-│   └── tests.py
+├── api/                          <span class="cm"># Main API router and versioning</span>
+│   ├── urls.py                  <span class="cm"># Main API URL router (includes all app routes)</span>
+│   └── tests.py                 <span class="cm"># API integration tests</span>
 │
 ├── tests/                        <span class="cm"># Global test configuration</span>
 │   ├── conftest.py              <span class="cm"># pytest fixtures and configuration</span>
@@ -1865,16 +1862,1005 @@ $ gunicorn project.wsgi:application</span></code></pre>
          - RESOURCES
     -->
 
-    <!-- FOOTER PLACEHOLDER FOR CONTINUATION -->
-    <div style="text-align: center; padding: var(--sp-16) 0; border-top: 1px solid var(--border-light); margin-top: var(--sp-20);">
-      <p style="font-family: var(--font-code); font-size: var(--text-xs); color: var(--text-tertiary);">Django 6.0 Complete Guide — Comprehensive Edition</p>
-      <p style="font-family: var(--font-code); font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--sp-2);">Updated February 25, 2026 · Django Green Dark Mode · Production Ready</p>
-      <p style="font-family: var(--font-code); font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--sp-4);">This HTML contains 60+ sections covering everything from quick start to production deployment, security hardening, monitoring, testing, and troubleshooting.</p>
-    </div>
+    <!-- ENVIRONMENT VARIABLES -->
+    <section id="environment" class="ds-section">
+      <div class="ds-section-header">
+        <span class="ds-section-num">11</span>
+        <span class="ds-section-tag">Configuration</span>
+      </div>
+      <h2>Environment <em>Variables</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="ds-sub">Complete .env Template for All Environments</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — .env.example template</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># ===============================================</span>
+<span class="cm"># DJANGO CONFIGURATION</span>
+<span class="cm"># ===============================================</span>
+DJANGO_ENVIRONMENT=local
+DEBUG=True
+SECRET_KEY=your-secret-key-min-50-chars-change-in-production
+
+ALLOWED_HOSTS=localhost,127.0.0.1,.localhost
+
+<span class="cm"># ===============================================</span>
+<span class="cm"># DATABASE CONFIGURATION (PostgreSQL)</span>
+<span class="cm"># ===============================================</span>
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=project_db
+DB_USER=project_user
+DB_PASSWORD=secure_password_here
+DB_HOST=localhost
+DB_PORT=5432
+
+<span class="cm"># ===============================================</span>
+<span class="cm"># REDIS & CACHING</span>
+<span class="cm"># ===============================================</span>
+REDIS_URL=redis://localhost:6379/0
+CACHE_URL=redis://localhost:6379/1
+
+<span class="cm"># ===============================================</span>
+<span class="cm"># CELERY & ASYNC TASKS</span>
+<span class="cm"># ===============================================</span>
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
+CELERY_TIMEZONE=UTC
+CELERY_TASK_TRACK_STARTED=True
+CELERY_TASK_TIME_LIMIT=1800
+
+<span class="cm"># ===============================================</span>
+<span class="cm"># JWT AUTHENTICATION</span>
+<span class="cm"># ===============================================</span>
+JWT_SECRET_KEY=your-jwt-secret-key-here
+JWT_ALGORITHM=HS256
+
+<span class="cm"># ===============================================</span>
+<span class="cm"># EMAIL CONFIGURATION</span>
+<span class="cm"># ===============================================</span>
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=noreply@example.com
+
+<span class="cm"># ===============================================</span>
+<span class="cm"># SECURITY (Development vs Production)</span>
+<span class="cm"># ===============================================</span>
+SECURE_SSL_REDIRECT=False
+SESSION_COOKIE_SECURE=False
+CSRF_COOKIE_SECURE=False
+
+<span class="cm"># ===============================================</span>
+<span class="cm"># LOGGING</span>
+<span class="cm"># ===============================================</span>
+LOG_LEVEL=INFO
+
+<span class="cm"># ===============================================</span>
+<span class="cm"># OPTIONAL: ERROR TRACKING (Sentry)</span>
+<span class="cm"># ===============================================</span>
+SENTRY_DSN=
+
+<span class="cm"># ===============================================</span>
+<span class="cm"># OPTIONAL: AWS S3 (for media/static files)</span>
+<span class="cm"># ===============================================</span>
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_STORAGE_BUCKET_NAME=</code></pre>
+      </div>
+
+      <div class="ds-sub">Production .env Configuration</div>
+      <div class="section-content">
+        <p><strong>For production deployment, change these critical settings:</strong></p>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Production environment settings</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Never debug in production</span>
+DJANGO_ENVIRONMENT=production
+DEBUG=False
+
+<span class="cm"># Generate secure key: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"</span>
+SECRET_KEY=your-generated-50-char-random-secret-key-here
+
+<span class="cm"># Set your domain(s)</span>
+ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+
+<span class="cm"># Production database (typically RDS, managed service, or remote server)</span>
+DB_HOST=your-database-host.example.com
+DB_PASSWORD=your-production-database-password
+
+<span class="cm"># Production Redis (typically ElastiCache, managed service, or remote server)</span>
+REDIS_URL=redis://:password@your-redis-host.example.com:6379/0
+
+<span class="cm"># Enable security</span>
+SECURE_SSL_REDIRECT=True
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+SECURE_HSTS_SECONDS=31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+
+<span class="cm"># SMTP email (Gmail, SendGrid, etc.)</span>
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST_USER=your-production-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-specific-password
+
+<span class="cm"># Error tracking</span>
+SENTRY_DSN=your-sentry-dsn-url-here
+
+<span class="cm"># Logging level (less verbose in production)</span>
+LOG_LEVEL=WARNING</code></pre>
+      </div>
+
+      <div class="callout danger">
+        <strong>🚫 Danger</strong>
+        <p>Never commit .env files to version control. Never put SECRET_KEY, passwords, or API keys in code. Always use environment variables. Generate unique SECRET_KEY for each environment.</p>
+      </div>
+    </section>
+
+    <!-- SECURITY HARDENING -->
+    <section id="security" class="ds-section">
+      <div class="ds-section-header">
+        <span class="ds-section-num">12</span>
+        <span class="ds-section-tag">Configuration</span>
+      </div>
+      <h2>Security <em>Hardening</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="ds-sub">Pre-Deployment Security Checklist</div>
+      <div class="checklist-group">
+        <h4>Critical Settings</h4>
+        <ul class="checklist">
+          <li>Set DEBUG=False in production settings</li>
+          <li>Generate secure SECRET_KEY (minimum 50 random characters)</li>
+          <li>Configure ALLOWED_HOSTS to your domain(s) only</li>
+          <li>Setup SSL/HTTPS certificates (Let's Encrypt recommended)</li>
+          <li>Enable SECURE_SSL_REDIRECT to redirect HTTP to HTTPS</li>
+          <li>Set SESSION_COOKIE_SECURE=True for HTTPS only</li>
+          <li>Set CSRF_COOKIE_SECURE=True for HTTPS only</li>
+          <li>Enable SECURE_HSTS with 1 year expiration</li>
+          <li>Configure Content Security Policy (CSP) headers</li>
+          <li>Set X-FRAME-OPTIONS to DENY (prevent clickjacking)</li>
+        </ul>
+      </div>
+
+      <div class="checklist-group">
+        <h4>Database & Access</h4>
+        <ul class="checklist">
+          <li>Use strong database passwords (minimum 16 characters)</li>
+          <li>Restrict database access to application servers only</li>
+          <li>Enable database encryption at rest</li>
+          <li>Setup automated database backups</li>
+          <li>Test database restore procedures</li>
+          <li>Use different users for development/production databases</li>
+          <li>Enable query logging for security audits</li>
+          <li>Setup read-only replicas for backups</li>
+        </ul>
+      </div>
+
+      <div class="checklist-group">
+        <h4>Monitoring & Logging</h4>
+        <ul class="checklist">
+          <li>Setup error tracking (Sentry recommended)</li>
+          <li>Configure centralized logging (ELK, CloudWatch)</li>
+          <li>Monitor application health and performance</li>
+          <li>Setup alerts for errors and anomalies</li>
+          <li>Log all authentication attempts</li>
+          <li>Monitor resource usage (CPU, memory, disk)</li>
+          <li>Setup log rotation and retention policies</li>
+          <li>Regular security audit logs review</li>
+        </ul>
+      </div>
+
+      <div class="ds-sub">Django Security Settings</div>
+      <div class="code-block">
+        <div class="code-header"><span>python — Production security configuration</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Django Security Settings for Production</span>
+DEBUG = False
+ALLOWED_HOSTS = [<span class="st">'yourdomain.com'</span>, <span class="st">'www.yourdomain.com'</span>]
+
+<span class="cm"># HTTPS/SSL</span>
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 31536000  <span class="cm"># 1 year</span>
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+<span class="cm"># Frame/Click jacking protection</span>
+X_FRAME_OPTIONS = <span class="st">'DENY'</span>
+SECURE_CONTENT_SECURITY_POLICY = {
+    <span class="st">'default-src'</span>: (<span class="st">'self'</span>,),
+    <span class="st">'script-src'</span>: (<span class="st">'self'</span>, <span class="st">'cdnjs.cloudflare.com'</span>),
+    <span class="st">'style-src'</span>: (<span class="st">'self'</span>, <span class="st">'cdnjs.cloudflare.com'</span>),
+}
+
+<span class="cm"># Browser Security</span>
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_SECURITY_POLICY_REPORT_ONLY = False
+
+<span class="cm"># Session & Cookie Security</span>
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_AGE = 1209600  <span class="cm"># 2 weeks</span>
+
+<span class="cm"># Password Validation</span>
+AUTH_PASSWORD_VALIDATORS = [
+    {<span class="st">'NAME'</span>: <span class="st">'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'</span>},
+    {<span class="st">'NAME'</span>: <span class="st">'django.contrib.auth.password_validation.MinimumLengthValidator'</span>, <span class="st">'OPTIONS'</span>: {<span class="st">'min_length'</span>: 12}},
+    {<span class="st">'NAME'</span>: <span class="st">'django.contrib.auth.password_validation.CommonPasswordValidator'</span>},
+    {<span class="st">'NAME'</span>: <span class="st">'django.contrib.auth.password_validation.NumericPasswordValidator'</span>},
+]</code></pre>
+      </div>
+
+      <div class="callout info">
+        <strong>ℹ️ Info</strong>
+        <p>Run <code>python manage.py check --deploy</code> before production deployment. This command checks for common security issues and will warn about unsafe settings.</p>
+      </div>
+    </section>
+
+    <!-- CELERY SETUP -->
+    <section id="celery" class="ds-section">
+      <div class="ds-section-header">
+        <span class="ds-section-num">13</span>
+        <span class="ds-section-tag">Configuration</span>
+      </div>
+      <h2>Celery <em>& Async Tasks</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="ds-sub">What is Celery?</div>
+      <div class="section-content">
+        <p>Celery is a distributed task queue library that allows Django to execute long-running operations asynchronously. Instead of blocking a web request while sending emails, processing images, or running reports, Celery queues the task and processes it in the background.</p>
+      </div>
+
+      <div class="ds-sub">Creating Celery Tasks</div>
+      <div class="code-block">
+        <div class="code-header"><span>python — accounts/tasks.py - Celery tasks</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="kw">from</span> celery <span class="kw">import</span> shared_task, current_task
+<span class="kw">from</span> django.core.mail <span class="kw">import</span> send_mail
+<span class="kw">from</span> django.contrib.auth <span class="kw">import</span> get_user_model
+<span class="kw">import</span> logging
+
+logger = logging.getLogger(__name__)
+User = get_user_model()
+
+<span class="cm">@shared_task(bind=True, max_retries=3, default_retry_delay=60)</span>
+<span class="kw">def</span> send_welcome_email(self, user_id: <span class="nm">str</span>, email: <span class="nm">str</span>):
+    <span class="st">"""Send welcome email to new user with retry logic"""</span>
+    <span class="kw">try</span>:
+        user = User.objects.get(id=user_id)
+        subject = <span class="st">'Welcome to Project!'</span>
+        message = f<span class="st">'Hello {user.first_name}, welcome aboard!'</span>
+        
+        send_mail(
+            subject,
+            message,
+            <span class="st">'noreply@example.com'</span>,
+            [email],
+            fail_silently=False,
+        )
+        logger.info(f<span class="st">'Welcome email sent to {email}'</span>)
+        <span class="kw">return</span> {<span class="st">'status'</span>: <span class="st">'success'</span>, <span class="st">'email'</span>: email}
+    <span class="kw">except</span> User.DoesNotExist:
+        logger.error(f<span class="st">'User {user_id} not found'</span>)
+        <span class="kw">return</span> {<span class="st">'status'</span>: <span class="st">'error'</span>, <span class="st">'message'</span>: <span class="st">'User not found'</span>}
+    <span class="kw">except</span> Exception <span class="kw">as</span> exc:
+        logger.error(f<span class="st">'Error sending email: {str(exc)}'</span>)
+        <span class="cm"># Retry with exponential backoff</span>
+        <span class="kw">raise</span> self.retry(exc=exc)</code></pre>
+      </div>
+
+      <div class="ds-sub">Calling Celery Tasks from Views</div>
+      <div class="code-block">
+        <div class="code-header"><span>python — accounts/viewsets.py - Call async tasks</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="kw">from</span> rest_framework <span class="kw">import</span> viewsets, status
+<span class="kw">from</span> rest_framework.response <span class="kw">import</span> Response
+<span class="kw">from</span> .tasks <span class="kw">import</span> send_welcome_email
+<span class="kw">from</span> .serializers <span class="kw">import</span> UserSerializer
+
+<span class="kw">class</span> UserViewSet(viewsets.ModelViewSet):
+    <span class="st">"""User API with async welcome email"""</span>
+    
+    <span class="kw">def</span> create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        
+        <span class="cm"># Queue email sending asynchronously</span>
+        send_welcome_email.delay(str(user.id), user.email)
+        
+        <span class="kw">return</span> Response(
+            {<span class="st">'message'</span>: <span class="st">'User created. Welcome email queued.'</span>},
+            status=status.HTTP_201_CREATED
+        )</code></pre>
+      </div>
+
+      <div class="ds-sub">Running Celery in Development</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Start Celery services</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Terminal 1: Django development server</span>
+$ python manage.py runserver
+
+<span class="cm"># Terminal 2: Celery worker (processes tasks)</span>
+$ celery -A project worker --loglevel=info --concurrency=4
+
+<span class="cm"># Terminal 3: Celery beat (scheduler, optional)</span>
+$ celery -A project beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+<span class="cm"># Terminal 4: Flower monitoring (optional)</span>
+$ celery -A project flower --port=5555</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>💡 Tip</strong>
+        <p>For testing without Celery, set <code>CELERY_TASK_ALWAYS_EAGER=True</code> in local settings. This runs tasks synchronously in tests, making debugging easier.</p>
+      </div>
+    </section>
+
+    <!-- CACHING & REDIS -->
+    <section id="caching" class="ds-section">
+      <div class="ds-section-header">
+        <span class="ds-section-num">14</span>
+        <span class="ds-section-tag">Configuration</span>
+      </div>
+      <h2>Caching <em>& Redis</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="ds-sub">Redis Caching Strategy</div>
+      <div class="section-content">
+        <p>Redis provides high-speed caching, session storage, and message brokering. Proper caching dramatically improves application performance by reducing database queries.</p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span>python — Django caching configuration</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># settings/base.py - Redis caching configuration</span>
+CACHES = {
+    <span class="st">'default'</span>: {
+        <span class="st">'BACKEND'</span>: <span class="st">'django_redis.cache.RedisCache'</span>,
+        <span class="st">'LOCATION'</span>: os.getenv(<span class="st">'CACHE_URL'</span>, <span class="st">'redis://localhost:6379/1'</span>),
+        <span class="st">'OPTIONS'</span>: {
+            <span class="st">'CLIENT_CLASS'</span>: <span class="st">'django_redis.client.DefaultClient'</span>,
+            <span class="st">'CONNECTION_POOL_KWARGS'</span>: {<span class="st">'max_connections'</span>: 50},
+            <span class="st">'SOCKET_CONNECT_TIMEOUT'</span>: 5,
+            <span class="st">'SOCKET_TIMEOUT'</span>: 5,
+        }
+    }
+}
+
+<span class="cm"># Use Redis for sessions (faster than database)</span>
+SESSION_ENGINE = <span class="st">'django.contrib.sessions.backends.cache'</span>
+SESSION_CACHE_ALIAS = <span class="st">'default'</span>
+SESSION_COOKIE_AGE = 1209600  <span class="cm"># 2 weeks</span></code></pre>
+      </div>
+
+      <div class="ds-sub">Using Cache in Views</div>
+      <div class="code-block">
+        <div class="code-header"><span>python — Cache usage patterns</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="kw">from</span> django.views.decorators.cache <span class="kw">import</span> cache_page
+<span class="kw">from</span> django.core.cache <span class="kw">import</span> cache
+<span class="kw">from</span> rest_framework.decorators <span class="kw">import</span> api_view
+<span class="kw">from</span> rest_framework.response <span class="kw">import</span> Response
+
+<span class="cm"># Cache entire view for 5 minutes (300 seconds)</span>
+@cache_page(300)
+@api_view([<span class="st">'GET'</span>])
+<span class="kw">def</span> expensive_list(request):
+    <span class="kw">return</span> Response({<span class="st">'items'</span>: [...]})
+
+<span class="cm"># Manual cache management</span>
+<span class="kw">def</span> get_user_profile(user_id):
+    cache_key = f<span class="st">'user_profile:{user_id}'</span>
+    
+    <span class="cm"># Check cache first</span>
+    profile = cache.get(cache_key)
+    <span class="kw">if</span> profile <span class="kw">is</span> <span class="kw">None</span>:
+        <span class="cm"># Not in cache, fetch from database</span>
+        profile = UserProfile.objects.get(user_id=user_id)
+        <span class="cm"># Cache for 1 hour</span>
+        cache.set(cache_key, profile, 3600)
+    
+    <span class="kw">return</span> profile
+
+<span class="cm"># Invalidate cache when updating</span>
+<span class="kw">def</span> update_user_profile(user_id, data):
+    profile = UserProfile.objects.get(user_id=user_id)
+    profile.update(**data)
+    <span class="cm"># Clear cache when data changes</span>
+    cache.delete(f<span class="st">'user_profile:{user_id}'</span>)
+    <span class="kw">return</span> profile</code></pre>
+      </div>
+
+      <div class="callout info">
+        <strong>ℹ️ Info</strong>
+        <p>Cache invalidation is one of the hardest problems in programming. Always clear cache when data changes, use cache versioning for deployments, and monitor cache hit rates to optimize TTL values.</p>
+      </div>
+    </section>
+
+    <!-- DEPLOYMENT -->
+    <section id="deployment" class="ds-section">
+      <div class="ds-section-header">
+        <span class="ds-section-num">15</span>
+        <span class="ds-section-tag">Deployment & Operations</span>
+      </div>
+      <h2>Deployment <em>Strategies</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="ds-sub">WSGI vs ASGI Servers</div>
+      <div class="two-col">
+        <div class="card">
+          <h4>Gunicorn (WSGI)</h4>
+          <ul>
+            <li>Synchronous request handling</li>
+            <li>Perfect for traditional REST APIs</li>
+            <li>Simple, battle-tested, stable</li>
+            <li>Multiple worker processes</li>
+            <li>Best for pure Django + DRF</li>
+          </ul>
+          <p><strong>Use when:</strong> Building APIs without WebSockets or real-time features</p>
+        </div>
+        <div class="card">
+          <h4>Uvicorn (ASGI)</h4>
+          <ul>
+            <li>Asynchronous request handling</li>
+            <li>WebSocket support (Channels)</li>
+            <li>Modern, fast, lightweight</li>
+            <li>Worker process management</li>
+            <li>Better for real-time apps</li>
+          </ul>
+          <p><strong>Use when:</strong> Building with Channels or needing async views</p>
+        </div>
+      </div>
+
+      <div class="ds-sub">Gunicorn Deployment</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Gunicorn production configuration</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Run with Gunicorn for REST APIs</span>
+$ gunicorn project.wsgi:application \
+    --bind 0.0.0.0:8000 \
+    --workers 4 \
+    --worker-class sync \
+    --worker-connections 1000 \
+    --max-requests 1000 \
+    --max-requests-jitter 50 \
+    --timeout 30 \
+    --graceful-timeout 30 \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level info</code></pre>
+      </div>
+
+      <div class="ds-sub">Uvicorn Deployment (With WebSockets)</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Uvicorn production configuration</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Run with Uvicorn for Channels/WebSocket support</span>
+$ uvicorn project.asgi:application \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 4 \
+    --loop auto \
+    --http h11 \
+    --log-level info</code></pre>
+      </div>
+
+      <div class="ds-sub">Docker Deployment</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Deploy entire stack with Docker</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Build production image</span>
+$ docker build -t myapp:latest -f docker/Dockerfile .
+
+<span class="cm"># Push to registry</span>
+$ docker tag myapp:latest myregistry.com/myapp:latest
+$ docker push myregistry.com/myapp:latest
+
+<span class="cm"># Deploy with Docker Compose</span>
+$ docker-compose -f docker-compose.yml up -d
+
+<span class="cm"># Check status</span>
+$ docker-compose ps
+
+<span class="cm"># View logs</span>
+$ docker-compose logs -f web
+
+<span class="cm"># Run migrations</span>
+$ docker-compose exec web python manage.py migrate
+
+<span class="cm"># Create superuser</span>
+$ docker-compose exec web python manage.py createsuperuser</span></code></pre>
+      </div>
+
+      <div class="callout warning">
+        <strong>⚠️ Warning</strong>
+        <p>Always run migrations before deploying. Test in staging environment first. Keep database and static file backups. Monitor application health and logs after deployment.</p>
+      </div>
+    </section>
+
+    <!-- NGINX CONFIGURATION -->
+    <section id="nginx" class="ds-section">
+      <div class="ds-section-header">
+        <span class="ds-section-num">16</span>
+        <span class="ds-section-tag">Deployment & Operations</span>
+      </div>
+      <h2>Nginx <em>Reverse Proxy</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="ds-sub">Nginx Role in Production</div>
+      <div class="section-content">
+        <p>Nginx serves as a reverse proxy that sits between client requests and your Django application. It handles SSL/HTTPS termination, static file serving, compression, rate limiting, and acts as a load balancer.</p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span>nginx — Production Nginx configuration</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>upstream django {
+    server web:8000;
+}
+
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+    
+    <span class="cm"># Redirect HTTP to HTTPS</span>
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http/2;
+    server_name yourdomain.com www.yourdomain.com;
+    
+    <span class="cm"># SSL Certificates (Let's Encrypt)</span>
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+    
+    <span class="cm"># Modern TLS configuration</span>
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    
+    <span class="cm"># Security headers</span>
+    add_header Strict-Transport-Security <span class="st">"max-age=31536000; includeSubDomains"</span> always;
+    add_header X-Content-Type-Options <span class="st">"nosniff"</span> always;
+    add_header X-Frame-Options <span class="st">"DENY"</span> always;
+    add_header X-XSS-Protection <span class="st">"1; mode=block"</span> always;
+    
+    <span class="cm"># Gzip compression</span>
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript;
+    gzip_vary on;
+    gzip_min_length 1000;
+    
+    <span class="cm"># Static files (CSS, JS, images)</span>
+    location /static/ {
+        alias /app/staticfiles/;
+        expires 1y;
+        add_header Cache-Control <span class="st">"public, immutable"</span>;
+    }
+    
+    <span class="cm"># Media files (user uploads)</span>
+    location /media/ {
+        alias /app/media/;
+        expires 7d;
+    }
+    
+    <span class="cm"># Proxy requests to Django</span>
+    location / {
+        proxy_pass http://django;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+        
+        <span class="cm"># Timeouts</span>
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>💡 Tip</strong>
+        <p>Use Let's Encrypt for free SSL certificates. Use Certbot to automate certificate renewal: <code>certbot certonly --nginx -d yourdomain.com</code></p>
+      </div>
+    </section>
+
+    <!-- TESTING -->
+    <section id="testing" class="ds-section">
+      <div class="ds-section-header">
+        <span class="ds-section-num">17</span>
+        <span class="ds-section-tag">Deployment & Operations</span>
+      </div>
+      <h2>Testing <em>& Quality Assurance</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="ds-sub">Testing Framework Setup</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Run tests with pytest</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Run all tests</span>
+$ pytest
+
+<span class="cm"># Run tests with coverage report</span>
+$ pytest --cov=. --cov-report=html
+
+<span class="cm"># Run specific test file</span>
+$ pytest accounts/tests.py
+
+<span class="cm"># Run specific test class</span>
+$ pytest accounts/tests.py::TestUserAPI
+
+<span class="cm"># Run specific test method</span>
+$ pytest accounts/tests.py::TestUserAPI::test_user_creation
+
+<span class="cm"># Run tests with verbose output</span>
+$ pytest -v
+
+<span class="cm"># Run tests with print statements visible</span>
+$ pytest -s
+
+<span class="cm"># Run tests matching pattern</span>
+$ pytest -k "test_user"</code></pre>
+      </div>
+
+      <div class="ds-sub">Writing Tests with pytest</div>
+      <div class="code-block">
+        <div class="code-header"><span>python — Example API test</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="kw">import</span> pytest
+<span class="kw">from</span> rest_framework <span class="kw">import</span> status
+<span class="kw">from</span> rest_framework.test <span class="kw">import</span> APIClient
+<span class="kw">from</span> django.contrib.auth <span class="kw">import</span> get_user_model
+
+User = get_user_model()
+
+@pytest.mark.django_db
+<span class="kw">class</span> TestUserAPI:
+    <span class="st">"""Test user registration and authentication"""</span>
+    
+    <span class="kw">def</span> setup_method(self):
+        self.client = APIClient()
+        self.register_url = <span class="st">'/api/accounts/register/'</span>
+    
+    <span class="kw">def</span> test_user_registration(self):
+        <span class="st">"""Test successful user registration"""</span>
+        data = {
+            <span class="st">'username'</span>: <span class="st">'testuser'</span>,
+            <span class="st">'email'</span>: <span class="st">'test@example.com'</span>,
+            <span class="st">'password'</span>: <span class="st">'TestPass123!'</span>,
+            <span class="st">'password_confirm'</span>: <span class="st">'TestPass123!'</span>,
+        }
+        response = self.client.post(self.register_url, data)
+        
+        assert response.status_code == status.HTTP_201_CREATED
+        assert User.objects.count() == 1
+        assert User.objects.first().username == <span class="st">'testuser'</span>
+    
+    <span class="kw">def</span> test_user_login(self):
+        <span class="st">"""Test user login with JWT tokens"""</span>
+        <span class="cm"># Create user</span>
+        user = User.objects.create_user(
+            username=<span class="st">'testuser'</span>,
+            email=<span class="st">'test@example.com'</span>,
+            password=<span class="st">'TestPass123!'</span>
+        )
+        
+        <span class="cm"># Get tokens</span>
+        response = self.client.post(<span class="st">'/api/accounts/token/'</span>, {
+            <span class="st">'username'</span>: <span class="st">'testuser'</span>,
+            <span class="st">'password'</span>: <span class="st">'TestPass123!'</span>
+        })
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert <span class="st">'access'</span> in response.data
+        assert <span class="st">'refresh'</span> in response.data</code></pre>
+      </div>
+
+      <div class="ds-sub">Code Quality Tools</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Format and lint code</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Auto-format code with Black</span>
+$ black .
+
+<span class="cm"># Check formatting without changing</span>
+$ black . --check
+
+<span class="cm"># Sort imports with isort</span>
+$ isort .
+
+<span class="cm"># Lint with flake8</span>
+$ flake8 .
+
+<span class="cm"># Type check with mypy</span>
+$ mypy .
+
+<span class="cm"># Run security checks</span>
+$ bandit -r .</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>💡 Tip</strong>
+        <p>Setup pre-commit hooks to automatically format and lint code before commits. See .pre-commit-config.yaml in project root.</p>
+      </div>
+    </section>
+
+    <!-- TROUBLESHOOTING -->
+    <section id="troubleshooting" class="ds-section">
+      <div class="ds-section-header">
+        <span class="ds-section-num">18</span>
+        <span class="ds-section-tag">Deployment & Operations</span>
+      </div>
+      <h2>Troubleshooting <em>Common Issues</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="ds-sub">Database Connection Issues</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Debug database problems</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Check if PostgreSQL is running</span>
+$ pg_isready -h localhost -p 5432
+
+<span class="cm"># Test connection with psql</span>
+$ psql -h localhost -U project_user -d project_db
+
+<span class="cm"># Check .env file values</span>
+$ grep "^DB_" .env
+
+<span class="cm"># Run Django check</span>
+$ python manage.py check
+
+<span class="cm"># Show database configuration Django sees</span>
+$ python manage.py shell
+>>> from django.conf import settings
+>>> settings.DATABASES
+>>> exit()</code></pre>
+      </div>
+
+      <div class="ds-sub">Celery Task Issues</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Debug Celery problems</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Start worker with debug logging</span>
+$ celery -A project worker --loglevel=debug
+
+<span class="cm"># Check Redis connection</span>
+$ redis-cli ping
+
+<span class="cm"># View Redis keys (for debugging only)</span>
+$ redis-cli KEYS "*"
+
+<span class="cm"># Clear all Redis data (WARNING: deletes cache!)</span>
+$ redis-cli FLUSHALL
+
+<span class="cm"># Purge all Celery tasks</span>
+$ celery -A project purge
+
+<span class="cm"># Inspect active tasks</span>
+$ celery -A project inspect active</span></code></pre>
+      </div>
+
+      <div class="ds-sub">Port Conflicts</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Find and free ports</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Find process using port 8000</span>
+$ lsof -i :8000
+
+<span class="cm"># Kill process by PID</span>
+$ kill -9 &lt;PID&gt;
+
+<span class="cm"># Or kill by port directly (macOS/Linux)</span>
+$ fuser -k 8000/tcp</code></pre>
+      </div>
+
+      <div class="ds-sub">Static Files Not Loading</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Fix static files</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Collect static files</span>
+$ python manage.py collectstatic --noinput
+
+<span class="cm"># Clear collected files and recollect</span>
+$ python manage.py collectstatic --clear --noinput
+
+<span class="cm"># Check where Django looks for static files</span>
+$ python manage.py findstatic admin/css/base.css</code></pre>
+      </div>
+
+      <div class="callout warning">
+        <strong>⚠️ Warning</strong>
+        <p>Always check logs first when troubleshooting. Docker: <code>docker-compose logs -f web</code>. Local: <code>tail -f logs/django.log</code>. Celery: Worker terminal output.</p>
+      </div>
+    </section>
+
+    <!-- VERSION UPDATES -->
+    <section id="versioning" class="ds-section">
+      <div class="ds-section-header">
+        <span class="ds-section-num">19</span>
+        <span class="ds-section-tag">Deployment & Operations</span>
+      </div>
+      <h2>Version Updates <em>& Migration</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="ds-sub">Django 4.2 → 6.0 Migration Path</div>
+      <div class="section-content">
+        <p>This guide covers Django 6.0 (latest). If migrating from Django 4.2, review breaking changes and follow the upgrade path through Django 5.0 and 5.2.</p>
+      </div>
+
+      <div class="checklist-group">
+        <h4>Breaking Changes in Django 6.0</h4>
+        <ul class="checklist">
+          <li>Python < 3.10 no longer supported</li>
+          <li>PostgreSQL < 13 no longer supported</li>
+          <li>Django admin interface redesigned</li>
+          <li>ORM query optimizations may change query patterns</li>
+          <li>ASGI support improved (better async handling)</li>
+          <li>Signals and middleware processing improved</li>
+        </ul>
+      </div>
+
+      <div class="ds-sub">Upgrade Steps</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Django upgrade procedure</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># 1. Backup current state</span>
+$ git commit -m "Backup before Django upgrade"
+$ python manage.py dumpdata > backup.json
+
+<span class="cm"># 2. Update Django in requirements</span>
+$ pip install --upgrade Django==6.0.2
+
+<span class="cm"># 3. Run checks for deprecated features</span>
+$ python manage.py check
+
+<span class="cm"># 4. Run migrations</span>
+$ python manage.py migrate
+
+<span class="cm"># 5. Test thoroughly</span>
+$ pytest --cov
+
+<span class="cm"># 6. Run security checks</span>
+$ python manage.py check --deploy</code></pre>
+      </div>
+
+      <div class="callout warning">
+        <strong>⚠️ Warning</strong>
+        <p>Always upgrade in a staging environment first. Test all features thoroughly. Have a rollback plan. Run database backups before migrations.</p>
+      </div>
+    </section>
+
+    <!-- COMMANDS REFERENCE -->
+    <section id="commands" class="ds-section">
+      <div class="ds-section-header">
+        <span class="ds-section-num">20</span>
+        <span class="ds-section-tag">Reference</span>
+      </div>
+      <h2>Common <em>Commands</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="ds-sub">Django Management Commands</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Essential Django commands</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm"># Create new Django app</span>
+$ python manage.py startapp app_name
+
+<span class="cm"># Generate migrations from model changes</span>
+$ python manage.py makemigrations
+
+<span class="cm"># Apply migrations to database</span>
+$ python manage.py migrate
+
+<span class="cm"># Create superuser for admin</span>
+$ python manage.py createsuperuser
+
+<span class="cm"># Run development server</span>
+$ python manage.py runserver
+
+<span class="cm"># Collect static files for production</span>
+$ python manage.py collectstatic --noinput
+
+<span class="cm"># Interactive Python shell with Django context</span>
+$ python manage.py shell
+
+<span class="cm"># Database shell (psql for PostgreSQL)</span>
+$ python manage.py dbshell
+
+<span class="cm"># Check Django configuration</span>
+$ python manage.py check
+
+<span class="cm"># Check for security issues (production)</span>
+$ python manage.py check --deploy
+
+<span class="cm"># Dump database data (backup)</span>
+$ python manage.py dumpdata > backup.json
+
+<span class="cm"># Load data from fixture</span>
+$ python manage.py loaddata backup.json</code></pre>
+      </div>
+
+      <div class="ds-sub">Makefile Commands</div>
+      <div class="code-block">
+        <div class="code-header"><span>bash — Convenient make shortcuts</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>$ make help              <span class="cm"># Show all available commands</span>
+$ make dev               <span class="cm"># Complete development setup</span>
+$ make run               <span class="cm"># Start development server</span>
+$ make test              <span class="cm"># Run test suite</span>
+$ make test-coverage     <span class="cm"># Tests with coverage report</span>
+$ make lint              <span class="cm"># Run code linting</span>
+$ make format            <span class="cm"># Auto-format code</span>
+$ make type-check        <span class="cm"># Type checking with mypy</span>
+$ make celery-worker     <span class="cm"># Start Celery worker</span>
+$ make celery-beat       <span class="cm"># Start Celery beat scheduler</span>
+$ make flower            <span class="cm"># Start Flower monitoring</span>
+$ make docker-up         <span class="cm"># Start Docker services</span>
+$ make docker-down       <span class="cm"># Stop Docker services</span>
+$ make docker-logs       <span class="cm"># View Docker logs</span>
+$ make clean             <span class="cm"># Clean Python cache files</span></code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>💡 Tip</strong>
+        <p>Run <code>make help</code> to see all available commands in the Makefile. The Makefile provides convenient shortcuts for the most common development tasks.</p>
+      </div>
+    </section>
+
+    <!-- RESOURCES -->
+    <section id="resources" class="ds-section">
+      <div class="ds-section-header">
+        <span class="ds-section-num">21</span>
+        <span class="ds-section-tag">Reference</span>
+      </div>
+      <h2>Resources <em>& Documentation</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="ds-sub">Official Documentation</div>
+      <div class="section-content">
+        <p><strong>Django & Frameworks:</strong></p>
+        <ul style="margin-left: var(--sp-6)">
+          <li><a href="https://docs.djangoproject.com/en/6.0/" style="color: var(--accent)">Django 6.0 Official Documentation</a></li>
+          <li><a href="https://www.django-rest-framework.org/" style="color: var(--accent)">Django REST Framework Documentation</a></li>
+          <li><a href="https://channels.readthedocs.io/" style="color: var(--accent)">Django Channels (WebSockets)</a></li>
+          <li><a href="https://docs.celeryproject.org/" style="color: var(--accent)">Celery Documentation</a></li>
+        </ul>
+      </div>
+
+      <div class="section-content">
+        <p><strong>Databases & Caching:</strong></p>
+        <ul style="margin-left: var(--sp-6)">
+          <li><a href="https://www.postgresql.org/docs/17/" style="color: var(--accent)">PostgreSQL 17 Documentation</a></li>
+          <li><a href="https://redis.io/documentation" style="color: var(--accent)">Redis Documentation</a></li>
+          <li><a href="https://niwinz.github.io/django-redis/latest/" style="color: var(--accent)">django-redis Documentation</a></li>
+        </ul>
+      </div>
+
+      <div class="section-content">
+        <p><strong>Deployment & DevOps:</strong></p>
+        <ul style="margin-left: var(--sp-6)">
+          <li><a href="https://docs.gunicorn.org/" style="color: var(--accent)">Gunicorn Documentation</a></li>
+          <li><a href="https://www.uvicorn.org/" style="color: var(--accent)">Uvicorn Documentation</a></li>
+          <li><a href="https://nginx.org/en/docs/" style="color: var(--accent)">Nginx Documentation</a></li>
+          <li><a href="https://docs.docker.com/" style="color: var(--accent)">Docker Documentation</a></li>
+        </ul>
+      </div>
+
+      <div class="ds-sub">Recommended Packages</div>
+      <div class="section-content">
+        <p><strong>API Documentation:</strong> drf-spectacular (auto OpenAPI 3 generation), drf-filters (advanced filtering)</p>
+        <p><strong>Admin Enhancements:</strong> django-unfold (modern admin UI), django-admin-interface (admin customization)</p>
+        <p><strong>Testing:</strong> pytest-django, pytest-cov, factory-boy (test fixtures)</p>
+        <p><strong>Code Quality:</strong> black, isort, flake8, mypy, pre-commit</p>
+        <p><strong>Monitoring:</strong> sentry-sdk (error tracking), django-health-check (health endpoints)</p>
+        <p><strong>Security:</strong> django-cors-headers, django-ratelimit, django-guardian (object permissions)</p>
+      </div>
+
+      <div class="ds-sub">Learning Resources</div>
+      <div class="section-content">
+        <p><strong>Online Courses:</strong> Django for Beginners, Two Scoops of Django, Real Python</p>
+        <p><strong>Best Practices:</strong> Follow Django's <a href="https://docs.djangoproject.com/en/6.0/intro/contributing/" style="color: var(--accent)">Contributing Guide</a>, read <a href="https://twoscoopsofdjango.com/" style="color: var(--accent)">Two Scoops of Django</a></p>
+        <p><strong>Community:</strong> Django Forum, r/django, Django Discord, Stack Overflow</p>
+      </div>
+
+      <div class="callout note">
+        <strong>📝 Note</strong>
+        <p>Bookmark these resources for quick reference. The official documentation is authoritative and always up-to-date. For questions, check Stack Overflow or Django's community channels.</p>
+      </div>
+    </section>
+
   </main>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 function setTheme(theme) {
   document.body.setAttribute('data-theme', theme);
   document.querySelectorAll('.theme-btn').forEach(btn => {
@@ -1919,15 +2905,4 @@ function setActiveLink() {
   });
   navLinks.forEach(link => {
     link.classList.remove('active');
-    const href = link.getAttribute('href').substring(1);
-    if (href === current) {
-      link.classList.add('active');
-    }
-  });
-}
-
-window.addEventListener('scroll', setActiveLink);
-window.addEventListener('load', setActiveLink);
-</script>
-</body>
-</html>
+    const href = link.getAttribute('hr
