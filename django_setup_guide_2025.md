@@ -694,13 +694,6 @@ project/
 │   ├── middleware.py            # Custom middleware
 │   └── admin.py
 │
-├── api/                          # API app
-│   ├── v1/                      # API version
-│   │   ├── urls.py
-│   │   ├── views.py
-│   │   └── serializers.py
-│   └── tests.py
-│
 ├── docker/                       # Docker configuration
 │   ├── Dockerfile
 │   ├── .dockerignore
