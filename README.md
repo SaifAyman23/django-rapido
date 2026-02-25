@@ -1,190 +1,300 @@
-# Django Project Quick Start Guide
+# 🚀 Django Production-Ready Project Template
 
-## 📋 Prerequisites
+A comprehensive, production-ready Django project setup with all modern best practices, including REST APIs, WebSockets, async task processing, and complete Docker containerization.
+
+## ✨ Features
+
+- **Django REST Framework** - Build powerful REST APIs
+- **Django Channels** - WebSocket support for real-time communication
+- **Celery + Beat + Flower** - Async task processing and scheduling
+- **Simple JWT** - Token-based authentication
+- **PostgreSQL** - Production-grade database
+- **Redis** - Caching and message broker
+- **Django Unfold** - Modern admin interface
+- **drf-spectacular** - Auto-generated API documentation with Swagger/ReDoc
+- **Docker & Docker Compose** - Complete containerization
+- **Gunicorn/Uvicorn** - Production WSGI/ASGI servers
+- **pytest** - Comprehensive testing framework
+- **Nginx** - Reverse proxy and static file serving
+- **Modular Settings** - Environment-based configuration
+
+## 📋 Requirements
 
 - Python 3.9+
 - PostgreSQL 12+
-- Docker & Docker Compose (optional but recommended)
+- Docker & Docker Compose (optional)
+- Redis 7+
 - Git
 
----
+## 🏃 Quick Start
 
-## 🚀 Quick Start (With Docker - Recommended)
-
-### Step 1: Clone/Create Project
+### Option 1: Docker (Recommended)
 
 ```bash
-# If you're using this as a template, create new project
-mkdir my-django-project
-cd my-django-project
-```
+# Clone or download this project
+git clone your-repo-url
+cd project
 
-### Step 2: Copy Files
-
-Copy all the files from the output (Dockerfile, docker-compose.yml, requirements.txt, etc.) into your project directory.
-
-### Step 3: Configure Environment
-
-```bash
-# Copy example environment file
+# Copy environment file
 cp .env.example .env
 
-# Edit .env with your values (for local development, defaults are fine)
-nano .env
-```
-
-### Step 4: Start Services
-
-```bash
-# Build and start all services
+# Start all services (PostgreSQL, Redis, Django, Celery, Flower)
 docker-compose up -d
 
-# Watch logs
-docker-compose logs -f web
+# Wait for migrations to complete, then access:
+# - API: http://localhost:8000
+# - Admin: http://localhost:8000/admin (admin / admin123)
+# - API Docs: http://localhost:8000/api/docs/
+# - Flower: http://localhost:5555
 
-# Wait for migrations to complete (you'll see "Server is running" message)
+# View logs
+docker-compose logs -f web
 ```
 
-### Step 5: Access Services
-
-- **Django API**: http://localhost:8000
-- **Admin Panel**: http://localhost:8000/admin (username: admin, password: admin123)
-- **API Docs**: http://localhost:8000/api/docs/
-- **Flower (Celery Monitoring)**: http://localhost:5555
-- **Redis Commander** (optional): http://localhost:8081
-
----
-
-## 🖥️ Quick Start (Local Development - No Docker)
-
-### Step 1: Create Virtual Environment
+### Option 2: Local Development
 
 ```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Setup PostgreSQL database
+createdb project_db
+createuser project_user
+# Set password: secure_password_here
+
+# Configure environment
+cp .env.example .env
+# Edit .env and set DB_HOST=localhost
+
+# Run migrations
+python manage.py migrate
+
+# Create superuser
+python manage.py createsuperuser
+
+# Start development server
+python manage.py runserver
+
+# In another terminal: Start Celery worker
+celery -A project worker --loglevel=info
+
+# In another terminal: Start Celery beat
+celery -A project beat --loglevel=info
+
+# Access: http://localhost:8000
+```
+
+## 📁 Project Structure
+
+```
+project/
+├── project/                    # Main Django project
+│   ├── settings/              # Modular settings
+│   │   ├── base.py            # Shared configuration
+│   │   ├── local.py           # Local development
+│   │   ├── production.py       # Production settings
+│   │   └── celery.py          # Celery configuration
+│   ├── asgi.py                # ASGI (async) entry point
+│   ├── wsgi.py                # WSGI (sync) entry point
+│   ├── urls.py                # Main URL router
+│   └── routing.py             # WebSocket routing
+│
+├── accounts/                  # User management app
+│   ├── models.py             # User models
+│   ├── serializers.py        # DRF serializers
+│   ├── viewsets.py           # API viewsets
+│   ├── urls.py               # App-specific URLs
+│   ├── tasks.py              # Celery tasks
+│   └── tests.py              # Tests
+│
+├── common/                    # Shared utilities
+│   ├── models.py             # Base models & mixins
+│   ├── serializers.py        # Base serializers
+│   ├── viewsets.py           # Base viewsets
+│   ├── permissions.py        # Custom permissions
+│   ├── pagination.py         # Pagination classes
+│   ├── filters.py            # Filter classes
+│   ├── helpers.py            # Helper functions
+│   ├── decorators.py         # Decorators
+│   ├── exceptions.py         # Custom exceptions
+│   └── constants.py          # Constants & enums
+│
+├── tests/                     # Test configuration
+│   ├── conftest.py           # pytest fixtures
+│   └── factories.py          # Test factories
+│
+├── docker/                    # Docker configuration
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   └── .dockerignore
+│
+├── static/                    # Static files (CSS, JS)
+├── media/                     # User uploads
+│
+├── .env.example              # Environment variables template
+├── .gitignore                # Git ignore rules
+├── requirements.txt          # Python dependencies
+├── docker-compose.yml        # Docker services
+├── Dockerfile                # Container image
+├── Makefile                  # Development commands
+├── pytest.ini                # pytest configuration
+├── manage.py                 # Django CLI
+└── README.md                 # This file
+```
+
+## 🛠️ Installation & Setup
+
+### 1. Install System Dependencies
+
+**macOS:**
+```bash
+brew install python postgresql redis
+brew services start postgresql
+brew services start redis
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install python3 python3-venv postgresql postgresql-contrib redis-server
+sudo systemctl start postgresql
+sudo systemctl start redis-server
+```
+
+**Windows:**
+- Download and install Python 3.11+ from python.org
+- Download and install PostgreSQL
+- Download and install Redis (using Windows Subsystem for Linux or Redis for Windows)
+
+### 2. Clone and Setup Project
+
+```bash
+# Clone repository
+git clone your-repo-url
+cd project
+
+# Create virtual environment
 python -m venv venv
 
-# Activate
-source venv/bin/activate  # Linux/Mac
-# or
-venv\Scripts\activate     # Windows
-```
+# Activate (Linux/Mac)
+source venv/bin/activate
+# Or Windows
+venv\Scripts\activate
 
-### Step 2: Install Dependencies
+# Upgrade pip
+pip install --upgrade pip
 
-```bash
+# Install all dependencies
 pip install -r requirements.txt
 ```
 
-### Step 3: Setup PostgreSQL
+### 3. Configure Database
 
 ```bash
-# Create database and user
+# Create PostgreSQL database and user
 createdb project_db
 createuser project_user
-
-# Set password
-psql -U postgres
+psql postgres
 ALTER USER project_user WITH PASSWORD 'secure_password_here';
 GRANT ALL PRIVILEGES ON DATABASE project_db TO project_user;
 \q
 ```
 
-### Step 4: Configure Environment
+### 4. Setup Environment Variables
 
 ```bash
+# Copy example file
 cp .env.example .env
 
-# Edit .env and set:
+# Edit .env with your settings
+nano .env  # or use your preferred editor
+
+# Key variables to set:
 # DJANGO_ENVIRONMENT=local
 # DEBUG=True
+# SECRET_KEY=your-secret-key
 # DB_HOST=localhost
+# REDIS_URL=redis://localhost:6379/0
 ```
 
-### Step 5: Run Migrations
+### 5. Initialize Database
 
 ```bash
+# Run migrations
 python manage.py migrate
-```
 
-### Step 6: Create Superuser
-
-```bash
+# Create superuser
 python manage.py createsuperuser
-# Follow prompts to create admin account
 ```
 
-### Step 7: Run Server
+### 6. Run Development Server
 
 ```bash
-# Terminal 1: Django development server
+# Terminal 1: Django server
 python manage.py runserver
 
 # Terminal 2: Celery worker
 celery -A project worker --loglevel=info
 
 # Terminal 3: Celery beat (optional)
-celery -A project beat --loglevel=info
+celery -A project beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 ```
 
-### Step 8: Access Application
+Access the application at http://localhost:8000
 
-- **API**: http://localhost:8000
-- **Admin**: http://localhost:8000/admin
-- **API Docs**: http://localhost:8000/api/docs/
+## 🐳 Docker Usage
 
----
+### Start Services
 
-## 📁 Project Structure
+```bash
+# Build and start all services
+docker-compose up -d
 
-```
-project/
-├── project/                 # Django project settings
-│   ├── settings/           # Modular settings (base, local, production)
-│   ├── wsgi.py             # WSGI server entry point
-│   ├── asgi.py             # ASGI server entry point (for Channels)
-│   ├── urls.py             # Main URL router
-│   └── routing.py          # WebSocket routing
-│
-├── accounts/               # User management app
-│   ├── models.py          # User-related models
-│   ├── serializers.py     # DRF serializers
-│   ├── viewsets.py        # API viewsets
-│   ├── urls.py            # App-specific URLs
-│   └── tests.py           # Tests
-│
-├── common/                # Shared utilities
-│   ├── models.py          # Base models and mixins
-│   ├── serializers.py     # Base serializers
-│   ├── viewsets.py        # Base viewsets
-│   ├── permissions.py     # Custom permissions
-│   ├── pagination.py      # Pagination classes
-│   ├── filters.py         # Filter classes
-│   ├── helpers.py         # Helper functions
-│   ├── decorators.py      # Custom decorators
-│   ├── exceptions.py      # Custom exceptions
-│   └── constants.py       # Constants and enums
-│
-├── api/                   # Main API app
-│   └── v1/               # API version
-│
-├── tests/                # Test configuration
-│   ├── conftest.py       # pytest fixtures
-│   └── factories.py      # Test data factories
-│
-├── docker/               # Docker configuration
-│   ├── Dockerfile
-│   └── nginx.conf
-│
-├── .env.example         # Environment variables template
-├── requirements.txt     # Python dependencies
-├── docker-compose.yml   # Docker services definition
-├── Dockerfile          # Container image definition
-├── manage.py           # Django CLI
-└── pytest.ini          # pytest configuration
+# Follow logs
+docker-compose logs -f web
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes (WARNING: deletes data)
+docker-compose down -v
 ```
 
----
+### Available Services
 
-## 📚 Common Commands
+- **Web (Gunicorn)**: http://localhost:8000
+- **PostgreSQL**: localhost:5432
+- **Redis**: localhost:6379
+- **Flower (Celery Monitoring)**: http://localhost:5555
+- **Nginx (Reverse Proxy)**: http://localhost:80/443
+
+### Common Docker Commands
+
+```bash
+# View running services
+docker-compose ps
+
+# View logs
+docker-compose logs -f web
+
+# Execute command in container
+docker-compose exec web python manage.py migrate
+
+# Shell into container
+docker-compose exec web /bin/bash
+
+# Rebuild images
+docker-compose build --no-cache
+
+# Restart services
+docker-compose restart
+```
+
+## 📝 Common Commands
 
 ### Django
 
@@ -192,42 +302,23 @@ project/
 # Create new app
 python manage.py startapp app_name
 
-# Make migrations
-python manage.py makemigrations
-
-# Apply migrations
+# Run migrations
 python manage.py migrate
+
+# Create migrations
+python manage.py makemigrations
 
 # Create superuser
 python manage.py createsuperuser
 
-# Run development server
-python manage.py runserver
-
 # Collect static files
 python manage.py collectstatic --noinput
 
-# Run shell
+# Django shell
 python manage.py shell
 
-# Create fixture
-python manage.py dumpdata > fixture.json
-```
-
-### Celery
-
-```bash
-# Start worker
-celery -A project worker --loglevel=info
-
-# Start beat (scheduler)
-celery -A project beat --loglevel=info
-
-# Start Flower (monitoring)
-celery -A project flower
-
-# Purge tasks
-celery -A project purge
+# Check settings
+python manage.py check
 ```
 
 ### Testing
@@ -236,218 +327,203 @@ celery -A project purge
 # Run all tests
 pytest
 
-# Run specific test file
+# Run specific file
 pytest tests/test_api.py
 
 # Run with coverage
-pytest --cov
-
-# Run with verbose output
-pytest -v
-
-# Run specific test class
-pytest tests/test_api.py::TestUserRegistration
-
-# Run specific test method
-pytest tests/test_api.py::TestUserRegistration::test_register_user_success
-```
-
-### Database
-
-```bash
-# Reset database (WARNING: Deletes all data)
-python manage.py flush
-
-# Create database backup
-pg_dump project_db > backup.sql
-
-# Restore from backup
-psql project_db < backup.sql
-
-# Interactive database shell
-python manage.py dbshell
-```
-
-### Docker
-
-```bash
-# Start services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f web
-
-# Execute command in container
-docker-compose exec web python manage.py migrate
-
-# Stop services
-docker-compose stop
-
-# Stop and remove containers
-docker-compose down
-
-# Remove volumes (WARNING: Deletes data)
-docker-compose down -v
-
-# Rebuild images
-docker-compose build --no-cache
-
-# View running containers
-docker-compose ps
-```
-
----
-
-## 🔧 Configuration Guide
-
-### Settings Management
-
-Settings are split into modular files in `project/settings/`:
-
-- **base.py**: Shared configuration
-- **local.py**: Development settings (DEBUG=True)
-- **production.py**: Production settings (DEBUG=False, security)
-
-Switch environment via `DJANGO_ENVIRONMENT` variable:
-
-```bash
-export DJANGO_ENVIRONMENT=production  # or "local"
-```
-
-### Environment Variables
-
-Key variables in `.env`:
-
-```bash
-# Django
-DJANGO_ENVIRONMENT=local
-DEBUG=True
-SECRET_KEY=change-in-production
-
-# Database
-DB_HOST=localhost
-DB_NAME=project_db
-DB_USER=project_user
-DB_PASSWORD=secure_password_here
-
-# Redis/Celery
-REDIS_URL=redis://localhost:6379/0
-CELERY_BROKER_URL=redis://localhost:6379/0
-
-# Email
-EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-```
-
-### Celery Tasks
-
-Define tasks in `app_name/tasks.py`:
-
-```python
-from celery import shared_task
-import logging
-
-logger = logging.getLogger(__name__)
-
-@shared_task(bind=True, max_retries=3)
-def my_task(self, arg1, arg2):
-    try:
-        # TODO: Implement task logic
-        logger.info(f"Processing: {arg1}, {arg2}")
-        return f"Result: {arg1} + {arg2}"
-    except Exception as exc:
-        logger.error(f"Error: {str(exc)}")
-        raise self.retry(exc=exc, countdown=60)
-```
-
-Call task:
-
-```python
-from accounts.tasks import my_task
-
-# Run asynchronously
-my_task.delay("value1", "value2")
-
-# Run with delay
-my_task.apply_async(("value1", "value2"), countdown=10)
-
-# Run synchronously (for testing)
-my_task("value1", "value2")
-```
-
----
-
-## 🧪 Testing Guide
-
-### Running Tests
-
-```bash
-# All tests
-pytest
-
-# Specific file
-pytest tests/test_api.py
-
-# Specific test
-pytest tests/test_api.py::TestUserRegistration::test_register_user_success
-
-# With coverage
 pytest --cov=.
 
-# Coverage report
+# Generate HTML coverage report
 pytest --cov=. --cov-report=html
 # Open htmlcov/index.html
+
+# Run specific test
+pytest tests/test_api.py::TestUserRegistration::test_register_user
 ```
 
-### Writing Tests
+### Code Quality
 
-```python
-import pytest
-from rest_framework import status
-from django.urls import reverse
+```bash
+# Lint code
+flake8 .
 
-@pytest.mark.django_db
-class TestUserAPI:
-    """Test user API endpoints."""
-    
-    def test_user_registration(self, api_client):
-        """Test user registration."""
-        data = {
-            "username": "testuser",
-            "email": "test@example.com",
-            "password": "testpass123",
-            "password_confirm": "testpass123",
-        }
-        response = api_client.post(reverse("register-register"), data)
-        assert response.status_code == status.HTTP_201_CREATED
+# Format code
+black .
+isort .
+
+# Check formatting
+black --check .
 ```
 
----
+### Celery
 
-## 🚢 Deployment Checklist
+```bash
+# Start worker
+celery -A project worker --loglevel=info
+
+# Start beat scheduler
+celery -A project beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+# Start Flower monitoring
+celery -A project flower
+
+# Purge all tasks
+celery -A project purge
+```
+
+### Using Makefile (Shortcut Commands)
+
+```bash
+make help          # Show all available commands
+make install       # Install dependencies
+make migrate       # Run migrations
+make run           # Start dev server
+make test          # Run tests
+make test-coverage # Run tests with coverage
+make celery-worker # Start Celery worker
+make docker-up     # Start Docker services
+make docker-down   # Stop Docker services
+make clean         # Clean Python cache files
+```
+
+## 🔑 API Documentation
+
+Once the server is running, access API documentation at:
+
+- **Swagger UI**: http://localhost:8000/api/docs/
+- **ReDoc**: http://localhost:8000/api/redoc/
+- **OpenAPI Schema**: http://localhost:8000/api/schema/
+
+### Available Endpoints
+
+```
+Authentication:
+  POST   /api/accounts/token/               - Get JWT token
+  POST   /api/accounts/token/refresh/       - Refresh token
+  POST   /api/accounts/register/register/   - Register new user
+
+Users:
+  GET    /api/accounts/users/               - List users
+  POST   /api/accounts/users/               - Create user
+  GET    /api/accounts/users/me/            - Get current user
+  POST   /api/accounts/users/change_password/ - Change password
+
+Profiles:
+  GET    /api/accounts/profiles/my_profile/ - Get own profile
+  PUT    /api/accounts/profiles/my_profile/ - Update profile
+```
+
+## 📧 Email Configuration
+
+Configure email in `.env`:
+
+```bash
+# Console backend (development)
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+
+# SMTP backend (production)
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=noreply@example.com
+```
+
+## 🔐 Security Checklist
 
 Before deploying to production:
 
 - [ ] Set `DEBUG=False`
-- [ ] Generate secure `SECRET_KEY`
-- [ ] Configure `ALLOWED_HOSTS`
-- [ ] Set up PostgreSQL database
-- [ ] Configure email backend
-- [ ] Set up Redis
-- [ ] Configure SSL/HTTPS
-- [ ] Set up backups
-- [ ] Configure monitoring/logging
-- [ ] Run full test suite
-- [ ] Load test the application
-- [ ] Security audit
-- [ ] Document API endpoints
+- [ ] Generate secure `SECRET_KEY` using: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`
+- [ ] Set `ALLOWED_HOSTS` to your domain
+- [ ] Configure HTTPS/SSL certificates
+- [ ] Set up database backups
+- [ ] Configure secure email settings
+- [ ] Enable CSRF protection
+- [ ] Set `SECURE_SSL_REDIRECT=True`
+- [ ] Set secure cookie flags
+- [ ] Configure CORS properly
+- [ ] Run security checks: `python manage.py check --deploy`
+- [ ] Review `INSTALLED_APPS` and remove unused apps
+- [ ] Implement rate limiting
+- [ ] Set up monitoring and logging
+- [ ] Regular security updates
 
----
+## 📚 Documentation
+
+Full documentation is available in:
+
+- **DJANGO_COMPLETE_SETUP_GUIDE.md** - Comprehensive setup guide with all details
+- **QUICK_START.md** - Quick reference guide
+- [Django Documentation](https://docs.djangoproject.com/)
+- [Django REST Framework](https://www.django-rest-framework.org/)
+- [Django Channels](https://channels.readthedocs.io/)
+- [Celery Documentation](https://docs.celeryproject.org/)
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=. --cov-report=html
+
+# Run specific test file
+pytest tests/test_api.py
+
+# Run specific test
+pytest tests/test_api.py::TestUserRegistration::test_register_user
+
+# Run with verbose output
+pytest -v
+
+# Run with print statements visible
+pytest -s
+```
+
+## 🚀 Deployment
+
+### Using Gunicorn (for REST APIs)
+
+```bash
+gunicorn project.wsgi:application \
+    --bind 0.0.0.0:8000 \
+    --workers 4 \
+    --worker-class sync \
+    --max-requests 1000 \
+    --timeout 30
+```
+
+### Using Uvicorn (for WebSocket support)
+
+```bash
+uvicorn project.asgi:application \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 4 \
+    --log-level info
+```
+
+### With Nginx Reverse Proxy
+
+See `nginx.conf` for complete Nginx configuration.
+
+### Docker Deployment
+
+```bash
+# Build production image
+docker-compose -f docker-compose.yml build
+
+# Run with production settings
+docker-compose -f docker-compose.yml up -d
+```
 
 ## 🐛 Troubleshooting
 
-### Common Issues
-
-**Port already in use**
+### Port Already in Use
 
 ```bash
 # Find process using port 8000
@@ -457,73 +533,76 @@ lsof -i :8000
 kill -9 <PID>
 ```
 
-**Database connection error**
+### Database Connection Error
 
 ```bash
-# Check PostgreSQL is running
+# Check PostgreSQL status
 pg_isready
 
-# Check connection
+# Test connection
 psql -U project_user -d project_db -h localhost
 ```
 
-**Redis connection error**
+### Redis Connection Error
 
 ```bash
-# Check Redis is running
+# Check Redis status
 redis-cli ping
 
-# Connect to Redis
-redis-cli
+# Start Redis if not running
+redis-server
+
+# Check Redis info
+redis-cli info
 ```
 
-**Celery tasks not running**
+### Celery Tasks Not Running
 
 ```bash
-# Check Celery worker logs
+# Check worker logs
 celery -A project worker --loglevel=debug
-
-# Check Redis
-redis-cli
-KEYS *  # Should see celery tasks
 
 # Purge failed tasks
 celery -A project purge
+
+# Check Redis tasks
+redis-cli
+KEYS *
 ```
 
-**Static files not loading**
+## 🤝 Contributing
 
-```bash
-# Collect static files
-python manage.py collectstatic --noinput
+1. Create a feature branch: `git checkout -b feature/your-feature`
+2. Commit changes: `git commit -am 'Add feature'`
+3. Push to branch: `git push origin feature/your-feature`
+4. Open a Pull Request
 
-# Check static files directory
-ls -la staticfiles/
-```
+## 📄 License
 
----
+This project is open source and available under the MIT License.
 
-## 📖 Documentation Links
+## 📞 Support
 
-- [Django Docs](https://docs.djangoproject.com/)
-- [DRF Docs](https://www.django-rest-framework.org/)
-- [Celery Docs](https://docs.celeryproject.org/)
-- [Channels Docs](https://channels.readthedocs.io/)
-- [PostgreSQL Docs](https://www.postgresql.org/docs/)
-- [Redis Docs](https://redis.io/documentation)
-- [Docker Docs](https://docs.docker.com/)
+For issues and questions:
 
----
+1. Check the [complete setup guide](DJANGO_COMPLETE_SETUP_GUIDE.md)
+2. Review [quick start guide](QUICK_START.md)
+3. Check official documentation links
+4. Review logs: `docker-compose logs -f web`
 
-## 🤝 Need Help?
+## 🎯 Next Steps
 
-1. Check logs: `docker-compose logs -f web`
-2. Check Django logs in `project/logs/`
-3. Review the comprehensive guide: `DJANGO_COMPLETE_SETUP_GUIDE.md`
-4. Check official documentation links above
+1. Customize `common/models.py` with your data models
+2. Create serializers for your models in `common/serializers.py`
+3. Create viewsets in `common/viewsets.py`
+4. Add URLs to `project/urls.py`
+5. Write tests in `tests/`
+6. Deploy following the deployment guide
 
 ---
 
-**Last Updated**: February 2026  
-**Django Version**: 4.2+  
-**Python Version**: 3.9+
+**Made with ❤️ for Django developers**
+
+Last Updated: February 2026  
+Django Version: 4.2+  
+Python Version: 3.9+
