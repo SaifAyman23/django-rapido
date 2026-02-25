@@ -238,9 +238,6 @@ project/
 │   ├── exceptions.py      # Custom exceptions
 │   └── constants.py       # Constants and enums
 │
-├── api/                   # API versioning app
-│   └── v1/               # API v1
-│
 ├── tests/                # Test configuration
 │   ├── conftest.py       # pytest fixtures
 │   └── factories.py      # Test factories
