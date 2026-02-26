@@ -4,8 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
-# from django.contrib.auth import get_user_model
-from .models import CustomUser
+from django.contrib.auth import get_user_model
 from accounts.serializers import (
     CustomTokenObtainPairSerializer,
     UserRegistrationSerializer,
@@ -13,8 +12,7 @@ from accounts.serializers import (
 )
 from common.views import BaseViewSet
 
-# User = get_user_model()
-User = CustomUser()
+User = get_user_model()
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """JWT token view"""

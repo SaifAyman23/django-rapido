@@ -19,12 +19,8 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 from unfold.admin import ModelAdmin
 from unfold.decorators import display, action
-from django.contrib.auth.models import User, Group
 
 from common.models import CustomUser, AuditLog
-
-admin.site.unregister(User)
-admin.site.unregister(Group)
 
 # ===========================
 # Unfold Configuration Mixin

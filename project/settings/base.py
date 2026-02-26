@@ -39,6 +39,10 @@ INSTALLED_APPS = [
     "unfold.contrib.filters",
     "unfold.contrib.inlines",
     
+    # Local apps
+    "accounts",
+    "common",
+    
     # Django core
     "django.contrib.admin",
     "django.contrib.auth",
@@ -56,10 +60,6 @@ INSTALLED_APPS = [
     "channels",
     "django_celery_beat",
     "django_celery_results",
-
-    # Local apps
-    "accounts",
-    "common",
 ]
 
 MIDDLEWARE = [
@@ -169,7 +169,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom user model
-# AUTH_USER_MODEL = "accounts.CustomUser"
+AUTH_USER_MODEL = "common.CustomUser"
 
 
 # ===========================

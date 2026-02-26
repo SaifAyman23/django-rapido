@@ -39,19 +39,19 @@ UNFOLD = {
     "SHOW_HISTORY": True, # show/hide "History" button, default: True
     "SHOW_VIEW_ON_SITE": True, # show/hide "View on site" button, default: True
     "SHOW_BACK_BUTTON": False, # show/hide "Back" button on changeform in header, default: False
-    "ENVIRONMENT": "sample_app.environment_callback", # environment name in header
-    "ENVIRONMENT_TITLE_PREFIX": "sample_app.environment_title_prefix_callback", # environment name prefix in title tag
-    "DASHBOARD_CALLBACK": "sample_app.dashboard_callback",
+    "ENVIRONMENT": "common.environment_callback", # environment name in header
+    "ENVIRONMENT_TITLE_PREFIX": "common.environment_title_prefix_callback", # environment name prefix in title tag
+    "DASHBOARD_CALLBACK": "common.dashboard_callback",
     "THEME": "dark", # Force theme: "dark" or "light". Will disable theme switcher
     "LOGIN": {
         "image": lambda request: static("sample/login-bg.jpg"),
-        "redirect_after": lambda request: reverse_lazy("accounts:customuser_changelist"),
+        "redirect_after": lambda request: reverse_lazy("admin:common_customuser_changelist"),
         # Inherits from `unfold.forms.AuthenticationForm`
         "form": "app.forms.CustomLoginForm",
     },
-    "STYLES": [
-        lambda request: static("css/style.css"),
-    ],
+    # "STYLES": [
+    #     lambda request: static("css/style.css"),
+    # ],
     "SCRIPTS": [
         lambda request: static("js/script.js"),
     ],
@@ -115,7 +115,7 @@ UNFOLD = {
                         "title": _("Dashboard"),
                         "icon": "dashboard",  # Supported icon set: https://fonts.google.com/icons
                         "link": reverse_lazy("admin:index"),
-                        "badge": "sample_app.badge_callback",
+                        "badge": "common.badge_callback",
                         "badge_variant": "info", # info, success, warning, primary, danger
                         "badge_style": "solid", # background fill style
                         "permission": lambda request: request.user.is_superuser,
@@ -123,7 +123,7 @@ UNFOLD = {
                     {
                         "title": _("Users"),
                         "icon": "people",
-                        "link": reverse_lazy("admin:auth_user_changelist"),
+                        "link": reverse_lazy("admin:common_customuser_changelist"),
                     },
                 ],
             },
@@ -132,12 +132,12 @@ UNFOLD = {
     "TABS": [
         {
             "models": [
-                "app_label.model_name_in_lowercase",
+                "common.auditlog",
             ],
             "items": [
                 {
                     "title": _("Your custom title"),
-                    "link": reverse_lazy("admin:app_label_model_name_changelist"),
+                    "link": reverse_lazy("admin:common_auditlog_changelist"),
                     # "permission": "sample_app.permission_callback",
                 },
             ],
