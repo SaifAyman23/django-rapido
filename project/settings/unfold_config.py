@@ -46,8 +46,8 @@ UNFOLD = {
         "de": "🇩🇪",
         "en": "🇺🇸",
     },
-    "ENVIRONMENT": "dashboard.utils.environment_callback",
-    "DASHBOARD_CALLBACK": "dashboard.views.dashboard_callback",
+    "ENVIRONMENT": "common.environment_callback",
+    "DASHBOARD_CALLBACK": "common.dashboard_callback",
     "LOGIN": {
         "image": lambda request: static("dashboard/images/login-bg.jpg"),
         "form": "dashboard.forms.LoginForm",
@@ -61,52 +61,43 @@ UNFOLD = {
     "TABS": [
         {
             "models": [
-                "dashboard.race",
-                "dashboard.constructor",
+                # "dashboard.race",
             ],
             "items": [
-                {
-                    "title": _("Races"),
-                    "link": reverse_lazy("admin:dashboard_race_changelist"),
-                },
-                {
-                    "title": _("Constructors"),
-                    "link": reverse_lazy("admin:dashboard_constructor_changelist"),
-                },
+                # {
+                #     "title": _("Races"),
+                #     "link": reverse_lazy("admin:dashboard_race_changelist"),
+                # },
             ],
         },
-        {
-            "page": "drivers",
-            "models": ["dashboard.driver"],
-            "items": [
-                {
-                    "title": _("Drivers"),
-                    "link": reverse_lazy("admin:dashboard_driver_changelist"),
-                    "active": lambda request: request.path
-                    == reverse_lazy("admin:dashboard_driver_changelist")
-                    and "status__exact" not in request.GET,
-                },
-                {
-                    "title": _("Active drivers"),
-                    "link": lambda request: f"{
-                        reverse_lazy('admin:dashboard_driver_changelist')
-                    }?status__exact=ACTIVE",
-                },
-                {
-                    "title": _("Crispy Form"),
-                    "link": reverse_lazy("admin:crispy_form"),
-                },
-                {
-                    "title": _("Crispy Formset"),
-                    "link": reverse_lazy("admin:crispy_formset"),
-                },
-            ],
-        },
+        # {
+        #     "page": "drivers",
+        #     "models": ["dashboard.driver"],
+        #     "items": [
+        #         {
+        #             "title": _("Drivers"),
+        #             "link": reverse_lazy("admin:dashboard_driver_changelist"),
+        #             "active": lambda request: request.path
+        #             == reverse_lazy("admin:dashboard_driver_changelist")
+        #             and "status__exact" not in request.GET,
+        #         },
+        #         {
+        #             "title": _("Active drivers"),
+        #             "link": lambda request: f"{
+        #                 reverse_lazy('admin:dashboard_driver_changelist')
+        #             }?status__exact=ACTIVE",
+        #         },
+        #         {
+        #             "title": _("Crispy Form"),
+        #             "link": reverse_lazy("admin:crispy_form"),
+        #         },
+        #         {
+        #             "title": _("Crispy Formset"),
+        #             "link": reverse_lazy("admin:crispy_formset"),
+        #         },
+        #     ],
+        # },
     ],
-    "COMMAND": {
-        "search_models": "dashboard.utils.search_models_callback",
-        "show_history": "dashboard.utils.show_history_callback",
-    },
     "SIDEBAR": {
         "show_search": True,
         "show_all_applications": True,
@@ -120,62 +111,35 @@ UNFOLD = {
                         "icon": "dashboard",
                         "link": reverse_lazy("admin:index"),
                     },
-                    {
-                        "title": _("Drivers"),
-                        "icon": "sports_motorsports",
-                        "active": "dashboard.utils.driver_list_link_callback",
-                        ###########################################################
-                        # Works only with Studio: https://unfoldadmin.com/studio/
-                        ###########################################################
-                        "items": [
-                            {
-                                "title": _("List drivers"),
-                                "link": reverse_lazy("admin:dashboard_driver_changelist"),
-                                "active": "dashboard.utils.driver_list_sublink_callback",
-                            },
-                            {
-                                "title": _("Advanced filters"),
-                                "link": reverse_lazy(
-                                    "admin:dashboard_driverwithfilters_changelist"
-                                ),
-                            },
-                            {
-                                "title": _("Crispy form"),
-                                "link": reverse_lazy("admin:crispy_form"),
-                            },
-                            {
-                                "title": _("Crispy formset"),
-                                "link": reverse_lazy("admin:crispy_formset"),
-                            },
-                        ],
-                    },
-                    {
-                        "title": _("Circuits"),
-                        "icon": "sports_score",
-                        "link": reverse_lazy("admin:dashboard_circuit_changelist"),
-                    },
-                    {
-                        "title": _("Races"),
-                        "icon": "stadium",
-                        "link": reverse_lazy("admin:dashboard_race_changelist"),
-                        "badge": "dashboard.utils.badge_callback",
-                        "badge_variant": "danger",
-                        "badge_style": "solid",
-                    },
-                    {
-                        "title": _("Standings"),
-                        "icon": "trophy",
-                        "link": reverse_lazy("admin:dashboard_standing_changelist"),
-                        "permission": "dashboard.utils.permission_callback",
-                        # "permission": lambda request: request.user.is_superuser,
-                    },
-                    {
-                        "title": _("Constance"),
-                        "icon": "settings",
-                        "link": reverse_lazy("admin:constance_config_changelist"),
-                        "badge": _("New"),
-                        "badge_variant": "primary",
-                    },
+                    # {
+                    #     "title": _("Drivers"),
+                    #     "icon": "sports_motorsports",
+                    #     "active": "dashboard.utils.driver_list_link_callback",
+                    #     ###########################################################
+                    #     # Works only with Studio: https://unfoldadmin.com/studio/
+                    #     ###########################################################
+                    #     "items": [
+                    #         {
+                    #             "title": _("List drivers"),
+                    #             "link": reverse_lazy("admin:dashboard_driver_changelist"),
+                    #             "active": "dashboard.utils.driver_list_sublink_callback",
+                    #         },
+                    #         {
+                    #             "title": _("Advanced filters"),
+                    #             "link": reverse_lazy(
+                    #                 "admin:dashboard_driverwithfilters_changelist"
+                    #             ),
+                    #         },
+                    #         {
+                    #             "title": _("Crispy form"),
+                    #             "link": reverse_lazy("admin:crispy_form"),
+                    #         },
+                    #         {
+                    #             "title": _("Crispy formset"),
+                    #             "link": reverse_lazy("admin:crispy_formset"),
+                    #         },
+                    #     ],
+                    # },
                 ],
             },
             {
@@ -185,7 +149,7 @@ UNFOLD = {
                     {
                         "title": _("Users"),
                         "icon": "account_circle",
-                        "link": reverse_lazy("admin:dashboard_user_changelist"),
+                        "link": reverse_lazy("admin:common_customuser_changelist"),
                     },
                     {
                         "title": _("Groups"),

@@ -1,400 +1,198 @@
 """
-Ultimate Django admin customization for Unfold
-Provides production-grade admin interface with:
-- Advanced filtering
-- Custom actions
-- Bulk operations
-- Audit logging
-- Permission-based visibility
-- Unfold UI theme integration
+CustomUser Admin Implementation
+=================================
+
+Example of how to implement CustomUserAdmin using the reusable
+Unfold admin base classes.
+
+This shows the best practices combining:
+1. BaseModelAdmin features (query optimization, permissions, timestamps)
+2. Django's BaseUserAdmin functionality
+3. Unfold UI theming and styling
+4. Custom display decorators with color coding
+5. Bulk action framework
 """
 
-from typing import List, Optional, Any, Tuple, Dict
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.utils.translation import gettext_lazy as _
-from django.urls import reverse
-from django.utils.html import format_html
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.contrib.auth.models import Group
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import QuerySet
 from django.http import HttpRequest
-from unfold.admin import ModelAdmin
+from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
+
+from unfold.contrib.filters.admin import (
+    BooleanRadioFilter,
+    RangeDateFilter,
+    RelatedCheckboxFilter,
+    ChoicesCheckboxFilter,
+    TextFilter,
+    RangeDateTimeFilter,
+)
 from unfold.decorators import display, action
 
+from .unfold_admin_bases import BaseUserAdmin, ReadOnlyModelAdmin
 from common.models import CustomUser, AuditLog
 
-# ===========================
-# Unfold Configuration Mixin
-# ===========================
-
-class UnfoldConfigMixin:
-    """Mixin with Unfold-specific configuration that all child admins inherit"""
-
-    # Sidebar and display
-    compress_fields = True
-    list_per_page = 25
-    list_max_show_all = 100
-    search_help_text = _("Search across key fields")
-    date_hierarchy = "created_at"
-    
-    # Query optimization (inherited by all child admins)
-    select_related_fields: List[str] = []
-    prefetch_related_fields: List[str] = []
-    
-    # Unfold-specific settings
-    readonly_fields = ["id", "created_at", "updated_at"]
-    
-    # Actions configuration
-    actions_selection_counter = True
-    actions_detail = False
-    
-    # Default ordering
-    ordering = ["-created_at"]
-
 
 # ===========================
-# Custom Admin Base Classes
+# Custom Filters
 # ===========================
 
-class BaseModelAdmin(UnfoldConfigMixin, ModelAdmin):
-    """
-    Base model admin with full Unfold integration and common functionality
-    
-    All child admins automatically inherit:
-    - Unfold UI theming and styling
-    - Query optimization (select_related, prefetch_related)
-    - Permission handling
-    - Timestamp management
-    - Action support with selection counter
-    - Enhanced display formatting
-    """
-
-    # Display Settings
-    date_hierarchy = "created_at"
-    list_per_page = 25
-    search_help_text = _("Search across key fields")
-
-    # Common Readonly Fields
-    readonly_fields = ["id", "created_at", "updated_at"]
-
-    # Timestamps Fieldset (Collapsed)
-    fieldsets_extend = [
-        (
-            _("Timestamps"),
-            {
-                "fields": ("created_at", "updated_at", "id"),
-                "classes": ("collapse",),
-                "description": _("Automatically managed timestamps"),
-            },
-        ),
-    ]
-
-    # Actions Configuration
-    actions_selection_counter = True
-    actions_detail = False
-
-    def get_fieldsets(self, request: HttpRequest, obj=None) -> List[Tuple]:
-        """
-        Add timestamp fieldset to all child admins
-        This ensures every admin has consistent timestamp management
-        """
-        fieldsets = super().get_fieldsets(request, obj)
-        fieldsets_list = list(fieldsets)
-
-        # Check if timestamps fieldset already exists
-        has_timestamps = any(
-            _("Timestamps") in str(fieldset[0]) for fieldset in fieldsets_list
-        )
-
-        # Add timestamps fieldset if not present
-        if not has_timestamps and self.fieldsets_extend:
-            fieldsets_list.extend(self.fieldsets_extend)
-
-        return fieldsets_list
-
-    def get_queryset(self, request: HttpRequest) -> QuerySet:
-        """
-        Optimize queryset with select_related and prefetch_related
-        
-        Child classes can set:
-        - select_related_fields = ['author', 'category']
-        - prefetch_related_fields = ['tags', 'comments']
-        """
-        qs = super().get_queryset(request)
-
-        # Apply select_related for foreign keys
-        if self.select_related_fields:
-            qs = qs.select_related(*self.select_related_fields)
-
-        # Apply prefetch_related for reverse relations
-        if self.prefetch_related_fields:
-            qs = qs.prefetch_related(*self.prefetch_related_fields)
-
-        return qs
-
-    def has_add_permission(self, request: HttpRequest) -> bool:
-        """Only staff can add"""
-        return request.user.is_staff
-
-    def has_change_permission(self, request: HttpRequest, obj=None) -> bool:
-        """Only staff can change"""
-        return request.user.is_staff
-
-    def has_delete_permission(self, request: HttpRequest, obj=None) -> bool:
-        """Only superusers can delete"""
-        return request.user.is_superuser
-
-    def has_view_permission(self, request: HttpRequest, obj=None) -> bool:
-        """Only staff can view"""
-        return request.user.is_staff
+class VerifiedFilter(BooleanRadioFilter):
+    """Filter users by verification status"""
+    title = "Verified"
+    parameter_name = "is_verified"
 
 
-class SoftDeleteModelAdmin(BaseModelAdmin):
-    """
-    Admin for models with soft delete support
-    
-    Inherits from BaseModelAdmin to get:
-    - Unfold UI theming
-    - Query optimization
-    - Permission handling
-    - Timestamp management
-    
-    Adds:
-    - Soft delete display
-    - Restore action
-    - Filtering of deleted/active records
-    """
-
-    # List Display
-    list_display = ["__str__", "deleted_at_display", "is_deleted_display"]
-
-    # Soft Delete Filtering
-    def get_queryset(self, request: HttpRequest) -> QuerySet:
-        """
-        Show only active records to regular staff
-        Show all records (including deleted) to superusers
-        """
-        qs = super().get_queryset(request)
-
-        if request.user.is_superuser:
-            # Superusers can see deleted records
-            if hasattr(qs, "all_with_deleted"):
-                return qs.all_with_deleted()
-        else:
-            # Regular staff only sees active records
-            if hasattr(qs, "active"):
-                return qs.active()
-
-        return qs
-
-    # Display Methods
-    @display(
-        description=_("Deleted At"),
-        ordering="deleted_at",
-    )
-    def deleted_at_display(self, obj):
-        """Display soft delete timestamp with red styling"""
-        if obj.deleted_at:
-            return format_html(
-                '<span style="color: #dc2626; font-weight: 500;">{}</span>',
-                obj.deleted_at.strftime("%Y-%m-%d %H:%M"),
-            )
-        return "-"
-
-    @display(description=_("Deleted"))
-    def is_deleted_display(self, obj):
-        """Display deletion status with color coding"""
-        if obj.is_deleted:
-            return format_html(
-                '<span style="background-color: #fee2e2; color: #dc2626; '
-                'padding: 4px 8px; border-radius: 4px; font-weight: 500;">Yes</span>'
-            )
-        return format_html(
-            '<span style="background-color: #dcfce7; color: #16a34a; '
-            'padding: 4px 8px; border-radius: 4px; font-weight: 500;">No</span>'
-        )
-
-    # Actions
-    actions = ["restore_deleted_records"]
-
-    @action(
-        description=_("Restore selected records"),
-        permissions=["change"],
-    )
-    def restore_deleted_records(self, request: HttpRequest, queryset: QuerySet):
-        """Restore soft-deleted records"""
-        if not hasattr(queryset, "restore"):
-            self.message_user(
-                request,
-                _("This model does not support restoration"),
-                level=admin.messages.ERROR,
-            )
-            return
-
-        count = queryset.restore()
-        self.message_user(
-            request,
-            _("Successfully restored {} record(s).").format(count),
-            level=admin.messages.SUCCESS,
-        )
+class TwoFactorFilter(BooleanRadioFilter):
+    """Filter users by 2FA status"""
+    title = "2FA Enabled"
+    parameter_name = "two_factor_enabled"
 
 
-class PublishableModelAdmin(BaseModelAdmin):
-    """
-    Admin for publishable models (draft/published/archived)
-    
-    Inherits from BaseModelAdmin to get:
-    - Unfold UI theming
-    - Query optimization
-    - Permission handling
-    - Timestamp management
-    
-    Adds:
-    - Status display with color coding
-    - Publish/unpublish/archive actions
-    - Publication timestamp display
-    """
+class ActiveFilter(BooleanRadioFilter):
+    """Filter users by active status"""
+    title = "Active"
+    parameter_name = "is_active"
 
-    # List Display
-    list_display = ["__str__", "status_display", "published_at_display"]
 
-    # Filtering
-    list_filter = ["status", "published_at"]
-
-    # Display Methods
-    @display(
-        description=_("Status"),
-        ordering="status",
-    )
-    def status_display(self, obj):
-        """Display publication status with color-coded badge"""
-        colors = {
-            "draft": ("gray", "#6b7280"),
-            "published": ("green", "#16a34a"),
-            "archived": ("orange", "#ea580c"),
-        }
-
-        bg_light, color = colors.get(obj.status, ("gray", "#6b7280"))
-
-        return format_html(
-            '<span style="background-color: {bg}20; color: {color}; '
-            'padding: 4px 8px; border-radius: 4px; font-weight: 500;">{label}</span>',
-            bg=color,
-            color=color,
-            label=obj.get_status_display(),
-        )
-
-    @display(
-        description=_("Published At"),
-        ordering="published_at",
-    )
-    def published_at_display(self, obj):
-        """Display publication timestamp"""
-        if obj.published_at:
-            return obj.published_at.strftime("%Y-%m-%d %H:%M")
-        return "-"
-
-    # Actions
-    actions = ["publish_records", "unpublish_records", "archive_records"]
-
-    @action(
-        description=_("Publish selected records"),
-        permissions=["change"],
-    )
-    def publish_records(self, request: HttpRequest, queryset: QuerySet):
-        """Publish selected records"""
-        if not hasattr(queryset.first(), "publish"):
-            self.message_user(
-                request,
-                _("This model does not support publishing"),
-                level=admin.messages.ERROR,
-            )
-            return
-
-        count = 0
-        for obj in queryset:
-            obj.publish()
-            count += 1
-
-        self.message_user(
-            request,
-            _("Published {} record(s).").format(count),
-            level=admin.messages.SUCCESS,
-        )
-
-    @action(
-        description=_("Unpublish selected records"),
-        permissions=["change"],
-    )
-    def unpublish_records(self, request: HttpRequest, queryset: QuerySet):
-        """Unpublish selected records (back to draft)"""
-        count = queryset.update(status="draft")
-        self.message_user(
-            request,
-            _("Unpublished {} record(s).").format(count),
-            level=admin.messages.SUCCESS,
-        )
-
-    @action(
-        description=_("Archive selected records"),
-        permissions=["change"],
-    )
-    def archive_records(self, request: HttpRequest, queryset: QuerySet):
-        """Archive selected records"""
-        count = queryset.update(status="archived")
-        self.message_user(
-            request,
-            _("Archived {} record(s).").format(count),
-            level=admin.messages.SUCCESS,
-        )
+class StaffFilter(BooleanRadioFilter):
+    """Filter users by staff status"""
+    title = "Staff"
+    parameter_name = "is_staff"
 
 
 # ===========================
-# Custom User Admin (Unfold-Compliant)
+# CustomUser Admin
 # ===========================
 
 @admin.register(CustomUser)
-class CustomUserAdmin(UnfoldConfigMixin, BaseUserAdmin):
+class CustomUserAdmin(BaseUserAdmin):
     """
-    Custom user admin with Unfold integration
-    
-    Inherits from BaseUserAdmin and UnfoldConfigMixin to get:
-    - Unfold UI theming
+    Custom user admin with full Unfold integration.
+
+    Inherits from BaseUserAdmin which provides:
+    ✓ All BaseModelAdmin features
+    ✓ Django's UserAdmin functionality
+    ✓ Query optimization (select_related, prefetch_related)
+    ✓ Permission handling
+    ✓ Timestamp management
+    ✓ Display helpers
+
+    Features:
+    - Email/username/full name display
+    - Verification status with badge
+    - 2FA status indicator
+    - Active/staff/superuser badges
+    - Advanced filtering
+    - Bulk actions (verify, activate, deactivate)
+    - Custom fieldsets with tabs
     - Query optimization
-    - Permission handling
-    - Custom display decorators
     """
 
-    model = CustomUser
+    # ===========================
+    # List Configuration
+    # ===========================
 
-    # Fieldsets
+    list_display = [
+        "email_display",
+        "username",
+        "full_name",
+        "verified_display",
+        "two_factor_display",
+        "active_display",
+        "staff_display",
+        "created_at",
+    ]
+
+    list_per_page = 25
+    list_fullwidth = True
+
+    # ===========================
+    # Filtering
+    # ===========================
+
+    list_filter = [
+        ("is_verified", VerifiedFilter),
+        ("two_factor_enabled", TwoFactorFilter),
+        ("is_active", BooleanRadioFilter),
+        ("is_staff", BooleanRadioFilter),
+        ("groups", RelatedCheckboxFilter),
+        ("created_at", RangeDateFilter),
+        ("verified_at", RangeDateFilter),
+    ]
+
+    # ===========================
+    # Search
+    # ===========================
+
+    search_fields = [
+        "email",
+        "username",
+        "first_name",
+        "last_name",
+        "phone_number",
+    ]
+
+    # ===========================
+    # Field Organization
+    # ===========================
+
     fieldsets = (
-        (None, {"fields": ("id", "email", "password", "username")}),
         (
-            _("Personal info"),
+            None,
+            {
+                "fields": (
+                    "id",
+                    "username",
+                    "password",
+                    "email",
+                ),
+            },
+        ),
+        (
+            "Personal Info",
             {
                 "fields": (
                     "first_name",
                     "last_name",
                     "phone_number",
-                    "bio",
                     "avatar",
-                )
+                ),
+                "classes": ("tab",),
             },
         ),
         (
-            _("Verification"),
+            "Biography",
+            {
+                "fields": ("bio",),
+                "classes": ("tab",),
+                "description": "User biography and about information",
+            },
+        ),
+        (
+            "Verification",
             {
                 "fields": (
                     "is_verified",
-                    "verified_at",
                     "verification_token",
-                    "two_factor_enabled",
                 ),
-                "classes": ("collapse",),
+                "classes": ("tab",),
             },
         ),
         (
-            _("Permissions"),
+            "Security",
+            {
+                "fields": (
+                    "two_factor_enabled",
+                ),
+                "classes": ("tab",),
+            },
+        ),
+        (
+            "Permissions",
             {
                 "fields": (
                     "is_active",
@@ -403,13 +201,20 @@ class CustomUserAdmin(UnfoldConfigMixin, BaseUserAdmin):
                     "groups",
                     "user_permissions",
                 ),
+                "classes": ("tab",),
             },
         ),
         (
-            _("Important dates"),
+            "Timestamps",
             {
-                "fields": ("last_login_at", "created_at", "updated_at"),
+                "fields": (
+                    "created_at",
+                    "updated_at",
+                    "verified_at",
+                    "last_login_at",
+                ),
                 "classes": ("collapse",),
+                "description": "Automatically managed timestamps",
             },
         ),
     )
@@ -419,31 +224,21 @@ class CustomUserAdmin(UnfoldConfigMixin, BaseUserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "username", "password1", "password2"),
+                "fields": (
+                    "email",
+                    "username",
+                    "password1",
+                    "password2",
+                ),
+                "description": "Create a new user account",
             },
         ),
     )
 
-    # List Display
-    list_display = [
-        "email",
-        "username",
-        "full_name",
-        "verified_display",
-        "active_display",
-        "staff_display",
-    ]
-
-    # Filtering
-    list_filter = ["is_verified", "is_active", "is_staff", "created_at"]
-
-    # Search
-    search_fields = ["email", "username", "first_name", "last_name"]
-
-    # Ordering
-    ordering = ["-created_at"]
-
+    # ===========================
     # Readonly Fields
+    # ===========================
+
     readonly_fields = [
         "id",
         "created_at",
@@ -452,180 +247,579 @@ class CustomUserAdmin(UnfoldConfigMixin, BaseUserAdmin):
         "last_login_at",
     ]
 
+    # ===========================
     # Query Optimization
+    # ===========================
+
     select_related_fields = []
-    prefetch_related_fields = ["groups", "user_permissions"]
+    prefetch_related_fields = [
+        "groups",
+        "user_permissions",
+    ]
 
+    # ===========================
+    # Actions
+    # ===========================
+
+    actions = [
+        "verify_users",
+        "unverify_users",
+        "activate_users",
+        "deactivate_users",
+        "make_staff",
+        "remove_staff",
+    ]
+
+    # ===========================
     # Display Methods
-    @display(description=_("Full Name"))
-    def full_name(self, obj):
-        """Display user's full name or username"""
-        return obj.get_full_name() or obj.username or "-"
+    # ===========================
 
-    @display(description=_("Verified"))
-    def verified_display(self, obj):
+    @display(description="Email")
+    def email_display(self, obj: CustomUser) -> str:
+        """Display email address"""
+        return obj.email or "-"
+
+    @display(description="Full Name")
+    def full_name(self, obj: CustomUser) -> str:
+        """Display user's full name or fallback to username"""
+        full = obj.get_full_name()
+        return full if full else (obj.username or "-")
+
+    @display(description="Verified")
+    def verified_display(self, obj: CustomUser) -> str:
         """Display verification status with badge"""
         if obj.is_verified:
-            return format_html(
-                '<span style="background-color: #dcfce7; color: #16a34a; '
-                'padding: 4px 8px; border-radius: 4px; font-weight: bold;">✓ Verified</span>'
+            return self.badge(
+                "✓ Verified",
+                color="#16a34a",
+                bg_color="#dcfce7",
             )
-        return format_html(
-            '<span style="background-color: #fee2e2; color: #dc2626; '
-            'padding: 4px 8px; border-radius: 4px;">Unverified</span>'
+        return self.badge(
+            "Unverified",
+            color="#dc2626",
+            bg_color="#fee2e2",
         )
 
-    @display(description=_("Active"))
-    def active_display(self, obj):
-        """Display active status with badge"""
-        if obj.is_active:
-            return format_html(
-                '<span style="background-color: #dcfce7; color: #16a34a; '
-                'padding: 4px 8px; border-radius: 4px; font-weight: bold;">Active</span>'
-            )
-        return format_html(
-            '<span style="background-color: #fee2e2; color: #dc2626; '
-            'padding: 4px 8px; border-radius: 4px; font-weight: bold;">Inactive</span>'
-        )
-
-    @display(description=_("Staff"))
-    def staff_display(self, obj):
-        """Display staff status"""
-        if obj.is_staff:
-            return format_html(
-                '<span style="background-color: #f3e8ff; color: #9333ea; '
-                'padding: 4px 8px; border-radius: 4px; font-weight: 500;">Staff</span>'
+    @display(description="2FA")
+    def two_factor_display(self, obj: CustomUser) -> str:
+        """Display 2FA status"""
+        if obj.two_factor_enabled:
+            return self.badge(
+                "Enabled",
+                color="#16a34a",
+                bg_color="#dcfce7",
             )
         return "-"
 
-    # Actions
-    actions = ["verify_users", "activate_users", "deactivate_users"]
+    @display(description="Active")
+    def active_display(self, obj: CustomUser) -> str:
+        """Display active status"""
+        if obj.is_active:
+            return self.badge(
+                "Active",
+                color="#16a34a",
+                bg_color="#dcfce7",
+            )
+        return self.badge(
+            "Inactive",
+            color="#dc2626",
+            bg_color="#fee2e2",
+        )
+
+    @display(description="Staff")
+    def staff_display(self, obj: CustomUser) -> str:
+        """Display staff status"""
+        if obj.is_staff:
+            return self.badge(
+                "Staff",
+                color="#9333ea",
+                bg_color="#f3e8ff",
+            )
+        return "-"
+
+    # ===========================
+    # Actions - Verification
+    # ===========================
 
     @action(
-        description=_("Mark selected as verified"),
+        description="Mark selected users as verified",
         permissions=["change"],
     )
-    def verify_users(self, request: HttpRequest, queryset: QuerySet):
+    def verify_users(
+        self,
+        request: HttpRequest,
+        queryset: QuerySet,
+    ) -> None:
         """Verify selected users"""
         count = 0
         for user in queryset:
-            user.verify_email()
-            count += 1
+            if not user.is_verified:
+                user.verify_email()
+                count += 1
 
-        self.message_user(
+        self.message_user_success(
             request,
-            _("Verified {} user(s).").format(count),
-            level=admin.messages.SUCCESS,
+            f"Verified {count} user(s).",
         )
 
     @action(
-        description=_("Activate selected users"),
+        description="Mark selected users as unverified",
         permissions=["change"],
     )
-    def activate_users(self, request: HttpRequest, queryset: QuerySet):
+    def unverify_users(
+        self,
+        request: HttpRequest,
+        queryset: QuerySet,
+    ) -> None:
+        """Unverify selected users"""
+        count = queryset.update(is_verified=False)
+        self.message_user_success(
+            request,
+            f"Unverified {count} user(s).",
+        )
+
+    # ===========================
+    # Actions - Status
+    # ===========================
+
+    @action(
+        description="Activate selected users",
+        permissions=["change"],
+    )
+    def activate_users(
+        self,
+        request: HttpRequest,
+        queryset: QuerySet,
+    ) -> None:
         """Activate selected users"""
         count = queryset.update(is_active=True)
-        self.message_user(
+        self.message_user_success(
             request,
-            _("Activated {} user(s).").format(count),
-            level=admin.messages.SUCCESS,
+            f"Activated {count} user(s).",
         )
 
     @action(
-        description=_("Deactivate selected users"),
+        description="Deactivate selected users",
         permissions=["change"],
     )
-    def deactivate_users(self, request: HttpRequest, queryset: QuerySet):
+    def deactivate_users(
+        self,
+        request: HttpRequest,
+        queryset: QuerySet,
+    ) -> None:
         """Deactivate selected users"""
         count = queryset.update(is_active=False)
-        self.message_user(
+        self.message_user_success(
             request,
-            _("Deactivated {} user(s).").format(count),
-            level=admin.messages.SUCCESS,
+            f"Deactivated {count} user(s).",
         )
+
+    # ===========================
+    # Actions - Permissions
+    # ===========================
+
+    @action(
+        description="Make selected users staff",
+        permissions=["change"],
+    )
+    def make_staff(
+        self,
+        request: HttpRequest,
+        queryset: QuerySet,
+    ) -> None:
+        """Make selected users staff"""
+        count = queryset.update(is_staff=True)
+        self.message_user_success(
+            request,
+            f"Made {count} user(s) staff.",
+        )
+
+    @action(
+        description="Remove staff from selected users",
+        permissions=["change"],
+    )
+    def remove_staff(
+        self,
+        request: HttpRequest,
+        queryset: QuerySet,
+    ) -> None:
+        """Remove staff from selected users"""
+        count = queryset.update(is_staff=False)
+        self.message_user_success(
+            request,
+            f"Removed staff from {count} user(s).",
+        )
+
+    # ===========================
+    # Permissions
+    # ===========================
+
+    def has_delete_permission(
+        self,
+        request: HttpRequest,
+        obj: CustomUser = None,
+    ) -> bool:
+        """Only superusers can delete users"""
+        return request.user.is_superuser
+
+    # ===========================
+    # Custom Methods
+    # ===========================
+
+    def get_form(self, request, obj=None, **kwargs):
+        """Customize form"""
+        form = super().get_form(request, obj, **kwargs)
+        
+        # Make email required on creation
+        if obj is None:
+            form.base_fields["email"].required = True
+        
+        return form
+
+    def save_model(self, request, obj, form, change):
+        """Track who created/modified the user"""
+        if not change:
+            # Creating new user
+            obj.created_by = request.user
+        else:
+            # Modifying existing user
+            obj.modified_by = request.user
+        
+        super().save_model(request, obj, form, change)
+
+# ===========================
+# Optional: Group Admin
+# ===========================
+
+from .unfold_admin_bases import GroupAdmin
+
+admin.site.unregister(Group)
+
+@admin.register(Group)
+class GroupAdminEnhanced(GroupAdmin):
+    """
+    Enhanced group admin with Unfold integration.
+
+    Inherits from GroupAdmin (which extends BaseModelAdmin)
+    to get all standard features plus Django's GroupAdmin.
+    """
+
+    list_display = [
+        "name",
+        "permission_count",
+    ]
+
+    search_fields = ["name"]
+    
+    ordering = []
+
+    fieldsets = (
+        (
+            None,
+            {"fields": ("name",)},
+        ),
+        (
+            "Permissions",
+            {
+                "fields": ("permissions",),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    date_hierarchy = None
+
+    readonly_fields = []
+    
+    filter_horizontal = ("permissions",)
+
+    @display(description="Permissions")
+    def permission_count(self, obj) -> str:
+        """Display permission count"""
+        count = obj.permissions.count()
+        return f"{count} permission(s)"
 
 
 # ===========================
-# Audit Log Admin (Unfold-Compliant)
+# Custom Filters for AuditLog
+# ===========================
+
+class ActionFilter(ChoicesCheckboxFilter):
+    """Filter audit logs by action type"""
+    title = "Action"
+    parameter_name = "action"
+
+
+class UserEmailFilter(TextFilter):
+    """Filter audit logs by user email"""
+    title = "User Email"
+    parameter_name = "user__email__icontains"
+
+
+# ===========================
+# AuditLogAdmin
 # ===========================
 
 @admin.register(AuditLog)
-class AuditLogAdmin(BaseModelAdmin):
+class AuditLogAdmin(ReadOnlyModelAdmin):
     """
-    Audit log admin with Unfold integration
-    
-    Inherits from BaseModelAdmin to get:
-    - Unfold UI theming
-    - Query optimization
-    - Permission handling
-    - Timestamp management
-    
-    Adds:
-    - Read-only (immutable) audit log
-    - Action display with color coding
+    Audit log admin with read-only, immutable records.
+
+    Inherits from ReadOnlyModelAdmin which provides:
+    ✓ No add/change permissions (immutable)
+    ✓ Only superusers can delete
+    ✓ All BaseModelAdmin features
+    ✓ Query optimization
+    ✓ Timestamp management
+    ✓ Permission handling
+
+    Features:
+    - Color-coded action display
+    - Advanced filtering (action, user, date, type)
+    - Email-based user search
+    - Date-based filtering
+    - Object representation display
+    - All fields readonly
+    - Optimized queries
+    - Change details view
+    - JSON changes display
     """
 
-    model = AuditLog
+    # ===========================
+    # List Configuration
+    # ===========================
 
-    # List Display
-    list_display = ["timestamp", "action_display", "user", "object_repr", "content_type"]
+    list_display = [
+        "timestamp_display",
+        "action_display",
+        "user_display",
+        "object_display",
+        "content_type",
+    ]
 
+    list_per_page = 50
+    list_fullwidth = True
+
+    # ===========================
     # Filtering
-    list_filter = ["action", "timestamp", "user", "content_type"]
+    # ===========================
 
+    list_filter = [
+        ("action", ActionFilter),
+        ("timestamp", RangeDateTimeFilter),
+        ("user", RelatedCheckboxFilter),
+        ("content_type", RelatedCheckboxFilter),
+        UserEmailFilter,
+    ]
+
+    # ===========================
     # Search
-    search_fields = ["object_repr", "user__email", "object_id"]
+    # ===========================
 
-    # Date Hierarchy
+    search_fields = [
+        "object_repr",
+        "user__email",
+        "user__username",
+        "object_id",
+        "changes",
+    ]
+
+    # ===========================
+    # Ordering & Hierarchy
+    # ===========================
+
     date_hierarchy = "timestamp"
-    
     ordering = ["-timestamp"]
 
-    # All Readonly (Audit Trail is Immutable)
+    # ===========================
+    # Field Organization
+    # ===========================
+
+    fieldsets = (
+        (
+            "Action Info",
+            {
+                "fields": (
+                    "timestamp",
+                    "action",
+                    "user",
+                ),
+            },
+        ),
+        (
+            "Object",
+            {
+                "fields": (
+                    "content_type",
+                    "object_id",
+                    "object_repr",
+                ),
+                "classes": ("tab",),
+            },
+        ),
+        (
+            "Changes",
+            {
+                "fields": ("changes_display",),
+                "classes": ("tab", "collapse"),
+                "description": "JSON representation of changes made",
+            },
+        ),
+        (
+            "Request",
+            {
+                "fields": (
+                    "ip_address",
+                    "user_agent",
+                ),
+                "classes": ("tab", "collapse"),
+                "description": "Request information",
+            },
+        ),
+        (
+            "System",
+            {
+                "fields": ("id",),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    # ===========================
+    # Readonly Fields
+    # ===========================
+
     readonly_fields = [
         "id",
+        "timestamp",
         "action",
+        "user",
         "content_type",
         "object_id",
         "object_repr",
-        "changes",
-        "user",
+        "changes_display",
         "ip_address",
         "user_agent",
-        "timestamp",
     ]
 
-    # Permissions
-    def has_add_permission(self, request: HttpRequest) -> bool:
-        """Prevent manual audit log creation"""
-        return False
+    # ===========================
+    # Query Optimization
+    # ===========================
 
-    def has_change_permission(self, request: HttpRequest, obj=None) -> bool:
-        """Prevent editing audit logs"""
-        return False
+    select_related_fields = [
+        "user",
+        "content_type",
+    ]
+    prefetch_related_fields = []
 
-    def has_delete_permission(self, request: HttpRequest, obj=None) -> bool:
-        """Only superusers can delete audit logs"""
-        return request.user.is_superuser
-
+    # ===========================
     # Display Methods
-    @display(description=_("Action"))
-    def action_display(self, obj):
+    # ===========================
+
+    @display(
+        description="Timestamp",
+        ordering="timestamp",
+    )
+    def timestamp_display(self, obj: AuditLog) -> str:
+        """Display timestamp with formatting"""
+        return obj.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+
+    @display(
+        description="Action",
+        ordering="action",
+    )
+    def action_display(self, obj: AuditLog) -> str:
         """Display action with color coding"""
         colors = {
-            "create": ("#dcfce7", "#16a34a"),      # Green
-            "update": ("#bfdbfe", "#2563eb"),      # Blue
-            "delete": ("#fee2e2", "#dc2626"),      # Red
-            "restore": ("#fef3c7", "#d97706"),     # Amber
-            "publish": ("#f3e8ff", "#9333ea"),     # Purple
+            "create": ("#16a34a", "#dcfce7"),      # Green
+            "update": ("#2563eb", "#bfdbfe"),      # Blue
+            "delete": ("#dc2626", "#fee2e2"),      # Red
+            "restore": ("#d97706", "#fef3c7"),     # Amber
+            "publish": ("#9333ea", "#f3e8ff"),     # Purple
         }
 
-        bg_light, color = colors.get(obj.action, ("#f3f4f6", "#6b7280"))
+        color, bg = colors.get(obj.action, ("#6b7280", "#f3f4f6"))
 
         return format_html(
             '<span style="background-color: {bg}; color: {color}; '
             'padding: 4px 8px; border-radius: 4px; font-weight: 500;">{label}</span>',
-            bg=bg_light,
+            bg=bg,
             color=color,
             label=obj.get_action_display(),
         )
+
+    @display(
+        description="User",
+        ordering="user__email",
+    )
+    def user_display(self, obj: AuditLog) -> str:
+        """Display user information"""
+        if obj.user:
+            full_name = obj.user.get_full_name()
+            if full_name:
+                return f"{full_name} ({obj.user.email})"
+            return obj.user.email or obj.user.username or "-"
+        return "-"
+
+    @display(
+        description="Object",
+        ordering="object_repr",
+    )
+    def object_display(self, obj: AuditLog) -> str:
+        """Display object information"""
+        return f"{obj.content_type.model.title()} #{obj.object_id}"
+
+    @display(description="Changes")
+    def changes_display(self, obj: AuditLog) -> str:
+        """Display changes in formatted JSON"""
+        import json
+        
+        if not obj.changes:
+            return "-"
+        
+        try:
+            changes = json.loads(obj.changes) if isinstance(obj.changes, str) else obj.changes
+            # Format as readable JSON
+            formatted = json.dumps(changes, indent=2, ensure_ascii=False)
+            return format_html(
+                '<pre style="background-color: #f3f4f6; padding: 12px; '
+                'border-radius: 4px; overflow-x: auto; '
+                'font-family: monospace; font-size: 12px;">{}</pre>',
+                formatted,
+            )
+        except (json.JSONDecodeError, TypeError):
+            return obj.changes or "-"
+
+    # ===========================
+    # Permissions (Inherited from ReadOnlyModelAdmin)
+    # ===========================
+
+    # No need to override - ReadOnlyModelAdmin already provides:
+    # - has_add_permission() → False
+    # - has_change_permission() → False
+    # - has_delete_permission() → only superuser
+
+    # ===========================
+    # Custom Methods
+    # ===========================
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
+        """
+        Optimize queryset for audit logs.
+        
+        Use select_related for ForeignKey fields.
+        """
+        qs = super().get_queryset(request)
+        
+        # Already handled by select_related_fields
+        # But can add additional optimizations here if needed
+        return qs
+
+    def changelist_view(self, request, extra_context=None):
+        """Add custom context to changelist view"""
+        extra_context = extra_context or {}
+        
+        # Add total audit log count
+        extra_context["total_logs"] = AuditLog.objects.count()
+        
+        return super().changelist_view(request, extra_context=extra_context)

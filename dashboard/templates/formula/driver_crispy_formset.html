@@ -10,7 +10,7 @@
                 {% trans 'Home' as name %}
                 {% include 'unfold/helpers/breadcrumb_item.html' with link=link name=name %}
 
-                {% url 'admin:dashboard_driver_changelist' as link %}
+                {% comment %} {% url 'admin:dashboard_driver_changelist' as link %} {% endcomment %}
                 {% trans 'Drivers' as name %}
                 {% include 'unfold/helpers/breadcrumb_item.html' with link=link name=name %}
 
