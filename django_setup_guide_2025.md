@@ -189,65 +189,63 @@ EOF
 ```bash
 # Create base requirements file
 cat > requirements/base.txt << 'EOF'
-# Core Django
-Django==6.0.2
-python-dotenv==1.0.1
-
-# REST API
+# Django LTS + REST API + Admin customization
+Django==5.2                    
 djangorestframework==3.16.1
-django-filter==24.3
-drf-spectacular==0.30.1
-
-# Authentication
-djangorestframework-simplejwt==5.4.0
-
-# Admin Enhancement
-django-unfold==0.42.0
-
-# Real-time Communication
-channels==4.1.1
-channels-redis==4.1.1
-
-# Async Task Processing
-celery==5.6.2
-django-celery-beat==2.6.0
+django-celery-beat==2.8.0
 django-celery-results==2.5.1
-kombu==5.6.0
-
-# Caching
+django-cors-headers==4.4.0
+django-filter==24.3
 django-redis==5.4.0
+django-unfold==0.42.0          # Modern Tailwind admin theme
+drf-spectacular==0.29.0        # OpenAPI/Swagger docs
+djangorestframework_simplejwt==5.4.0
+django-channels==0.7.0
+channels==4.3.2
+channels_redis==4.3.0
 
-# Database
-psycopg==3.2.1
+# Celery tasks + Redis backend + ASGI support
+celery==5.6.2
+kombu==5.6.0                   # Celery messaging (AMQP/Redis)
+billiard==4.2.4                # Celery multiprocessing
+vine==5.1.0                    # Celery promise library
+redis==5.2.0                   # Cache + Celery broker
+asgiref==3.11.1                # Django ASGI
+anyio==4.12.1                  # Async compatibility
+uvicorn==0.31.0                # ASGI server
+watchfiles==1.1.1              # Hot reload
+websockets==16.0               # WebSocket protocol
 
-# Type Safety
-django-stubs==4.2.9
-mypy==1.11.2
+# PostgreSQL + Image handling + Static files
+psycopg==3.2.1                 # Modern PostgreSQL adapter
+pillow==11.0.0                 # Images (upgrade to 11.2.0)
+whitenoise==6.8.2              # Static files in production
+django-timezone-field==7.2.1   # TZ-aware DateTimeField
+pytz==2024.2                   # Timezone definitions
+tzdata==2025.3                 # IANA timezone DB
 
-# Testing
-pytest==8.3.4
-pytest-django==4.7.0
-pytest-cov==5.0.0
-pytest-asyncio==0.24.0
-faker==25.9.2
+# Type checking + Linting + Testing
+django-stubs==5.0.0            # Django mypy stubs
+mypy==1.11.2                   # Static type checker
+black==24.10.0                 # Code formatter
+isort==5.13.2                  # Import sorter
+flake8==7.1.1                  # Linter
+pytest==8.3.4                  # Testing framework
+pytest-django==4.7.0           # Django testing utils
+coverage==7.13.4               # Test coverage
+pre-commit==3.7.1              # Git hooks
+factory-boy==3.3.0             # Test factories
+Faker==25.9.2                  # Fake test data
 
-# Development
-black==24.10.0
-flake8==7.1.1
-isort==5.13.2
-pre-commit==3.7.1
-
-# Production Servers
-gunicorn==23.0.0
-uvicorn==0.31.0
-
-# Utilities
-python-dateutil==2.8.2
-pytz==2024.2
-requests==2.32.3
-
-# Monitoring & Logging
-sentry-sdk==2.0.0
+# Production deployment + Config
+gunicorn==23.0.0               # WSGI server
+python-decouple==3.8           # .env files
+python-dotenv==1.0.1           # Environment variables
+PyYAML==6.0.3                  # YAML config
+requests==2.32.3               # HTTP client
+sqlparse==0.5.2                # SQL formatter
+typing_extensions==4.15.0      # Backported type hints
+sentry-sdk==2.0.0              # Monitoring
 
 EOF
 
