@@ -1,0 +1,112 @@
+# ===========================
+# Version Control
+# ===========================
+.git
+.gitignore
+.gitattributes
+
+# ===========================
+# Virtual Environments
+# ===========================
+venv/
+.venv/
+ENV/
+env/
+
+# ===========================
+# Python Cache
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# ===========================
+# Testing & Coverage
+# ===========================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ===========================
+# IDE
+# ===========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+
+# ===========================
+# OS
+# ===========================
+.DS_Store
+Thumbs.db
+
+# ===========================
+# Logs
+# ===========================
+logs/
+*.log
+
+# ===========================
+# Docker
+# ===========================
+.docker/
+docker-compose.override.yml
+
+# ===========================
+# Documentation
+# ===========================
+docs/
+README.md
+LICENSE
+DEPLOYMENT_GUIDE.md
+QUICK_START.md
+
+# ===========================
+# Environment Files
+# ===========================
+.env
+.env.local
+.env.*.local
+
+# ===========================
+# CI/CD
+# ===========================
+.github/
+.gitlab-ci.yml
+.circleci/
+Jenkinsfile
+
+# ===========================
+# Node
+# ===========================
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ===========================
+# Development files
+# ===========================
+local_settings.py
+db.sqlite3
+*.db
+media/
+staticfiles/
+
+# ===========================
+# Miscellaneous
+# ===========================
+*.bak
+*.backup
+*~
+.coverage
+.pytest_cache

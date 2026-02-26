@@ -1,4 +1,4 @@
-# Dockerfile (Updated for Django 6.0, Python 3.13, Feb 2026)
+# Dockerfile (Updated for Django 5.2, Python 3.13, Feb 2026)
 FROM python:3.13-slim
 
 WORKDIR /app

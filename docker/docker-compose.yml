@@ -1,4 +1,4 @@
-# docker-compose.yml (Updated for Django 6.0, PostgreSQL 17, Python 3.13 - Feb 2026)
+# docker-compose.yml (Updated for Django 5.2, PostgreSQL 17, Python 3.13 - Feb 2026)
 version: '3.10'
 
 services:

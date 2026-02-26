@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project"
+version = "1.0.0"
+description = "Modern Django 5.2 Project"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+
+[tool.django]
+django-project = "project.settings"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "project.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = "--cov=. --cov-report=html --cov-report=term-missing"
+testpaths = ["tests"]
+norecursedirs = ["venv", ".git", ".tox"]
+
+[tool.black]
+line-length = 100
+target-version = ["py313"]
+extend-exclude = '''
+/(
+  # directories
+  \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_glob = [".venv"]
+known_django = ["django"]
+sections = ["FUTURE", "STDLIB", "DJANGO", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.mypy]
+python_version = "3.13"
+plugins = ["mypy_django_plugin.main"]
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "project.settings"
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/tests*",
+    "*/migrations/*",
+    "*/__pycache__/*",
+    "*/virtualenvs/*",
+    "manage.py",
+    "setup.py"
+]
