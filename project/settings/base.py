@@ -31,7 +31,7 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 LOGIN_USERNAME = os.getenv("LOGIN_USERNAME", "s@gmail.com")
 
-LOGIN_PASSWORD = os.getenv("LOGIN_PASSWORD", "1234")
+LOGIN_PASSWORD = os.getenv("LOGIN_PASSWORD", "1")
 
 # Application definition
 
