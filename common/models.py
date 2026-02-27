@@ -11,13 +11,15 @@ Provides production-grade base classes for rapid development with:
 
 import uuid
 from datetime import timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
-from django.db import models, transaction
-from django.db.models import QuerySet, Q, Manager
+from django.db import models
+from django.db.models import QuerySet, Manager
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
@@ -282,56 +284,56 @@ class ChangeTrackingModel(TimestampedModel):
         abstract = True
 
 
-# class PublishableModel(TimestampedModel):
-#     """Model with draft/published status"""
+class PublishableModel(TimestampedModel):
+    """Model with draft/published status"""
 
-#     STATUS_CHOICES = (
-#         ("draft", _("Draft")),
-#         ("published", _("Published")),
-#         ("archived", _("Archived")),
-#     )
+    STATUS_CHOICES = (
+        ("draft", _("Draft")),
+        ("published", _("Published")),
+        ("archived", _("Archived")),
+    )
 
-#     status = models.CharField(
-#         max_length=20,
-#         choices=STATUS_CHOICES,
-#         default="draft",
-#         db_index=True,
-#         help_text="Publication status",
-#     )
-#     published_at = models.DateTimeField(
-#         null=True,
-#         blank=True,
-#         db_index=True,
-#         help_text="Publication timestamp",
-#     )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="draft",
+        db_index=True,
+        help_text="Publication status",
+    )
+    published_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Publication timestamp",
+    )
 
-#     def publish(self) -> None:
-#         """Publish the record"""
-#         self.status = "published"
-#         self.published_at = timezone.now()
-#         self.save(update_fields=["status", "published_at"])
+    def publish(self) -> None:
+        """Publish the record"""
+        self.status = "published"
+        self.published_at = timezone.now()
+        self.save(update_fields=["status", "published_at"])
 
-#     def unpublish(self) -> None:
-#         """Unpublish the record"""
-#         self.status = "draft"
-#         self.save(update_fields=["status"])
+    def unpublish(self) -> None:
+        """Unpublish the record"""
+        self.status = "draft"
+        self.save(update_fields=["status"])
 
-#     def archive(self) -> None:
-#         """Archive the record"""
-#         self.status = "archived"
-#         self.save(update_fields=["status"])
+    def archive(self) -> None:
+        """Archive the record"""
+        self.status = "archived"
+        self.save(update_fields=["status"])
 
-#     @property
-#     def is_published(self) -> bool:
-#         """Check if record is published"""
-#         return self.status == "published"
+    @property
+    def is_published(self) -> bool:
+        """Check if record is published"""
+        return self.status == "published"
 
-#     class Meta:
-#         abstract = True
-#         indexes = [
-#             models.Index(fields=["status", "-published_at"]),
-#             models.Index(fields=["status", "-created_at"]),
-#         ]
+    class Meta:
+        abstract = True
+        indexes = [
+            models.Index(fields=["status", "-published_at"]),
+            models.Index(fields=["status", "-created_at"]),
+        ]
 
 
 class SEOModel(TimestampedModel):
@@ -508,8 +510,20 @@ class AuditLog(UUIDModel):
         choices=ACTION_CHOICES,
         db_index=True,
     )
-    content_type = models.CharField(max_length=255)
-    object_id = models.CharField(max_length=255, db_index=True)
+    # ContentType fields
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        # limit_choices_to={'app_label__in': ['app1', 'app2']},  # Optional: restrict to specific apps
+        null=True,
+        blank=True
+    )
+    object_id = models.UUIDField(  # ✅ Even better - matches your UUID PKs
+        null=True, 
+        blank=True, 
+        db_index=True
+    )
+    content_object = GenericForeignKey('content_type', 'object_id')
     object_repr = models.CharField(max_length=255)
     changes = models.JSONField(default=dict)
     user = models.ForeignKey(
@@ -533,43 +547,3 @@ class AuditLog(UUIDModel):
     def __str__(self) -> str:
         return f"{self.action} {self.object_repr}"
 
-
-# ===========================
-# Utility Functions
-# ===========================
-
-@transaction.atomic
-def bulk_soft_delete(queryset: QuerySet) -> Tuple[int, Dict[str, int]]:
-    """Soft delete multiple records in a transaction"""
-    count = queryset.update(deleted_at=timezone.now())
-    logger.info(f"Soft deleted {count} records")
-    return count, {queryset.model._meta.label: count}
-
-
-@transaction.atomic
-def bulk_restore(queryset: QuerySet) -> int:
-    """Restore multiple soft-deleted records in a transaction"""
-    count = queryset.update(deleted_at=None)
-    logger.info(f"Restored {count} records")
-    return count
-
-
-def log_audit(
-    action: str,
-    model: models.Model,
-    user: Optional[CustomUser] = None,
-    changes: Optional[Dict] = None,
-    ip_address: Optional[str] = None,
-) -> AuditLog:
-    """Create audit log entry"""
-    audit = AuditLog.objects.create(
-        action=action,
-        content_type=model._meta.label,
-        object_id=str(model.pk),
-        object_repr=str(model),
-        changes=changes or {},
-        user=user,
-        ip_address=ip_address,
-    )
-    logger.debug(f"Audit log created: {audit.id}")
-    return audit

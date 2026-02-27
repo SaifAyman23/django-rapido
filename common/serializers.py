@@ -5,7 +5,7 @@ Provides production-grade serializers with:
 - Error handling
 - Field-level customization
 - Nested relationships
-- Audit trail integration
+- Audit trail integration (via helpers)
 """
 
 from typing import Any, Dict, Optional, List, Tuple
@@ -18,9 +18,14 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import URLValidator, EmailValidator
 from django.db import transaction
-import logging
+from django.utils.text import slugify
 
-logger = logging.getLogger(__name__)
+from .helpers import (
+    is_strong_password,
+    is_valid_email,
+    safe_json_dumps,
+    log_audit,
+)
 
 User = get_user_model()
 
@@ -52,7 +57,7 @@ class DynamicFieldsSerializer(serializers.ModelSerializer):
 
 
 class AuditableSerializer(serializers.ModelSerializer):
-    """Base serializer with audit trail support"""
+    """Base serializer with audit trail support via helpers"""
 
     created_at = serializers.DateTimeField(
         read_only=True,
@@ -66,20 +71,42 @@ class AuditableSerializer(serializers.ModelSerializer):
     class Meta:
         abstract = True
 
+    def _get_user_from_context(self) -> Optional[User]:
+        """Extract user from request context"""
+        request = self.context.get("request")
+        return request.user if request and request.user.is_authenticated else None
+
+    def _get_request_metadata(self) -> Dict[str, str]:
+        """Extract IP and user agent from request"""
+        request = self.context.get("request")
+        if not request:
+            return {}
+        
+        return {
+            "ip_address": request.META.get('REMOTE_ADDR'),
+            "user_agent": request.META.get('HTTP_USER_AGENT', ''),
+        }
+
     @transaction.atomic
     def create(self, validated_data: Dict) -> Any:
-        """Create instance and log audit trail"""
+        """Create instance and log audit trail using helpers"""
         instance = super().create(validated_data)
-        logger.info(
-            f"Created {instance.__class__.__name__} (ID: {instance.pk})",
-            extra={"user_id": self.context.get("request").user.id if self.context.get("request") else None},
+        
+        # Log audit trail
+        log_audit(
+            action="create",
+            instance=instance,
+            user=self._get_user_from_context(),
+            changes=validated_data,
+            **self._get_request_metadata()
         )
+        
         return instance
 
     @transaction.atomic
     def update(self, instance: Any, validated_data: Dict) -> Any:
-        """Update instance and log audit trail"""
-        # Get changed fields
+        """Update instance and log audit trail using helpers"""
+        # Calculate changes
         changes = {}
         for field_name, new_value in validated_data.items():
             old_value = getattr(instance, field_name, None)
@@ -91,10 +118,14 @@ class AuditableSerializer(serializers.ModelSerializer):
 
         instance = super().update(instance, validated_data)
 
+        # Log audit trail if there are changes
         if changes:
-            logger.info(
-                f"Updated {instance.__class__.__name__} (ID: {instance.pk}): {changes}",
-                extra={"user_id": self.context.get("request").user.id if self.context.get("request") else None},
+            log_audit(
+                action="update",
+                instance=instance,
+                user=self._get_user_from_context(),
+                changes=changes,
+                **self._get_request_metadata()
             )
 
         return instance
@@ -160,7 +191,6 @@ class SlugField(serializers.SlugField):
             # Auto-generate from field if not provided
             source_field = self.parent._kwargs.get(self.auto_generate_from)
             if source_field:
-                from django.utils.text import slugify
                 data = slugify(source_field)
 
         return super().to_internal_value(data)
@@ -237,27 +267,47 @@ class UserCreateSerializer(TimestampedSerializer):
             "last_name",
         ]
 
+    def validate_email(self, value: str) -> str:
+        """Validate email format using helper"""
+        if not is_valid_email(value):
+            raise ValidationError(_("Invalid email format"))
+        return value
+
     def validate(self, data: Dict) -> Dict:
-        """Validate password match"""
-        password = data.pop("password")
+        """Validate passwords using helper"""
+        password = data.get("password")
         password_confirm = data.pop("password_confirm")
 
+        # Check password strength
+        is_valid, errors = is_strong_password(password)
+        if not is_valid:
+            raise ValidationError({"password": errors})
+
+        # Check passwords match
         if password != password_confirm:
             raise ValidationError({
                 "password": _("Passwords do not match"),
             })
 
-        data["password"] = password
         return data
 
     @transaction.atomic
     def create(self, validated_data: Dict) -> User:
-        """Create user with password"""
+        """Create user with password and audit logging"""
         password = validated_data.pop("password")
         user = User.objects.create_user(**validated_data)
         user.set_password(password)
         user.save()
-        logger.info(f"User created: {user.email}")
+        
+        # Audit logging via helper
+        log_audit(
+            action="create",
+            instance=user,
+            user=self._get_user_from_context(),
+            changes={"email": user.email, "username": user.username},
+            **self._get_request_metadata()
+        )
+        
         return user
 
 
@@ -363,16 +413,31 @@ class UserPasswordChangeSerializer(serializers.Serializer):
                 "new_password": _("Passwords do not match"),
             })
 
+        # Validate new password strength using helper
+        is_valid, errors = is_strong_password(data["new_password"])
+        if not is_valid:
+            raise ValidationError({"new_password": errors})
+
         return data
 
     @transaction.atomic
     def save(self) -> User:
-        """Update user password"""
+        """Update user password and log audit"""
         request = self.context.get("request")
         user = request.user
         user.set_password(self.validated_data["new_password"])
         user.save()
-        logger.info(f"Password changed for user: {user.email}")
+        
+        # Audit logging via helper
+        log_audit(
+            action="update",
+            instance=user,
+            user=user,
+            changes={"password": "changed"},
+            ip_address=request.META.get('REMOTE_ADDR'),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+        )
+        
         return user
 
 
@@ -388,8 +453,34 @@ class BulkCreateSerializer(serializers.ListSerializer):
         """Create multiple instances"""
         instances = [self.child.Meta.model(**item) for item in validated_data]
         instances = self.child.Meta.model.objects.bulk_create(instances)
-        logger.info(f"Bulk created {len(instances)} instances")
+        
+        # Log bulk operation via helper
+        for instance in instances:
+            log_audit(
+                action="create",
+                instance=instance,
+                user=self._get_user_from_context(),
+                changes={"bulk": True},
+                **self._get_request_metadata()
+            )
+        
         return instances
+
+    def _get_user_from_context(self) -> Optional[User]:
+        """Extract user from request context"""
+        request = self.context.get("request")
+        return request.user if request and request.user.is_authenticated else None
+
+    def _get_request_metadata(self) -> Dict[str, str]:
+        """Extract IP and user agent from request"""
+        request = self.context.get("request")
+        if not request:
+            return {}
+        
+        return {
+            "ip_address": request.META.get('REMOTE_ADDR'),
+            "user_agent": request.META.get('HTTP_USER_AGENT', ''),
+        }
 
 
 class BulkUpdateSerializer(serializers.ListSerializer):
@@ -411,12 +502,38 @@ class BulkUpdateSerializer(serializers.ListSerializer):
                 updated.append(instance)
 
         self.child.Meta.model.objects.bulk_update(updated, fields=list(validated_data[0].keys()))
-        logger.info(f"Bulk updated {len(updated)} instances")
+        
+        # Log bulk operation via helper
+        for instance in updated:
+            log_audit(
+                action="update",
+                instance=instance,
+                user=self._get_user_from_context(),
+                changes={"bulk": True},
+                **self._get_request_metadata()
+            )
+        
         return updated
+
+    def _get_user_from_context(self) -> Optional[User]:
+        """Extract user from request context"""
+        request = self.context.get("request")
+        return request.user if request and request.user.is_authenticated else None
+
+    def _get_request_metadata(self) -> Dict[str, str]:
+        """Extract IP and user agent from request"""
+        request = self.context.get("request")
+        if not request:
+            return {}
+        
+        return {
+            "ip_address": request.META.get('REMOTE_ADDR'),
+            "user_agent": request.META.get('HTTP_USER_AGENT', ''),
+        }
 
 
 class NestedCreateSerializer(serializers.ModelSerializer):
-    """Handle nested object creation"""
+    """Handle nested object creation with audit logging"""
 
     class Meta:
         abstract = True

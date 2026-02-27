@@ -15,13 +15,15 @@ import logging
 import hashlib
 import uuid
 import re
-
+from django.db import models, transaction
+from django.db.models import QuerySet
 from django.utils import timezone
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.utils.text import slugify
 from django.template.loader import render_to_string
 from django.contrib.auth.tokens import default_token_generator
+from .models import AudotLog
 
 logger = logging.getLogger(__name__)
 
@@ -352,3 +354,60 @@ def format_file_size(size_bytes: int) -> str:
         size_bytes /= 1024
 
     return f"{size_bytes:.2f} PB"
+
+
+
+# ===========================
+# Utility Functions
+# ===========================
+
+@transaction.atomic
+def bulk_soft_delete(queryset: QuerySet) -> Tuple[int, Dict[str, int]]:
+    """Soft delete multiple records in a transaction"""
+    count = queryset.update(deleted_at=timezone.now())
+    logger.info(f"Soft deleted {count} records")
+    return count, {queryset.model._meta.label: count}
+
+
+@transaction.atomic
+def bulk_restore(queryset: QuerySet) -> int:
+    """Restore multiple soft-deleted records in a transaction"""
+    count = queryset.update(deleted_at=None)
+    logger.info(f"Restored {count} records")
+    return count
+
+
+def log_audit(
+    action: str,
+    instance: models.Model,
+    user: Optional[CustomUser] = None,
+    changes: Optional[Dict] = None,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> AuditLog:
+    """
+    Create audit log entry for any model instance.
+    
+    Args:
+        action: Action performed (create, update, delete, restore, publish)
+        instance: The model instance being audited
+        user: User who performed the action (optional)
+        changes: Dictionary of changes made (optional)
+        ip_address: IP address of the request (optional)
+        user_agent: User agent string (optional)
+    
+    Returns:
+        The created AuditLog instance
+    """
+    audit = AuditLog.objects.create(
+        action=action,
+        content_object=instance,  # Pass the instance directly, not _meta.label
+        object_id=str(instance.pk),  # Convert PK to string for CharField
+        object_repr=str(instance),
+        changes=changes or {},
+        user=user,
+        ip_address=ip_address,
+        user_agent=user_agent or "",
+    )
+    logger.debug(f"Audit log created: {audit.id} for {action} on {instance}")
+    return audit

@@ -8,6 +8,56 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
+
+# ===========================
+# Permission & Auth Decorators
+# ===========================
+
+def check_permissions(required_permissions: List[str]):
+    """Decorator to check multiple permissions"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, request, *args, **kwargs):
+            user = request.user
+            if not user.is_authenticated:
+                raise PermissionDenied("Authentication required")
+
+            for perm in required_permissions:
+                if not user.has_perm(perm):
+                    raise PermissionDenied(f"Permission {perm} required")
+
+            return func(self, request, *args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def check_object_permissions(func):
+    """Decorator to check object-level permissions"""
+    @wraps(func)
+    def wrapper(self, request, *args, **kwargs):
+        obj = self.get_object()
+        self.check_object_permissions(request, obj)
+        return func(self, request, *args, **kwargs)
+    return wrapper
+
+
+def log_action(action_type: str):
+    """Decorator to log view actions"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, request, *args, **kwargs):
+            logger.info(
+                f"{action_type}: {self.__class__.__name__}",
+                extra={
+                    "user_id": request.user.id if request.user else None,
+                    "method": request.method,
+                    "path": request.path,
+                },
+            )
+            return func(self, request, *args, **kwargs)
+        return wrapper
+    return decorator
+
 # ===========================
 # Caching Decorators
 # ===========================

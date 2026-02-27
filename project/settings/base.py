@@ -15,6 +15,18 @@ from pathlib import Path
 from datetime import timedelta
 import logging.config
 from .unfold_config import *
+from dotenv import load_dotenv
+
+# Determine which environment we're in
+ENVIRONMENT = os.getenv('DJANGO_ENV', 'development')
+
+# Load files in order of precedence
+load_dotenv('.env')  # Base defaults (always loaded)
+
+if ENVIRONMENT == 'production':
+    load_dotenv('.env.production', override=True)  # Production overrides
+else:
+    load_dotenv('.env.local', override=True)  # Local overrides
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -82,7 +94,7 @@ ROOT_URLCONF = "project.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "formula/templates"],
+        "DIRS": [BASE_DIR / "dashboard/templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
