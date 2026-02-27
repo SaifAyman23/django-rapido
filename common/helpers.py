@@ -23,7 +23,7 @@ from django.core.mail import send_mail
 from django.utils.text import slugify
 from django.template.loader import render_to_string
 from django.contrib.auth.tokens import default_token_generator
-from .models import AudotLog
+from .models import AuditLog, CustomUser
 
 logger = logging.getLogger(__name__)
 

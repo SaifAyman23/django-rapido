@@ -46,8 +46,8 @@ UNFOLD = {
         "de": "🇩🇪",
         "en": "🇺🇸",
     },
-    "ENVIRONMENT": "common.environment_callback",
-    "DASHBOARD_CALLBACK": "common.dashboard_callback",
+    "ENVIRONMENT": "dashboard.environment_callback",
+    "DASHBOARD_CALLBACK": "dashboard.dashboard_callback",
     "LOGIN": {
         "image": lambda request: static("dashboard/images/login-bg.jpg"),
         "form": "dashboard.forms.LoginForm",
@@ -247,6 +247,11 @@ UNFOLD = {
                         "title": _("Users"),
                         "icon": "account_circle",
                         "link": reverse_lazy("admin:common_customuser_changelist"),
+                    },
+                    {
+                        "title": _("Admin Logs"),
+                        "icon": "hourglass_bottom",
+                        "link": reverse_lazy("admin:admin_logentry_changelist"),
                     },
                     {
                         "title": _("Groups"),

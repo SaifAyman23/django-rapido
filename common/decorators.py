@@ -2,7 +2,8 @@ import logging
 import hashlib
 
 from django.core.cache import cache
-from typing import TypeVar, Callable
+from typing import TypeVar, Callable, List
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 

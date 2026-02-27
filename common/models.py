@@ -14,7 +14,7 @@ from datetime import timedelta
 from typing import Any, Dict, Optional, Tuple
 
 from django.db import models
-from django.db.models import QuerySet, Manager
+from django.db.models import QuerySet, Manager, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser, BaseUserManager
@@ -172,7 +172,7 @@ class UUIDModel(models.Model):
         abstract = True
 
 
-class TimestampedModel(UUIDModel):
+class TimestampedModel(models.Model):
     """Model with created_at and updated_at timestamps"""
 
     created_at = models.DateTimeField(
@@ -197,7 +197,7 @@ class TimestampedModel(UUIDModel):
         ]
 
 
-class SoftDeleteModel(TimestampedModel):
+class SoftDeleteModel(models.Model):
     """Model with soft delete capability"""
 
     deleted_at = models.DateTimeField(
@@ -376,11 +376,6 @@ class CustomUser(AbstractUser):
     """Custom user model with enhanced features"""
 
     # Identity
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     email = models.EmailField(unique=True, db_index=True)
     phone_number = models.CharField(
         max_length=20,
@@ -482,6 +477,13 @@ class CustomUser(AbstractUser):
         """Check if user is fully verified"""
         return self.is_verified and self.is_active
 
+    
+    def save(self, *args, **kwargs):
+        # Ensure ID is stored as string with hyphens
+        if self.id and isinstance(self.id, uuid.UUID):
+            self.id = str(self.id)  # Convert to string with hyphens
+        super().save(*args, **kwargs)
+
 
 @receiver(post_save, sender=CustomUser)
 def log_user_creation(sender, instance, created, **kwargs):
@@ -494,7 +496,7 @@ def log_user_creation(sender, instance, created, **kwargs):
 # Audit Trail Model
 # ===========================
 
-class AuditLog(UUIDModel):
+class AuditLog(TimestampedModel):
     """Track changes to models for compliance and debugging"""
 
     ACTION_CHOICES = (
@@ -514,11 +516,11 @@ class AuditLog(UUIDModel):
     content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
-        # limit_choices_to={'app_label__in': ['app1', 'app2']},  # Optional: restrict to specific apps
+        limit_choices_to=~Q(app_label='common'),  # Optional: restrict to specific apps
         null=True,
         blank=True
     )
-    object_id = models.UUIDField(  # ✅ Even better - matches your UUID PKs
+    object_id = models.UUIDField(  # matches your UUID PKs
         null=True, 
         blank=True, 
         db_index=True
@@ -546,4 +548,3 @@ class AuditLog(UUIDModel):
 
     def __str__(self) -> str:
         return f"{self.action} {self.object_repr}"
-

@@ -25,6 +25,7 @@ from django.views.decorators.cache import cache_page
 from django.core.paginator import Paginator
 from .mixins import BaseViewSetMixin
 import logging
+from .decorators import log_action
 
 logger = logging.getLogger(__name__)
 

@@ -70,23 +70,23 @@ article.restore()  # Restore from soft delete
 ```python
 class SoftDeleteQuerySet(QuerySet):
     """QuerySet for soft-deleted models"""
-    
+
     def delete(self) -> Tuple[int, Dict[str, int]]:
         """Soft delete records"""
         return self.update(deleted_at=timezone.now())
-    
+
     def restore(self) -> int:
         """Restore soft-deleted records"""
         return self.update(deleted_at=None)
-    
+
     def active(self) -> "SoftDeleteQuerySet":
         """Return only active (non-deleted) records"""
         return self.filter(deleted_at__isnull=True)
-    
+
     def deleted(self) -> "SoftDeleteQuerySet":
         """Return only deleted records"""
         return self.filter(deleted_at__isnull=False)
-    
+
     def all_including_deleted(self) -> "SoftDeleteQuerySet":
         """Return all records including deleted"""
         return self.all()
@@ -116,19 +116,19 @@ Article.objects.deleted().restore()  # Restore all deleted
 ```python
 class SoftDeleteManager(Manager):
     """Manager for soft-deleted models"""
-    
+
     def get_queryset(self) -> SoftDeleteQuerySet:
         """Override to filter out deleted records by default"""
         return SoftDeleteQuerySet(self.model, using=self._db).active()
-    
+
     def all_with_deleted(self) -> SoftDeleteQuerySet:
         """Include deleted records in query"""
         return SoftDeleteQuerySet(self.model, using=self._db).all_including_deleted()
-    
+
     def deleted(self) -> SoftDeleteQuerySet:
         """Return only deleted records"""
         return SoftDeleteQuerySet(self.model, using=self._db).deleted()
-    
+
     def restore_all(self) -> int:
         """Restore all deleted records"""
         return self.all_with_deleted().filter(deleted_at__isnull=False).restore()
@@ -141,20 +141,20 @@ class SoftDeleteManager(Manager):
 ```python
 class CustomUserManager(BaseUserManager):
     """Custom user manager with email as unique identifier"""
-    
+
     def create_user(
         self, email: str, password: Optional[str] = None, **extra_fields
     ) -> "CustomUser":
         """Create and save regular user"""
         if not email:
             raise ValueError(_("Email address is required"))
-        
+
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
-    
+
     def create_superuser(
         self, email: str, password: Optional[str] = None, **extra_fields
     ) -> "CustomUser":
@@ -162,22 +162,22 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_verified", True)
-        
+
         if not extra_fields.get("is_staff"):
             raise ValueError(_("Superuser must have is_staff=True"))
         if not extra_fields.get("is_superuser"):
             raise ValueError(_("Superuser must have is_superuser=True"))
-        
+
         return self.create_user(email, password, **extra_fields)
-    
+
     def active(self) -> QuerySet:
         """Return only active users"""
         return self.filter(is_active=True)
-    
+
     def verified(self) -> QuerySet:
         """Return only verified users"""
         return self.filter(is_verified=True)
-    
+
     def recently_joined(self, days: int = 7) -> QuerySet:
         """Return users who joined in the last N days"""
         cutoff_date = timezone.now() - timedelta(days=days)
@@ -213,31 +213,32 @@ recent_users = CustomUser.objects.recently_joined(days=30)
 ```python
 class TimestampedQuerySet(QuerySet):
     """QuerySet with timestamp-based filtering"""
-    
+
     def recent(self, days: int = 7) -> "TimestampedQuerySet":
         """Return records from the last N days"""
         cutoff_date = timezone.now() - timedelta(days=days)
         return self.filter(created_at__gte=cutoff_date)
-    
+
     def older_than(self, days: int = 30) -> "TimestampedQuerySet":
         """Return records older than N days"""
         cutoff_date = timezone.now() - timedelta(days=days)
         return self.filter(created_at__lt=cutoff_date)
-    
+
     def updated_since(self, datetime_obj) -> "TimestampedQuerySet":
         """Return records updated since a specific datetime"""
         return self.filter(updated_at__gte=datetime_obj)
 
+
 class TimestampedManager(Manager):
     """Manager for timestamped models"""
-    
+
     def get_queryset(self) -> TimestampedQuerySet:
         return TimestampedQuerySet(self.model, using=self._db)
-    
+
     def recent(self, days: int = 7) -> TimestampedQuerySet:
         """Return records from the last N days"""
         return self.get_queryset().recent(days)
-    
+
     def older_than(self, days: int = 30) -> TimestampedQuerySet:
         """Return records older than N days"""
         return self.get_queryset().older_than(days)
@@ -263,14 +264,14 @@ updated_today = Article.objects.updated_since(timezone.now().replace(hour=0))
 ```python
 class UUIDModel(models.Model):
     """Base model with UUID primary key"""
-    
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
         editable=False,
         help_text="Unique identifier",
     )
-    
+
     class Meta:
         abstract = True
 ```
@@ -302,9 +303,9 @@ print(product.id)  # 550e8400-e29b-41d4-a716-446655440000
 **Purpose:** Adds created_at and updated_at timestamps to any model.
 
 ```python
-class TimestampedModel(UUIDModel):
+class TimestampedModel(models.Model):
     """Model with created_at and updated_at timestamps"""
-    
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         db_index=True,
@@ -315,9 +316,9 @@ class TimestampedModel(UUIDModel):
         db_index=True,
         help_text="Last update timestamp",
     )
-    
+
     objects = TimestampedManager()
-    
+
     class Meta:
         abstract = True
         ordering = ["-created_at"]
@@ -360,38 +361,38 @@ old_comments = Comment.objects.older_than(days=30)
 **Purpose:** Implements soft delete pattern with restore capability.
 
 ```python
-class SoftDeleteModel(TimestampedModel):
+class SoftDeleteModel(models.Model):
     """Model with soft delete capability"""
-    
+
     deleted_at = models.DateTimeField(
         null=True,
         blank=True,
         db_index=True,
         help_text="Soft delete timestamp",
     )
-    
+
     objects = SoftDeleteManager()
-    
+
     def delete(self, *args, **kwargs) -> Tuple[int, Dict[str, int]]:
         """Override delete to implement soft delete"""
         self.deleted_at = timezone.now()
         self.save(update_fields=["deleted_at"])
         return 1, {self._meta.label: 1}
-    
+
     def hard_delete(self, *args, **kwargs) -> Tuple[int, Dict[str, int]]:
         """Permanently delete the record"""
         return super().delete(*args, **kwargs)
-    
+
     def restore(self) -> None:
         """Restore soft-deleted record"""
         self.deleted_at = None
         self.save(update_fields=["deleted_at"])
-    
+
     @property
     def is_deleted(self) -> bool:
         """Check if record is soft deleted"""
         return self.deleted_at is not None
-    
+
     class Meta:
         abstract = True
         indexes = [
@@ -453,47 +454,47 @@ Task.objects.deleted().hard_delete()
 ```python
 class ChangeTrackingModel(TimestampedModel):
     """Model that tracks field changes"""
-    
+
     change_log = models.JSONField(
         default=dict,
         blank=True,
         help_text="Track field changes",
     )
-    
+
     def get_changed_fields(self) -> Dict[str, Any]:
         """Get fields that have changed since last save"""
         if not self.pk:
             return {}
-        
+
         try:
             db_instance = self.__class__.objects.get(pk=self.pk)
         except ObjectDoesNotExist:
             return {}
-        
+
         changed = {}
         for field in self._meta.fields:
             if field.name in ["updated_at", "change_log"]:
                 continue
-            
+
             current_value = getattr(self, field.name)
             db_value = getattr(db_instance, field.name)
-            
+
             if current_value != db_value:
                 changed[field.name] = {
                     "old": str(db_value),
                     "new": str(current_value),
                 }
-        
+
         return changed
-    
+
     def save(self, *args, **kwargs) -> None:
         """Save and track changes"""
         changed = self.get_changed_fields()
         if changed:
             self.change_log[str(timezone.now().isoformat())] = changed
-        
+
         super().save(*args, **kwargs)
-    
+
     class Meta:
         abstract = True
 ```
@@ -549,13 +550,13 @@ print(doc.change_log)
 ```python
 class PublishableModel(TimestampedModel):
     """Model with draft/published status"""
-    
+
     STATUS_CHOICES = (
         ("draft", _("Draft")),
         ("published", _("Published")),
         ("archived", _("Archived")),
     )
-    
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -569,28 +570,28 @@ class PublishableModel(TimestampedModel):
         db_index=True,
         help_text="Publication timestamp",
     )
-    
+
     def publish(self) -> None:
         """Publish the record"""
         self.status = "published"
         self.published_at = timezone.now()
         self.save(update_fields=["status", "published_at"])
-    
+
     def unpublish(self) -> None:
         """Unpublish the record"""
         self.status = "draft"
         self.save(update_fields=["status"])
-    
+
     def archive(self) -> None:
         """Archive the record"""
         self.status = "archived"
         self.save(update_fields=["status"])
-    
+
     @property
     def is_published(self) -> bool:
         """Check if record is published"""
         return self.status == "published"
-    
+
     class Meta:
         abstract = True
         indexes = [
@@ -647,7 +648,7 @@ published_posts = BlogPost.objects.filter(status="published")
 ```python
 class SEOModel(TimestampedModel):
     """Model with SEO fields"""
-    
+
     slug = models.SlugField(
         max_length=255,
         unique=True,
@@ -669,7 +670,7 @@ class SEOModel(TimestampedModel):
         blank=True,
         help_text="SEO keywords (comma-separated)",
     )
-    
+
     class Meta:
         abstract = True
         indexes = [
@@ -723,20 +724,15 @@ print(product.slug)  # "wireless-headphones"
 ```python
 class CustomUser(AbstractUser):
     """Custom user model with enhanced features"""
-    
+
     # Identity
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     email = models.EmailField(unique=True, db_index=True)
     phone_number = models.CharField(
         max_length=20,
         blank=True,
         help_text="User phone number",
     )
-    
+
     # Media & Profile
     avatar = models.ImageField(
         upload_to="avatars/%Y/%m/%d/",
@@ -749,7 +745,7 @@ class CustomUser(AbstractUser):
         blank=True,
         help_text="User biography",
     )
-    
+
     # Verification & Security
     is_verified = models.BooleanField(
         default=False,
@@ -770,7 +766,7 @@ class CustomUser(AbstractUser):
         default=False,
         help_text="Two-factor authentication status",
     )
-    
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -793,12 +789,12 @@ class CustomUser(AbstractUser):
         related_name='customuser_set',
         related_query_name='customuser',
     )
-    
+
     objects = CustomUserManager()
-    
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
-    
+
     class Meta:
         verbose_name = _("User")
         verbose_name_plural = _("Users")
@@ -808,10 +804,10 @@ class CustomUser(AbstractUser):
             models.Index(fields=["is_verified"]),
             models.Index(fields=["-created_at"]),
         ]
-    
+
     def __str__(self) -> str:
         return f"{self.get_full_name() or self.username}"
-    
+
     def verify_email(self) -> None:
         """Mark user email as verified"""
         self.is_verified = True
@@ -819,24 +815,30 @@ class CustomUser(AbstractUser):
         self.verification_token = ""
         self.save(update_fields=["is_verified", "verified_at", "verification_token"])
         logger.info(f"User {self.id} email verified")
-    
+
     def get_display_name(self) -> str:
         """Get user's display name"""
         if self.get_full_name():
             return self.get_full_name()
         return self.username or self.email
-    
+
     @property
     def is_fully_verified(self) -> bool:
         """Check if user is fully verified"""
         return self.is_verified and self.is_active
+
+    def save(self, *args, **kwargs):
+        # Ensure ID is stored as string with hyphens
+        if self.id and isinstance(self.id, uuid.UUID):
+            self.id = str(self.id)  # Convert to string with hyphens
+        super().save(*args, **kwargs)
 ```
 
 **Key Features:**
 
 | Feature | Description |
 |---------|-------------|
-| **UUID Primary Key** | Non-sequential, globally unique IDs |
+| **UUID Primary Key** | Non-sequential, globally unique IDs (inherited from AbstractUser) |
 | **Email as Username** | Login with email instead of username |
 | **Email Verification** | Track verification status and timestamp |
 | **Profile Fields** | Avatar, bio, phone number |
@@ -918,9 +920,9 @@ def log_user_creation(sender, instance, created, **kwargs):
 **Purpose:** Comprehensive audit logging for all model changes.
 
 ```python
-class AuditLog(UUIDModel):
+class AuditLog(TimestampedModel):
     """Track changes to models for compliance and debugging"""
-    
+
     ACTION_CHOICES = (
         ("create", _("Create")),
         ("update", _("Update")),
@@ -928,7 +930,7 @@ class AuditLog(UUIDModel):
         ("restore", _("Restore")),
         ("publish", _("Publish")),
     )
-    
+
     action = models.CharField(
         max_length=20,
         choices=ACTION_CHOICES,
@@ -939,11 +941,15 @@ class AuditLog(UUIDModel):
     content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
-        limit_choices_to={'app_label__in': ['app1', 'app2']},  # Optional: restrict to specific apps
+        limit_choices_to=~Q(app_label='common'),  # Optional: restrict to specific apps
         null=True,
         blank=True
     )
-    object_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
+    object_id = models.UUIDField(
+        null=True, 
+        blank=True, 
+        db_index=True
+    )
     content_object = GenericForeignKey('content_type', 'object_id')
     
     object_repr = models.CharField(max_length=255)
@@ -960,14 +966,14 @@ class AuditLog(UUIDModel):
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
-    
+
     class Meta:
         ordering = ["-timestamp"]
         indexes = [
             models.Index(fields=["object_id", "-timestamp"]),
             models.Index(fields=["content_type", "-timestamp"]),
         ]
-    
+
     def __str__(self) -> str:
         return f"{self.action} {self.object_repr}"
 ```
@@ -978,7 +984,7 @@ class AuditLog(UUIDModel):
 |-------|---------|---------|
 | `action` | Type of change | "update" |
 | `content_type` | Model type | Article |
-| `object_id` | Record ID | 123 |
+| `object_id` | Record ID (UUID) | "550e8400-e29b-41d4-a716-446655440000" |
 | `object_repr` | String representation | "Article: My Post" |
 | `changes` | Detailed changes | `{"title": {"old": "Draft", "new": "Final"}}` |
 | `user` | Who made the change | John Doe |
@@ -994,6 +1000,7 @@ from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
 import json
+import uuid
 
 @receiver(pre_save)
 def audit_pre_save(sender, instance, **kwargs):
@@ -1040,11 +1047,16 @@ def audit_post_save(sender, instance, created, **kwargs):
             if field.name not in ['id', 'created_at', 'updated_at']
         }
     
+    # Ensure object_id is stored as string with hyphens
+    object_id = instance.pk
+    if isinstance(object_id, uuid.UUID):
+        object_id = str(object_id)
+    
     # Create audit log
     AuditLog.objects.create(
         action=action,
         content_type=ContentType.objects.get_for_model(instance),
-        object_id=instance.pk,
+        object_id=object_id,
         object_repr=str(instance),
         changes=changes,
         user=getattr(instance, '_audit_user', None),  # Pass user context
@@ -1058,10 +1070,15 @@ def audit_post_delete(sender, instance, **kwargs):
     if sender == AuditLog:
         return
     
+    # Ensure object_id is stored as string with hyphens
+    object_id = instance.pk
+    if isinstance(object_id, uuid.UUID):
+        object_id = str(object_id)
+    
     AuditLog.objects.create(
         action="delete",
         content_type=ContentType.objects.get_for_model(instance),
-        object_id=instance.pk,
+        object_id=object_id,
         object_repr=str(instance),
         changes={},
         user=getattr(instance, '_audit_user', None),
@@ -1794,7 +1811,7 @@ class Post(CachedModelMixin, TimestampedModel):
     content = models.TextField()
 
 # Usage
-post = Post.get_cached('some-uuid')  # Gets from cache if available
+post = Post.get_cached('550e8400-e29b-41d4-a716-446655440000')  # Gets from cache if available
 ```
 
 ### 4. Bulk Operations
@@ -2293,6 +2310,7 @@ from django.contrib.contenttypes.models import ContentType
 from apps.core.models import AuditLog
 from apps.blog.models import Post
 from apps.users.models import CustomUser
+import uuid
 
 class AuditLogTest(TestCase):
     """Test audit logging"""
@@ -2361,6 +2379,18 @@ class AuditLogTest(TestCase):
         )
         
         self.assertEqual(logs.count(), 1)
+        
+    def test_uuid_formatting_in_audit_log(self):
+        """Test that UUIDs are stored as strings with hyphens"""
+        log = AuditLog.objects.filter(
+            content_type=ContentType.objects.get_for_model(Post),
+            object_id=self.post.id
+        ).first()
+        
+        # Check that object_id is a string with hyphens
+        self.assertIsInstance(log.object_id, str)
+        self.assertEqual(len(log.object_id), 36)  # UUID with hyphens
+        self.assertIn('-', log.object_id)
 ```
 
 ---
@@ -2372,8 +2402,8 @@ class AuditLogTest(TestCase):
 ✅ **DO:**
 
 ```python
-class Article(SoftDeleteModel, PublishableModel):
-    """Single responsibility model"""
+class Article(SoftDeleteModel, PublishableModel, SEOModel, ChangeTrackingModel):
+    """Single responsibility model with proper inheritance"""
     
     title = models.CharField(max_length=200)
     content = models.TextField()
@@ -2391,8 +2421,8 @@ class Article(SoftDeleteModel, PublishableModel):
 
 ```python
 class Article(models.Model):  # Missing base classes
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)  # Reinventing
-    created_at = models.DateTimeField(auto_now_add=True)  # Redundant
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)  # Reinventing UUIDModel
+    created_at = models.DateTimeField(auto_now_add=True)  # Redundant with TimestampedModel
     updated_at = models.DateTimeField(auto_now=True)  # Redundant
     deleted_at = models.DateTimeField(null=True)  # Reinventing soft delete
     
@@ -2402,6 +2432,7 @@ class Article(models.Model):  # Missing base classes
     seo_title = models.CharField(max_length=60)  # Should use SEOModel
     seo_description = models.CharField(max_length=160)  # Should use SEOModel
     slug = models.SlugField()  # Should use SEOModel
+    status = models.CharField(max_length=20)  # Should use PublishableModel
 ```
 
 ### 2. Manager Usage
@@ -2486,7 +2517,7 @@ if 'price' in latest_changes:
 post._old_title = post.title
 post.title = "New Title"
 if post._old_title != post.title:
-    log_change(post)  # Redundant
+    log_change(post)  # Redundant with ChangeTrackingModel
 ```
 
 ### 5. Audit Logging
@@ -2514,10 +2545,39 @@ user_actions = AuditLog.objects.filter(user=user)
 log_entry = f"User {user} changed post {post.id}"  # Use AuditLog instead
 
 # Don't forget IP and user agent
-post.save()  # No audit context
+post.save()  # No audit context means no tracking
 ```
 
-### 6. Performance
+### 6. UUID Handling
+
+✅ **DO:**
+
+```python
+# In models, let Django handle UUID conversion
+class MyModel(UUIDModel):
+    name = models.CharField(max_length=100)
+
+# When querying, use strings
+obj = MyModel.objects.get(id="550e8400-e29b-41d4-a716-446655440000")
+
+# In signals, ensure UUIDs are strings
+@receiver(post_save)
+def log_save(sender, instance, **kwargs):
+    object_id = str(instance.pk) if isinstance(instance.pk, uuid.UUID) else instance.pk
+    # Use object_id...
+```
+
+❌ **DON'T:**
+
+```python
+# Don't assume UUID objects everywhere
+obj = MyModel.objects.get(id=uuid.UUID("550e8400-e29b-41d4-a716-446655440000"))  # Works but verbose
+
+# Don't forget to convert UUIDs to strings for logging
+object_id = instance.pk  # Might be UUID object, causing issues in JSON serialization
+```
+
+### 7. Performance
 
 ✅ **DO:**
 
@@ -2552,7 +2612,7 @@ posts = Post.objects.all()  # Fetches all fields
 Post.objects.filter(status='published')  # Should have index
 ```
 
-### 7. Testing
+### 8. Testing
 
 ✅ **DO:**
 
@@ -2565,6 +2625,12 @@ class PostTest(TestCase):
         self.post.publish()
         self.assertTrue(self.post.is_published)
         self.assertIsNotNone(self.post.published_at)
+    
+    def test_uuid_format(self):
+        """Test that UUID is stored as string"""
+        self.assertIsInstance(self.post.id, str)
+        self.assertEqual(len(self.post.id), 36)
+        self.assertIn('-', self.post.id)
 ```
 
 ❌ **DON'T:**
@@ -2576,7 +2642,7 @@ def test_post():
     assert post.is_published  # No assertions, no test isolation
 ```
 
-### 8. Error Handling
+### 9. Error Handling
 
 ✅ **DO:**
 
@@ -2594,21 +2660,23 @@ except Exception as e:
 post.publish()  # No error handling
 ```
 
-### 9. Documentation
+### 10. Documentation
 
 ✅ **DO:**
 
 ```python
-class Post(SoftDeleteModel):
+class Post(SoftDeleteModel, PublishableModel, SEOModel, ChangeTrackingModel):
     """
     Blog post model with publishing workflow.
     
     Features:
+    - UUID primary key
     - Soft delete with restore
     - Draft/published/archived states
     - Automatic slug generation
-    - SEO fields
+    - SEO fields (title, description, keywords)
     - Change tracking
+    - Timestamps (created, updated)
     """
     
     title = models.CharField(
@@ -2621,7 +2689,7 @@ class Post(SoftDeleteModel):
 
 ```python
 class Post(models.Model):
-    title = models.CharField(max_length=200)  # No help text
+    title = models.CharField(max_length=200)  # No help text, no class docstring
 ```
 
 ---
@@ -2640,6 +2708,7 @@ class Post(models.Model):
 | **AuditLog** | Action history | Generic audit trail |
 | **SoftDeleteManager** | Query filtering | active(), deleted() |
 | **CustomUserManager** | User queries | verified(), recently_joined() |
+| **TimestampedManager** | Time queries | recent(), older_than() |
 
 ---
 
@@ -2653,18 +2722,21 @@ class Post(models.Model):
 6. **Create serializers** for API
 7. **Add filters** for list views
 8. **Monitor performance** and optimize
+9. **Document your models** thoroughly
 
 ---
 
 **Key Takeaways:**
 
-- Use UUIDModel for distributed-friendly IDs
-- Use SoftDeleteModel for safe deletion
-- Use PublishableModel for content workflows
-- Use ChangeTrackingModel for audit requirements
-- Use SEOModel for SEO-optimized content
-- Use CustomUser for enhanced user features
-- Use AuditLog for compliance
-- Always add indexes for filtered fields
-- Write comprehensive tests
-- Document your models
+- Use **UUIDModel** for distributed-friendly IDs
+- Use **SoftDeleteModel** for safe deletion
+- Use **PublishableModel** for content workflows
+- Use **ChangeTrackingModel** for audit requirements
+- Use **SEOModel** for SEO-optimized content
+- Use **CustomUser** for enhanced user features
+- Use **AuditLog** for compliance
+- **Always convert UUIDs to strings** in signals and logs
+- **Add indexes** for filtered fields
+- **Write comprehensive tests**
+- **Document your models** thoroughly
+- **Use manager methods** instead of manual filtering
