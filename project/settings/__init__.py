@@ -27,8 +27,6 @@ from .components.apps import *
 from .components.database import *
 from .components.cache import *
 from .components.celery import *
-from .components.jwt import *
-from .components.email import *
 from .components.api import *
 from .components.security import *
 from .components.logging import *
@@ -39,5 +37,8 @@ from .unfold_config import *
 # Load environment-specific settings last (they can override anything)
 if ENVIRONMENT == 'production':
     from .production import *
+elif ENVIRONMENT == 'testing':
+    from .testing import *
 else:
+    # Default to local for development
     from .local import *

@@ -1,4 +1,7 @@
-"""Production settings with security hardening"""
+"""
+Production settings with security hardening.
+"""
+import os
 from .base import *
 
 DEBUG = False
@@ -13,8 +16,16 @@ SECURE_HSTS_PRELOAD = True
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = "DENY"
 
-# CORS
+# CORS - must be explicitly set in production
 CORS_TRUSTED_ORIGINS = os.getenv("CORS_TRUSTED_ORIGINS", "").split(",")
 
-# Allowed hosts from environment
+# Allowed hosts - must be explicitly set in production
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+
+# Use proper email backend
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Logging - less verbose in production
+LOGGING['root']['level'] = 'WARNING'
+LOGGING['loggers']['django']['level'] = 'WARNING'
+LOGGING['loggers']['celery']['level'] = 'WARNING'
