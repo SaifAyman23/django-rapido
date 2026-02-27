@@ -1,127 +1,136 @@
-# Core Framework
+﻿# pip freeze | Out-File -FilePath requirements.txt -Encoding UTF8
+
+# Core Django & Web Framework
 Django==5.2
 djangorestframework==3.16.1
-channels==4.3.2
-channels_redis==4.3.0
-django-channels==0.7.0
+django-cors-headers==4.4.0
+django-filter==24.3
+django-stubs==5.0.0
+django-stubs-ext==5.2.9
+djangorestframework_simplejwt==5.4.0
+gunicorn==23.0.0
+whitenoise==6.8.2
+asgiref==3.11.1
+sqlparse==0.5.2
+python-decouple==3.8
+python-dotenv==1.0.1
 
-# Database & Models
-psycopg==3.2.1
-redis==5.2.0
-django-redis==5.4.0
-
-# Task Queue / Background Processing
+# Celery & Task Queue
 celery==5.6.2
 django-celery-beat==2.8.0
 django-celery-results==2.5.1
 kombu==5.6.0
 billiard==4.2.4
 vine==5.1.0
+amqp==5.3.1
 click==8.3.1
 click-didyoumean==0.3.1
 click-plugins==1.1.1.2
 click-repl==0.3.0
+prompt_toolkit==3.0.52
+wcwidth==0.6.0
 cron_descriptor==2.0.6
 python-crontab==3.3.0
+django-timezone-field==7.2.1
+tzdata==2025.3
+tzlocal==5.3.1
+pytz==2024.2
 
-# Authentication & Security
-djangorestframework_simplejwt==5.4.0
-PyJWT==2.11.0
-oauthlib==3.3.1
-requests-oauthlib==2.0.0
+# Redis & Caching
+redis==5.2.0
+django-redis==5.4.0
+msgpack==1.1.2
 
-# API & Documentation
+# Channels & WebSockets
+channels==4.3.2
+channels_redis==4.3.0
+django-channels==0.7.0
+
+# ASGI Server
+uvicorn==0.31.0
+anyio==4.12.1
+h11==0.16.0
+httptools==0.7.1
+watchfiles==1.1.1
+websockets==16.0
+
+# Database & ORM
+psycopg==3.2.1
+
+# API Documentation
 drf-spectacular==0.29.0
 uritemplate==4.2.0
 inflection==0.5.1
+PyYAML==6.0.3
 
-# CORS & Middleware
-django-cors-headers==4.4.0
-whitenoise==6.8.2
-gunicorn==23.0.0
-
-# ASGI/WebSocket Support
-uvicorn==0.31.0
-asgiref==3.11.1
-watchfiles==1.1.1
-websockets==16.0
-httptools==0.7.1
-h11==0.16.0
-
-# Admin Interface
-django-unfold==0.42.0
-django-timezone-field==7.2.1
-pillow==11.0.0
-
-# Utilities
-python-decouple==3.8
-python-dotenv==1.0.1
-python-json-logger==2.0.7
-django-filter==24.3
-attrs==25.4.0
-jsonschema==4.26.0
-jsonschema-specifications==2025.9.1
-referencing==0.37.0
-rpds-py==0.30.0
-amqp==5.3.1
-anyio==4.12.1
+# Authentication & Security
+PyJWT==2.11.0
+requests==2.32.3
+requests-oauthlib==2.0.0
+oauthlib==3.3.1
 certifi==2026.2.25
 charset-normalizer==3.4.4
 idna==3.11
 urllib3==2.6.3
-requests==2.32.3
-msgpack==1.1.2
-packaging==26.0
-pytz==2024.2
-tzdata==2025.3
-tzlocal==5.3.1
-six==1.17.0
-sqlparse==0.5.2
-typing_extensions==4.15.0
-python-discovery==1.0.0
+
+# Admin Interface
+django-unfold==0.81.0
+djangoql==0.19.1
+ply==3.11
+pillow==11.0.0
 
 # Development & Debugging
 django-debug-toolbar==6.2.0
-django-stubs==5.0.0
-django-stubs-ext==5.2.9
-mypy==1.11.2
-mypy_extensions==1.1.0
-pylint==3.0.4
-astroid==3.0.3
-tomlkit==0.14.0
-flake8==7.1.1
-pycodestyle==2.12.1
-pyflakes==3.2.0
-black==24.10.0
-pathspec==1.0.4
-isort==5.13.2
-pre-commit==3.7.1
-cfgv==3.5.0
-identify==2.6.16
-nodeenv==1.10.0
-virtualenv==21.0.0
-distlib==0.4.0
-filelock==3.24.3
-platformdirs==4.9.2
-colorama==0.4.6
-dill==0.4.1
-mccabe==0.7.0
+python-json-logger==2.0.7
+python-discovery==1.0.0
 
 # Testing
 pytest==8.3.4
 pytest-django==4.7.0
-pytest-asyncio==0.24.0
 pytest-cov==5.0.0
+pytest-asyncio==0.24.0
 coverage==7.13.4
 factory-boy==3.3.0
 Faker==25.9.2
+
+# Code Quality & Linting
+black==24.10.0
+isort==5.13.2
+flake8==7.1.1
+mypy==1.11.2
+pylint==3.0.4
+astroid==3.0.3
+dill==0.4.1
+tomlkit==0.14.0
+mccabe==0.7.0
+pycodestyle==2.12.1
+pyflakes==3.2.0
+mypy_extensions==1.1.0
+pathspec==1.0.4
+platformdirs==4.9.2
+types-PyYAML==6.0.12.20250915
+typing_extensions==4.15.0
+
+# Pre-commit
+pre-commit==3.7.1
+cfgv==3.5.0
+distlib==0.4.0
+filelock==3.24.3
+identify==2.6.16
+nodeenv==1.10.0
+virtualenv==21.0.0
+
+# JSON Schema & Validation
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+referencing==0.37.0
+rpds-py==0.30.0
+attrs==25.4.0
+
+# Utility Libraries
+six==1.17.0
+python-dateutil==2.8.2
+packaging==26.0
 iniconfig==2.3.0
 pluggy==1.6.0
-
-# Prompt Toolkit & REPL
-prompt_toolkit==3.0.52
-wcwidth==0.6.0
-
-# YAML Processing
-PyYAML==6.0.3
-types-PyYAML==6.0.12.20250915
+colorama==0.4.6
