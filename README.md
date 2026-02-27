@@ -1,4 +1,4 @@
-# Django 6.0 Production-Ready Project Template
+# Django 6.0 Project Template
 
 **A modern Django starter with REST APIs, async tasks, and Docker containerization**
 
@@ -8,7 +8,7 @@
 
 ## Table of Contents
 
-- [Django 6.0 Production-Ready Project Template](#django-60-production-ready-project-template)
+- [Django 6.0 Project Template](#django-60-project-template)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
   - [Tech Stack](#tech-stack)
@@ -32,7 +32,7 @@
 
 ## Overview
 
-This template provides a production-ready Django 6.0 foundation with:
+This template provides a Django 6.0 foundation with:
 
 - REST API support (DRF 3.16)
 - JWT authentication
