@@ -1,21 +1,1113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Django 6.0 Project Template — modern starter with APIs, async tasks & Docker</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
-<style>:root{--bg-primary:#f8fafb;--bg-secondary:#fff;--bg-tertiary:#f0f4f7;--bg-elevated:#fff;--border-light:#e0e8f0;--border-strong:#b8c8dc;--text-primary:#0d1829;--text-secondary:#4a6480;--text-tertiary:#7a9ab8;--text-inverse:#fff;--accent:#092E20;--accent-light:#0C3C26;--accent-mid:#19A975;--accent-bright:#2ECC71;--accent-dim:rgba(9,46,32,0.08);--accent-glow:rgba(25,169,117,0.25);--blue:#1d4ed8;--blue-light:#eff6ff;--blue-dim:rgba(29,78,216,0.12);--green:#047857;--green-light:#d1fae5;--green-dim:rgba(4,120,87,0.12);--amber:#b45309;--amber-light:#fef3c7;--amber-dim:rgba(180,83,9,0.12);--red:#be123c;--red-light:#fff1f2;--red-dim:rgba(190,18,60,0.12);--purple:#6d28d9;--purple-light:#ede9fe;--purple-dim:rgba(109,40,217,0.12);--font-display:'Instrument Serif',serif;--font-heading:'Plus Jakarta Sans',sans-serif;--font-body:'Plus Jakarta Sans',system-ui,sans-serif;--font-code:'JetBrains Mono',monospace;--text-xs:0.6rem;--text-sm:0.65rem;--text-base:0.75rem;--text-md:0.85rem;--text-lg:0.95rem;--text-xl:1.1rem;--text-2xl:1.35rem;--text-3xl:1.7rem;--text-4xl:2.1rem;--text-5xl:2.8rem;--text-6xl:5rem;--sp-1:0.25rem;--sp-2:0.5rem;--sp-3:0.75rem;--sp-4:1rem;--sp-5:1.25rem;--sp-6:1.5rem;--sp-7:1.75rem;--sp-8:2rem;--sp-10:2.5rem;--sp-12:3rem;--sp-16:4rem;--sp-20:5rem;--sp-24:6rem;--radius-sm:3px;--radius-md:5px;--radius-lg:6px;--radius-xl:8px;--shadow-sm:0 2px 4px rgba(0,0,0,0.05);--shadow-md:0 4px 8px rgba(0,0,0,0.08);--shadow-lg:0 8px 16px rgba(0,0,0,0.1);--glow-accent:0 0 8px var(--accent-glow);--max-width:880px}
-[data-theme="dark"]{--bg-primary:#0a1612;--bg-secondary:#0c1f1a;--bg-tertiary:#0e2820;--bg-elevated:#103325;--border-light:#1a4a3a;--border-strong:#2a6050;--text-primary:#e0f2e9;--text-secondary:#a0d8c0;--text-tertiary:#6a9680;--text-inverse:#0a1612;--accent:#44bd87;--accent-light:#5fd5a0;--accent-mid:#2ECC71;--accent-bright:#6fe8b3;--accent-dim:rgba(68,189,135,0.15);--accent-glow:rgba(68,189,135,0.4);--blue:#60a5fa;--blue-light:#0c1f1a;--blue-dim:rgba(96,165,250,0.15);--green:#44bd87;--green-light:#0c1f1a;--green-dim:rgba(68,189,135,0.2);--amber:#fbbf24;--amber-light:#0c1f1a;--amber-dim:rgba(251,191,36,0.15);--red:#f87171;--red-light:#0c1f1a;--red-dim:rgba(248,113,113,0.15);--purple:#a78bfa;--purple-light:#0c1f1a;--purple-dim:rgba(167,139,250,0.15);--shadow-sm:0 2px 4px rgba(0,0,0,0.5);--shadow-md:0 4px 8px rgba(0,0,0,0.6);--shadow-lg:0 8px 16px rgba(0,0,0,0.7)}
-*,::after,::before{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background:var(--bg-primary);color:var(--text-primary);font-family:var(--font-body);font-size:var(--text-lg);line-height:1.72;font-weight:400;transition:background-color .3s,color .3s}.ds-shell{display:grid;grid-template-columns:260px 1fr;min-height:100vh;background:var(--bg-primary)}.ds-sidebar{background:var(--bg-secondary);border-right:1px solid var(--border-light);padding:var(--sp-8) var(--sp-5);position:sticky;top:0;height:100vh;overflow-y:auto;scrollbar-width:thin}.ds-sidebar::-webkit-scrollbar{width:4px}.ds-sidebar::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:var(--radius-sm)}.ds-sidebar-header{margin-bottom:var(--sp-8);border-bottom:1px solid var(--border-light);padding-bottom:var(--sp-4)}.ds-sidebar-header h1{font-family:var(--font-display);font-size:var(--text-3xl);font-weight:400;font-style:italic;letter-spacing:-.01em;color:var(--accent);line-height:1.1;margin-bottom:var(--sp-2)}.ds-sidebar-header p{font-family:var(--font-code);font-size:var(--text-xs);color:var(--text-tertiary);letter-spacing:.08em;text-transform:uppercase}.theme-toggle{display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-4);padding:var(--sp-2);background:var(--bg-tertiary);border-radius:var(--radius-lg);border:1px solid var(--border-light)}.theme-btn{flex:1;padding:var(--sp-2) var(--sp-3);font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;text-align:center;cursor:pointer;border-radius:var(--radius-sm);color:var(--text-secondary);border:none;background:transparent;transition:all .2s}.theme-btn:hover{color:var(--accent)}.theme-btn.active{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);box-shadow:var(--glow-accent)}.ds-nav-group{margin-bottom:var(--sp-6)}.ds-nav-label{font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text-tertiary);padding:var(--sp-2) 0;border-bottom:1px dashed var(--border-light);margin-bottom:var(--sp-2)}.ds-sidebar nav a{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3);color:var(--text-secondary);text-decoration:none;font-family:var(--font-code);font-size:var(--text-sm);border-left:2px solid transparent;transition:all .2s;margin-bottom:2px;border-radius:0 var(--radius-sm) var(--radius-sm) 0}.ds-sidebar nav a::before{content:'//';color:var(--accent);opacity:0;transition:opacity .2s;font-size:var(--text-xs)}.ds-sidebar nav a:hover{color:var(--text-primary);border-left-color:var(--accent);background:var(--accent-dim)}.ds-sidebar nav a:hover::before{opacity:1}.ds-sidebar nav a.active{color:var(--accent);border-left-color:var(--accent);background:var(--accent-dim);box-shadow:var(--glow-accent)}.ds-sidebar nav a.active::before{opacity:1;content:'◆'}.ds-main{padding:var(--sp-16) var(--sp-12);min-width:0;background:var(--bg-primary)}.ds-page-header{margin-bottom:var(--sp-16);padding-bottom:var(--sp-12);border-bottom:1px solid var(--border-light);position:relative}.ds-page-header::after{content:'';position:absolute;bottom:-1px;left:0;width:120px;height:2px;background:linear-gradient(90deg,var(--accent),transparent);box-shadow:0 0 10px var(--accent-glow)}.ds-eyebrow{display:flex;align-items:center;gap:var(--sp-4);margin-bottom:var(--sp-4);font-family:var(--font-code);font-size:var(--text-xs);letter-spacing:.3em;text-transform:uppercase;color:var(--accent)}.ds-eyebrow::after,.ds-eyebrow::before{content:'';height:1px;background:var(--accent);opacity:.3;flex:1}.ds-eyebrow::after{flex:.5}.ds-page-header h1{font-family:var(--font-display);font-size:var(--text-6xl);font-weight:400;font-style:italic;line-height:1.08;margin-bottom:var(--sp-6);color:var(--text-primary);letter-spacing:-.01em}.ds-page-header h1 strong{font-style:normal;font-weight:400;color:var(--accent);font-family:var(--font-code);font-size:.72em;letter-spacing:.04em;display:block;margin-bottom:var(--sp-2)}.ds-page-header h1 .sub{display:block;font-size:.4em;letter-spacing:.15em;font-style:normal;font-weight:400;color:var(--text-tertiary);text-transform:uppercase;font-family:var(--font-code);margin-top:var(--sp-4)}.ds-page-desc{font-size:var(--text-xl);color:var(--text-secondary);max-width:680px;line-height:1.82;margin-bottom:var(--sp-6);font-weight:300}.ds-meta{display:flex;gap:var(--sp-3);flex-wrap:wrap}.ds-badge{font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;background:var(--bg-tertiary);border:1px solid var(--border-light);padding:var(--sp-2) var(--sp-3);color:var(--text-secondary);border-radius:var(--radius-sm);transition:all .2s}.ds-badge.accent{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);box-shadow:var(--glow-accent)}.ds-badge:hover{border-color:var(--accent);color:var(--accent)}.ds-section{margin-bottom:var(--sp-20);scroll-margin-top:calc(var(--sp-4) + 50px);animation:fadeUp .5s ease both}@keyframes fadeUp{0%{opacity:0;transform:translateY(var(--sp-4))}to{opacity:1;transform:translateY(0)}}.ds-section-header{display:flex;align-items:center;gap:var(--sp-4);margin-bottom:var(--sp-4)}.ds-section-num{font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;background:var(--bg-tertiary);border:1px solid var(--border-light);padding:var(--sp-1) var(--sp-3);color:var(--accent);letter-spacing:.12em;border-radius:var(--radius-sm)}.ds-section-tag{font-family:var(--font-code);font-size:var(--text-xs);letter-spacing:.24em;text-transform:uppercase;color:var(--text-tertiary)}.ds-section h2{font-family:var(--font-display);font-size:var(--text-4xl);font-weight:400;font-style:italic;line-height:1.15;color:var(--text-primary);margin-bottom:var(--sp-2);letter-spacing:-.01em}.ds-section h2 em{font-style:normal;color:var(--accent);font-family:var(--font-code);font-size:.6em;margin-left:var(--sp-2)}.ds-section h3{font-family:var(--font-body);font-size:var(--text-xl);color:var(--text-primary);margin-top:var(--sp-6);margin-bottom:var(--sp-3);font-weight:500}.ds-section-rule{display:flex;align-items:center;gap:var(--sp-4);margin:var(--sp-4) 0 var(--sp-8)}.ds-section-rule .line{height:2px;background:var(--border-light);flex:1}.ds-section-rule .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;box-shadow:var(--glow-accent)}.ds-section-desc{color:var(--text-secondary);margin-bottom:var(--sp-8);max-width:720px}.ds-sub{font-family:var(--font-code);font-size:var(--text-base);font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:var(--sp-8) 0 var(--sp-4);position:relative;padding-left:var(--sp-4)}.ds-sub::before{content:'';position:absolute;left:0;top:.2em;width:4px;height:1.2em;background:var(--accent);border-radius:var(--radius-sm);box-shadow:var(--glow-accent)}.callout{border-radius:var(--radius-md);padding:var(--sp-4) var(--sp-5);margin:var(--sp-6) 0;border-left:3px solid;font-size:var(--text-md);background:var(--bg-secondary);border:1px solid var(--border-light);border-left-width:3px}.callout.info{border-left-color:var(--blue);background:var(--blue-dim)}.callout.warning{border-left-color:var(--amber);background:var(--amber-dim)}.callout.tip{border-left-color:var(--green);background:var(--green-dim)}.callout.danger{border-left-color:var(--red);background:var(--red-dim)}.callout.note{border-left-color:var(--accent);background:var(--accent-dim)}.callout strong{font-family:var(--font-code);font-size:var(--text-xs);letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:var(--sp-2);font-weight:500}.callout.info strong{color:var(--blue)}.callout.warning strong{color:var(--amber)}.callout.tip strong{color:var(--green)}.callout.danger strong{color:var(--red)}.callout.note strong{color:var(--accent)}.callout p{margin:0;color:var(--text-secondary);font-size:var(--text-md);line-height:1.7}.pill{display:inline-block;font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;padding:var(--sp-1) var(--sp-3);border-radius:100px;letter-spacing:.06em;text-transform:uppercase;vertical-align:middle;margin:0 var(--sp-1);border:1px solid}.pill.docker{background:var(--blue-dim);color:var(--blue);border-color:var(--blue)}.pill.python{background:var(--purple-dim);color:var(--purple);border-color:var(--purple)}.pill.recommended{background:var(--green-dim);color:var(--green);border-color:var(--green)}.code-block{background:var(--bg-secondary);border-radius:var(--radius-lg);overflow:hidden;margin:var(--sp-6) 0;font-size:var(--text-base);border:1px solid var(--border-strong);position:relative;box-shadow:var(--shadow-md)}.code-block::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent-bright));opacity:.9}.code-header{background:color-mix(in srgb,var(--bg-tertiary) 80%,#000000 5%);border-bottom:1px solid var(--border-strong);padding:var(--sp-2) var(--sp-4);display:flex;justify-content:space-between;align-items:center}.code-header span{font-family:var(--font-code);font-size:var(--text-xs);color:var(--text-secondary);letter-spacing:.12em;text-transform:uppercase;font-weight:500}.copy-btn{background:var(--bg-tertiary);border:1px solid var(--border-strong);color:var(--text-secondary);font-family:var(--font-code);font-size:var(--text-xs);padding:var(--sp-1) var(--sp-3);border-radius:var(--radius-sm);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:all .2s}.copy-btn:hover{color:var(--accent);border-color:var(--accent);background:var(--bg-secondary);box-shadow:var(--glow-accent)}pre{padding:var(--sp-5);overflow-x:auto;font-family:var(--font-code);font-size:var(--text-base);line-height:1.72;tab-size:4;background:var(--bg-tertiary);color:var(--text-primary);border-top:1px solid var(--border-light)}code{font-family:var(--font-code);font-size:.9em;background:var(--accent-dim);padding:.1em .4em;border-radius:var(--radius-sm);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent)}pre code{background:0 0;padding:0;color:inherit;font-size:1em;border:none}[data-theme=light] pre .kw{color:#d73a49}[data-theme=light] pre .st{color:#032f62}[data-theme=light] pre .cm{color:#6a737d;font-style:italic}[data-theme=light] pre .fn{color:#6f42c1}[data-theme=light] pre .nm{color:#005cc5}[data-theme=dark] pre .kw{color:#ff7b72}[data-theme=dark] pre .st{color:#a5d6ff}[data-theme=dark] pre .cm{color:#8b949e;font-style:italic}[data-theme=dark] pre .fn{color:#d2a8ff}[data-theme=dark] pre .nm{color:#79c0ff}.data-table{width:100%;border-collapse:collapse;margin:var(--sp-6) 0;border:1px solid var(--border-light);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm)}.data-table th{background:linear-gradient(135deg,var(--accent),var(--accent-light));color:var(--text-inverse);padding:var(--sp-3) var(--sp-4);text-align:left;font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--border-light)}[data-theme=dark] .data-table th{color:var(--bg-primary)}.data-table td{padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--border-light);color:var(--text-secondary);font-size:var(--text-sm);vertical-align:top;background:var(--bg-secondary)}.data-table tr:last-child td{border-bottom:none}.data-table td:first-child{font-family:var(--font-code);font-size:var(--text-sm);color:var(--accent);white-space:nowrap}.data-table tr:hover td{background:var(--bg-tertiary)}.card{background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:var(--sp-5);border-top:3px solid var(--accent);position:relative;overflow:hidden;box-shadow:var(--shadow-sm);transition:transform .2s,box-shadow .2s}.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md),var(--glow-accent);border-color:var(--accent)}.card::after{content:'';position:absolute;bottom:0;right:0;width:80px;height:80px;background:radial-gradient(circle at bottom right,var(--accent-dim),transparent);pointer-events:none}.card h4{margin-top:0;font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:var(--sp-3);padding-bottom:var(--sp-2);border-bottom:1px solid var(--border-light)}.card ul{list-style:none}.card ul li{padding:var(--sp-2) 0;font-size:var(--text-sm);color:var(--text-secondary);display:flex;gap:var(--sp-2);align-items:flex-start}.card ul li::before{content:'◆';color:var(--accent);font-size:var(--text-xs);flex-shrink:0}.card p{font-size:var(--text-sm);color:var(--text-tertiary);font-style:italic;margin-top:var(--sp-3);margin-bottom:0}.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--sp-6);margin:var(--sp-8) 0}.feature-card{background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:var(--sp-5);box-shadow:var(--shadow-sm);transition:all .2s}.feature-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow-md),var(--glow-accent)}.feature-card h4{font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:var(--sp-3)}.feature-card p{font-size:var(--text-sm);color:var(--text-secondary);line-height:1.6}.checklist-group{background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:var(--sp-5);margin:var(--sp-4) 0;border-left:3px solid var(--accent);position:relative;box-shadow:var(--shadow-sm)}.checklist-group h4{font-family:var(--font-code);font-size:var(--text-xs);color:var(--accent);text-transform:uppercase;letter-spacing:.14em;margin-bottom:var(--sp-4);margin-top:0;font-weight:500}.checklist{list-style:none}.checklist li{padding:var(--sp-2) 0;border-bottom:1px solid var(--border-light);font-size:var(--text-sm);color:var(--text-secondary);display:flex;gap:var(--sp-3);align-items:flex-start}.checklist li:last-child{border-bottom:none}.checklist li::before{content:'✓';font-size:var(--text-base);color:var(--accent);flex-shrink:0;font-weight:700}.steps{counter-reset:step}.step{position:relative;padding-left:4rem;margin-bottom:var(--sp-8);counter-increment:step}.step::before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:.1rem;width:2.8rem;height:2.8rem;background:transparent;border:2px solid var(--accent);color:var(--accent);font-family:var(--font-code);font-size:var(--text-sm);font-weight:500;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;box-shadow:var(--glow-accent)}.step h3{margin-top:0;color:var(--text-primary)}.step p{color:var(--text-secondary)}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-6);margin:var(--sp-6) 0}@media (max-width:900px){.two-col{grid-template-columns:1fr}.ds-shell{grid-template-columns:1fr}.ds-sidebar{display:none}.ds-main{padding:var(--sp-8) var(--sp-6)}.feature-grid{grid-template-columns:1fr}}footer{background:var(--bg-secondary);border-top:1px solid var(--border-light);color:var(--text-tertiary);padding:var(--sp-8);text-align:center;font-family:var(--font-code);font-size:var(--text-xs);letter-spacing:.06em}footer a{color:var(--text-secondary);text-decoration:none;transition:color .2s}footer a:hover{color:var(--accent)}.section-content{color:var(--text-secondary);line-height:1.8;margin:var(--sp-4) 0}.section-content p{margin:var(--sp-4) 0}.section-content ol,.section-content ul{margin:var(--sp-4) 0 var(--sp-4) var(--sp-6)}.section-content li{margin:var(--sp-2) 0;color:var(--text-secondary)}.section-content strong{color:var(--text-primary);font-weight:500}::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:#f1f1f100;border-radius:10px}::-webkit-scrollbar-thumb{background:#888;border-radius:10px}::-webkit-scrollbar-thumb:hover{background:#555}</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Django 6.0 Project Template — modern starter with APIs, async tasks & Docker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       ROOT & THEME TOKENS
+       ============================================================ */
+    :root {
+      --radius: 0.65rem;
+
+      /* Light theme */
+      --background: oklch(1.000 0.000 89.9);
+      --foreground: oklch(0.141 0.005 285.823);
+      --card: oklch(1 0 0);
+      --card-foreground: oklch(0.141 0.005 285.823);
+      --primary: oklch(0.488 0.243 264.376);
+      --primary-foreground: oklch(0.97 0.014 254.604);
+      --secondary: oklch(0.967 0.001 286.375);
+      --secondary-foreground: oklch(0.21 0.006 285.885);
+      --muted: oklch(0.967 0.001 286.375);
+      --muted-foreground: oklch(0.552 0.016 285.938);
+      --accent: oklch(0.967 0.001 286.375);
+      --accent-foreground: oklch(0.21 0.006 285.885);
+      --destructive: oklch(0.577 0.245 27.325);
+      --border: oklch(0.92 0.004 286.32);
+      --input: oklch(0.92 0.004 286.32);
+      --ring: oklch(0.708 0 0);
+      --chart-1: oklch(0.809 0.105 251.813);
+      --chart-2: oklch(0.623 0.214 259.815);
+      --chart-3: oklch(0.546 0.245 262.881);
+      --chart-4: oklch(0.488 0.243 264.376);
+      --chart-5: oklch(0.424 0.199 265.638);
+      --sidebar: oklch(0.985 0 0);
+      --sidebar-foreground: oklch(0.141 0.005 285.823);
+      --sidebar-primary: oklch(0.546 0.245 262.881);
+      --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+      --sidebar-accent: oklch(0.967 0.001 286.375);
+      --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+      --sidebar-border: oklch(0.92 0.004 286.32);
+      --sidebar-ring: oklch(0.708 0 0);
+    }
+
+    /* ============================================================
+       DARK THEME
+       ============================================================ */
+    [data-theme="dark"] {
+      --background: oklch(0.141 0.005 285.823);
+      --foreground: oklch(0.985 0 0);
+      --card: oklch(0.21 0.006 285.885);
+      --card-foreground: oklch(0.985 0 0);
+      --primary: oklch(0.488 0.243 264.376);
+      --primary-foreground: oklch(0.97 0.014 254.604);
+      --secondary: oklch(0.274 0.006 286.033);
+      --secondary-foreground: oklch(0.985 0 0);
+      --muted: oklch(0.274 0.006 286.033);
+      --muted-foreground: oklch(0.705 0.015 286.067);
+      --accent: oklch(0.274 0.006 286.033);
+      --accent-foreground: oklch(0.985 0 0);
+      --destructive: oklch(0.704 0.191 22.216);
+      --border: oklch(1 0 0 / 10%);
+      --input: oklch(1 0 0 / 15%);
+      --ring: oklch(0.556 0 0);
+      --chart-1: oklch(0.809 0.105 251.813);
+      --chart-2: oklch(0.623 0.214 259.815);
+      --chart-3: oklch(0.546 0.245 262.881);
+      --chart-4: oklch(0.488 0.243 264.376);
+      --chart-5: oklch(0.424 0.199 265.638);
+      --sidebar: oklch(0.21 0.006 285.885);
+      --sidebar-foreground: oklch(0.985 0 0);
+      --sidebar-primary: oklch(0.623 0.214 259.815);
+      --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+      --sidebar-accent: oklch(0.274 0.006 286.033);
+      --sidebar-accent-foreground: oklch(0.985 0 0);
+      --sidebar-border: oklch(1 0 0 / 10%);
+      --sidebar-ring: oklch(0.439 0 0);
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: var(--background);
+      color: var(--foreground);
+      font-size: 1rem;
+      line-height: 1.6;
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* ============================================================
+       LAYOUT SHELL
+       ============================================================ */
+    .shell {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+      gap: 0;
+    }
+
+    /* ============================================================
+       SIDEBAR
+       ============================================================ */
+    .sidebar {
+      background-color: var(--sidebar);
+      border-right: 1px solid var(--sidebar-border);
+      padding: 2rem 1.5rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--sidebar-border) transparent;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background-color: var(--sidebar-border);
+      border-radius: 3px;
+    }
+
+    .sidebar-header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--sidebar-border);
+      padding-bottom: 1rem;
+    }
+
+    .sidebar-header h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--sidebar-primary);
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-header .version {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+      display: block;
+      margin-top: 0.25rem;
+    }
+
+    .sidebar-header p {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+      margin-top: 0.75rem;
+    }
+
+    /* Theme toggle */
+    .theme-toggle {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+      background-color: var(--muted);
+      border: 1px solid var(--sidebar-border);
+      border-radius: calc(var(--radius) + 2px);
+      padding: 0.25rem;
+    }
+
+    .theme-btn {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted-foreground);
+      border-radius: 3px;
+      transition: all 0.2s ease;
+    }
+
+    .theme-btn:hover {
+      color: var(--sidebar-primary);
+    }
+
+    .theme-btn.active {
+      background-color: var(--sidebar);
+      color: var(--sidebar-primary);
+      border-color: var(--sidebar-primary);
+      box-shadow: 0 0 8px rgba(76, 93, 227, 0.15);
+    }
+
+    /* Navigation groups */
+    .nav-group {
+      margin-bottom: 2rem;
+    }
+
+    .nav-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed var(--sidebar-border);
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .nav-group nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .nav-group nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      color: var(--sidebar-foreground);
+      text-decoration: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 400;
+      border-left: 2px solid transparent;
+      border-radius: 0 4px 4px 0;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .nav-group nav a::before {
+      content: '//';
+      color: var(--sidebar-primary);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      font-size: 0.65rem;
+      font-weight: 700;
+    }
+
+    .nav-group nav a:hover {
+      color: var(--sidebar-primary);
+      border-left-color: var(--sidebar-primary);
+      background-color: rgba(76, 93, 227, 0.1);
+    }
+
+    .nav-group nav a:hover::before {
+      opacity: 1;
+    }
+
+    .nav-group nav a.active {
+      color: var(--sidebar-primary);
+      border-left-color: var(--sidebar-primary);
+      background-color: rgba(76, 93, 227, 0.15);
+      box-shadow: 0 0 8px rgba(76, 93, 227, 0.2);
+    }
+
+    .nav-group nav a.active::before {
+      opacity: 1;
+      content: '◆';
+    }
+
+    /* ============================================================
+       MAIN CONTENT
+       ============================================================ */
+    .main {
+      padding: 4rem 3rem;
+      background-color: var(--background);
+      overflow-y: auto;
+    }
+
+    /* ============================================================
+       PAGE HEADER
+       ============================================================ */
+    .page-header {
+      margin-bottom: 4rem;
+      padding-bottom: 3rem;
+      border-bottom: 2px solid var(--border);
+      position: relative;
+    }
+
+    .page-header::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 180px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--chart-4), transparent);
+      box-shadow: 0 0 12px rgba(123, 109, 252, 0.3);
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--chart-4);
+      font-weight: 600;
+    }
+
+    .eyebrow::before,
+    .eyebrow::after {
+      content: '';
+      height: 1px;
+      background: var(--chart-4);
+      opacity: 0.3;
+      flex: 1;
+    }
+
+    .eyebrow::after {
+      flex: 0.5;
+    }
+
+    .page-header h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      color: var(--foreground);
+      letter-spacing: -0.02em;
+    }
+
+    .page-header h1 strong {
+      font-style: italic;
+      font-weight: 700;
+      color: var(--chart-4);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.5em;
+      letter-spacing: 0.08em;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header h1 .sub {
+      display: block;
+      font-size: 0.35em;
+      letter-spacing: 0.2em;
+      font-style: normal;
+      font-weight: 500;
+      color: var(--muted-foreground);
+      text-transform: uppercase;
+      font-family: 'DM Sans', sans-serif;
+      margin-top: 1rem;
+    }
+
+    .page-desc {
+      font-size: 1.1rem;
+      color: var(--muted-foreground);
+      max-width: 680px;
+      line-height: 1.82;
+      margin-bottom: 1.5rem;
+      font-weight: 300;
+    }
+
+    .meta {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      background-color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.75rem;
+      color: var(--muted-foreground);
+      border-radius: var(--radius);
+      transition: all 0.2s ease;
+      letter-spacing: 0.05em;
+    }
+
+    .badge.accent {
+      background-color: rgba(123, 109, 252, 0.1);
+      border-color: var(--chart-4);
+      color: var(--chart-4);
+      box-shadow: 0 0 8px rgba(123, 109, 252, 0.15);
+    }
+
+    .badge:hover {
+      border-color: var(--chart-4);
+      color: var(--chart-4);
+    }
+
+    /* ============================================================
+       SECTIONS
+       ============================================================ */
+    .section {
+      margin-bottom: 5rem;
+      scroll-margin-top: 100px;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(1rem);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-num {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      background-color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.75rem;
+      color: var(--chart-4);
+      letter-spacing: 0.15em;
+      border-radius: 3px;
+    }
+
+    .section-tag {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+      font-weight: 600;
+    }
+
+    .section h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(1.9rem, 4vw, 3rem);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--foreground);
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section h2 em {
+      font-style: italic;
+      color: var(--chart-4);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.5em;
+      margin-left: 0.5rem;
+    }
+
+    .section h3 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.35rem;
+      color: var(--foreground);
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .section-rule {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1rem 0 2rem;
+    }
+
+    .section-rule .line {
+      height: 2px;
+      background: var(--border);
+      flex: 1;
+    }
+
+    .section-rule .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--chart-4);
+      border-radius: 50%;
+      box-shadow: 0 0 12px rgba(123, 109, 252, 0.3);
+    }
+
+    .section-desc {
+      color: var(--muted-foreground);
+      margin-bottom: 2rem;
+      max-width: 720px;
+      line-height: 1.8;
+    }
+
+    .section-sub {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--chart-4);
+      margin: 2rem 0 1rem;
+      position: relative;
+      padding-left: 1rem;
+    }
+
+    .section-sub::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.1em;
+      width: 4px;
+      height: 1.4em;
+      background: var(--chart-4);
+      border-radius: 2px;
+      box-shadow: 0 0 8px rgba(123, 109, 252, 0.3);
+    }
+
+    /* ============================================================
+       CALLOUTS
+       ============================================================ */
+    .callout {
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+      border-left: 3px solid;
+      font-size: 0.95rem;
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-left-width: 3px;
+    }
+
+    .callout.info {
+      border-left-color: var(--chart-1);
+      background-color: rgba(129, 153, 232, 0.08);
+    }
+
+    .callout.warning {
+      border-left-color: var(--chart-2);
+      background-color: rgba(159, 115, 183, 0.08);
+    }
+
+    .callout.tip {
+      border-left-color: var(--chart-3);
+      background-color: rgba(139, 113, 249, 0.08);
+    }
+
+    .callout.danger {
+      border-left-color: var(--destructive);
+      background-color: rgba(247, 114, 155, 0.08);
+    }
+
+    .callout.note {
+      border-left-color: var(--chart-4);
+      background-color: rgba(123, 109, 252, 0.08);
+    }
+
+    .callout strong {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .callout.info strong {
+      color: var(--chart-1);
+    }
+
+    .callout.warning strong {
+      color: var(--chart-2);
+    }
+
+    .callout.tip strong {
+      color: var(--chart-3);
+    }
+
+    .callout.danger strong {
+      color: var(--destructive);
+    }
+
+    .callout.note strong {
+      color: var(--chart-4);
+    }
+
+    .callout p {
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    /* ============================================================
+       CODE BLOCKS
+       ============================================================ */
+    .code-block {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1.5rem 0;
+      font-size: 0.85rem;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="dark"] .code-block {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .code-block::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--chart-4), var(--chart-3));
+      opacity: 0.9;
+      z-index: 1;
+    }
+
+    .code-header {
+      background-color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .code-header span {
+      font-family: 'DM Sans', monospace;
+      font-size: 0.65rem;
+      color: var(--muted-foreground);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .copy-btn {
+      background-color: var(--background);
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 3px;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+      font-weight: 600;
+    }
+
+    .copy-btn:hover {
+      color: var(--chart-4);
+      border-color: var(--chart-4);
+      background-color: var(--card);
+      box-shadow: 0 0 8px rgba(123, 109, 252, 0.15);
+    }
+
+    pre {
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      tab-size: 4;
+      background-color: var(--card);
+      color: var(--foreground);
+      border-top: 1px solid var(--border);
+      margin: 0;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85em;
+      background-color: var(--muted);
+      padding: 0.15em 0.4em;
+      border-radius: 3px;
+      color: var(--chart-4);
+      border: 1px solid rgba(123, 109, 252, 0.2);
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-size: 1em;
+      border: none;
+    }
+
+    /* ============================================================
+       TABLES
+       ============================================================ */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="dark"] .data-table {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .data-table th {
+      background: linear-gradient(135deg, var(--chart-4), var(--chart-3));
+      color: white;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted-foreground);
+      font-size: 0.9rem;
+      vertical-align: top;
+      background-color: var(--card);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table td:first-child {
+      font-family: 'DM Sans', monospace;
+      font-size: 0.9rem;
+      color: var(--chart-4);
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .data-table tr:hover td {
+      background-color: var(--muted);
+    }
+
+    /* ============================================================
+       CARDS & GRIDS
+       ============================================================ */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .feature-card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+      border-top: 3px solid var(--chart-4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    [data-theme="dark"] .feature-card {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card:hover {
+      border-color: var(--chart-4);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(123, 109, 252, 0.15);
+    }
+
+    .feature-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle at bottom right, rgba(123, 109, 252, 0.1), transparent);
+      pointer-events: none;
+    }
+
+    .feature-card h4 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--chart-4);
+      margin-bottom: 0.75rem;
+      margin-top: 0;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--muted-foreground);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* ============================================================
+       TWO COLUMN LAYOUT
+       ============================================================ */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      border-top: 3px solid var(--chart-4);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+    }
+
+    [data-theme="dark"] .card {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(123, 109, 252, 0.15);
+      border-color: var(--chart-4);
+    }
+
+    .card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle at bottom right, rgba(123, 109, 252, 0.1), transparent);
+      pointer-events: none;
+    }
+
+    .card h4 {
+      margin-top: 0;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--chart-4);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card pre {
+      margin: 0;
+      border: none;
+      padding: 0.75rem;
+      background: var(--muted);
+      border-radius: 3px;
+      font-size: 0.75rem;
+    }
+
+    .card ul {
+      list-style: none;
+      margin-top: 0.75rem;
+    }
+
+    .card ul li {
+      padding: 0.5rem 0;
+      font-size: 0.85rem;
+      color: var(--muted-foreground);
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    .card ul li::before {
+      content: '◆';
+      color: var(--chart-4);
+      font-size: 0.7rem;
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+    }
+
+    /* ============================================================
+       CHECKLIST
+       ============================================================ */
+    .checklist-group {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin: 1rem 0;
+      border-left: 3px solid var(--chart-4);
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="dark"] .checklist-group {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .checklist-group h4 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      color: var(--chart-4);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 1rem;
+      margin-top: 0;
+      font-weight: 700;
+    }
+
+    .checklist {
+      list-style: none;
+    }
+
+    .checklist li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--muted-foreground);
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+
+    .checklist li:last-child {
+      border-bottom: none;
+    }
+
+    .checklist li::before {
+      content: '✓';
+      font-size: 1rem;
+      color: var(--chart-4);
+      flex-shrink: 0;
+      font-weight: 700;
+    }
+
+    /* ============================================================
+       CONTENT SECTIONS
+       ============================================================ */
+    .section-content {
+      color: var(--muted-foreground);
+      line-height: 1.8;
+      margin: 1rem 0;
+    }
+
+    .section-content p {
+      margin: 1rem 0;
+      color: var(--muted-foreground);
+    }
+
+    .section-content strong {
+      color: var(--foreground);
+      font-weight: 600;
+    }
+
+    .section-content ol,
+    .section-content ul {
+      margin: 1rem 0 1rem 1.5rem;
+    }
+
+    .section-content li {
+      margin: 0.5rem 0;
+      color: var(--muted-foreground);
+      line-height: 1.7;
+    }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    footer {
+      background-color: var(--card);
+      border-top: 1px solid var(--border);
+      color: var(--muted-foreground);
+      padding: 2rem;
+      text-align: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      margin-top: 5rem;
+    }
+
+    footer a {
+      color: var(--muted-foreground);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    footer a:hover {
+      color: var(--chart-4);
+    }
+
+    /* ============================================================
+       SCROLLBAR STYLING
+       ============================================================ */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    *::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background-color: var(--border);
+      border-radius: 3px;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+      background-color: var(--muted-foreground);
+    }
+
+    *::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 900px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .main {
+        padding: 2rem 1.5rem;
+      }
+
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .page-header h1 {
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+      }
+    }
+  </style>
 </head>
 <body data-theme="light">
 
-<div class="ds-shell">
-  <aside class="ds-sidebar">
-    <div class="ds-sidebar-header">
-      <h1>Django<span style="font-style: normal; font-family: var(--font-code); font-size: 0.5em; display: block; margin-top: var(--sp-1);">6.0</span></h1>
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>
+        Django
+        <span class="version">6.0</span>
+      </h1>
       <p>Project Template 2026</p>
       <div class="theme-toggle">
         <button class="theme-btn active" onclick="setTheme('light')">Light</button>
@@ -23,8 +1115,8 @@
       </div>
     </div>
 
-    <div class="ds-nav-group">
-      <div class="ds-nav-label">Getting Started</div>
+    <div class="nav-group">
+      <span class="nav-label">Getting Started</span>
       <nav>
         <a href="#overview" class="active">Overview</a>
         <a href="#quickstart">Quick Start</a>
@@ -32,97 +1124,172 @@
         <a href="#project-structure">Structure</a>
       </nav>
     </div>
-    <div class="ds-nav-group">
-      <div class="ds-nav-label">Configuration</div>
+
+    <div class="nav-group">
+      <span class="nav-label">Configuration</span>
       <nav>
         <a href="#environment">Environment</a>
         <a href="#settings">Settings</a>
         <a href="#security-checklist">Security</a>
       </nav>
     </div>
-    <div class="ds-nav-group">
-      <div class="ds-nav-label">Development</div>
+
+    <div class="nav-group">
+      <span class="nav-label">Development</span>
       <nav>
         <a href="#development">Commands</a>
         <a href="#makefile">Makefile</a>
         <a href="#testing">Testing</a>
       </nav>
     </div>
-    <div class="ds-nav-group">
-      <div class="ds-nav-label">Deployment</div>
+
+    <div class="nav-group">
+      <span class="nav-label">Deployment</span>
       <nav>
         <a href="#deployment">Production</a>
         <a href="#docker-deploy">Docker Deploy</a>
       </nav>
     </div>
-    <div class="ds-nav-group">
-      <div class="ds-nav-label">Reference</div>
+
+    <div class="nav-group">
+      <span class="nav-label">Reference</span>
       <nav>
         <a href="#resources">Resources</a>
       </nav>
     </div>
   </aside>
 
-  <main class="ds-main">
-    <div class="ds-page-header">
-      <div class="ds-eyebrow">Updated February 27, 2026</div>
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="eyebrow">Updated February 27, 2026</div>
       <h1>
         <strong>Django 6.0</strong>
         Project Template
         <span class="sub">REST APIs · Async tasks · Docker</span>
       </h1>
-      <p class="ds-page-desc">A modern Django starter with REST APIs, JWT, WebSockets, Celery, and full Docker containerization. Everything you need for a production‑ready application in February 2026.</p>
-      <div class="ds-meta">
-        <span class="ds-badge">v6.0.2</span>
-        <span class="ds-badge accent">Python 3.13</span>
-        <span class="ds-badge">PostgreSQL 17</span>
-        <span class="ds-badge">DRF 3.16</span>
-        <span class="ds-badge">Celery 5.6</span>
+      <p class="page-desc">A modern Django starter with REST APIs, JWT, WebSockets, Celery, and full Docker containerization. Everything you need for a production‑ready application in February 2026.</p>
+      <div class="meta">
+        <span class="badge">v6.0.2</span>
+        <span class="badge accent">Python 3.13</span>
+        <span class="badge">PostgreSQL 17</span>
+        <span class="badge">DRF 3.16</span>
+        <span class="badge">Celery 5.6</span>
       </div>
     </div>
 
-    <!-- OVERVIEW -->
-    <section id="overview" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">01</span><span class="ds-section-tag">Overview</span></div>
-      <h2>What’s <em>inside</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+    <!-- SECTION 01: OVERVIEW -->
+    <section id="overview" class="section">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <span class="section-tag">Overview</span>
+      </div>
+      <h2>What's <em>inside</em></h2>
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
       <div class="section-content">
         <p><strong>Production‑ready foundation</strong> – REST API (DRF 3.16) with JWT, WebSockets via Channels 4.1, background tasks with Celery 5.6, modern admin (Unfold 0.42), and a complete Docker setup.</p>
         <p><strong>Modular and scalable</strong> – environment‑based settings (local/production), reusable <code>common</code> app, and domain‑driven app structure.</p>
         <p><strong>Dev experience</strong> – pytest, black, isort, flake8, mypy, pre‑commit, Makefile shortcuts.</p>
       </div>
       <div class="feature-grid">
-        <div class="feature-card"><h4>REST API</h4><p>DRF + drf‑spectacular, OpenAPI 3, Swagger UI, ReDoc, JWT auth (SimpleJWT).</p></div>
-        <div class="feature-card"><h4>Async & Real‑time</h4><p>Channels 4.1 WebSocket, Redis channel layer, Celery 5.6 worker/beat, Flower monitoring.</p></div>
-        <div class="feature-card"><h4>Docker Compose</h4><p>7 services: web, db, redis, celery_worker, celery_beat, flower, nginx – one command to start.</p></div>
-        <div class="feature-card"><h4>Security hardened</h4><p>Env‑based secrets, HTTPS redirect, secure cookies, CORS, and <code>check --deploy</code> ready.</p></div>
+        <div class="feature-card">
+          <h4>REST API</h4>
+          <p>DRF + drf‑spectacular, OpenAPI 3, Swagger UI, ReDoc, JWT auth (SimpleJWT).</p>
+        </div>
+        <div class="feature-card">
+          <h4>Async & Real‑time</h4>
+          <p>Channels 4.1 WebSocket, Redis channel layer, Celery 5.6 worker/beat, Flower monitoring.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Docker Compose</h4>
+          <p>7 services: web, db, redis, celery_worker, celery_beat, flower, nginx – one command to start.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Security hardened</h4>
+          <p>Env‑based secrets, HTTPS redirect, secure cookies, CORS, and <code>check --deploy</code> ready.</p>
+        </div>
       </div>
     </section>
 
-    <!-- TECH STACK -->
-    <section id="techstack" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">02</span><span class="ds-section-tag">Stack</span></div>
+    <!-- SECTION 02: TECH STACK -->
+    <section id="techstack" class="section">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <span class="section-tag">Stack</span>
+      </div>
       <h2>Tech <em>Stack</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
       <table class="data-table">
-        <thead><tr><th>Component</th><th>Version</th><th>Component</th><th>Version</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Version</th>
+            <th>Component</th>
+            <th>Version</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr><td>Python</td><td>3.13</td><td>Django</td><td>6.0.2</td></tr>
-          <tr><td>DRF</td><td>3.16.1</td><td>Channels</td><td>4.1</td></tr>
-          <tr><td>Celery</td><td>5.6.2</td><td>PostgreSQL</td><td>17</td></tr>
-          <tr><td>Redis</td><td>7</td><td>Docker</td><td>24.0+</td></tr>
-          <tr><td>Unfold (admin)</td><td>0.42</td><td>Gunicorn</td><td>23.0</td></tr>
+          <tr>
+            <td>Python</td>
+            <td>3.13</td>
+            <td>Django</td>
+            <td>6.0.2</td>
+          </tr>
+          <tr>
+            <td>DRF</td>
+            <td>3.16.1</td>
+            <td>Channels</td>
+            <td>4.1</td>
+          </tr>
+          <tr>
+            <td>Celery</td>
+            <td>5.6.2</td>
+            <td>PostgreSQL</td>
+            <td>17</td>
+          </tr>
+          <tr>
+            <td>Redis</td>
+            <td>7</td>
+            <td>Docker</td>
+            <td>24.0+</td>
+          </tr>
+          <tr>
+            <td>Unfold (admin)</td>
+            <td>0.42</td>
+            <td>Gunicorn</td>
+            <td>23.0</td>
+          </tr>
         </tbody>
       </table>
     </section>
 
-    <!-- QUICK START (merged from README) -->
-    <section id="quickstart" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">03</span><span class="ds-section-tag">Quick Start</span></div>
+    <!-- SECTION 03: QUICK START -->
+    <section id="quickstart" class="section">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <span class="section-tag">Quick Start</span>
+      </div>
       <h2>Docker <em>setup</em> (recommended)</h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="code-block"><div class="code-header"><span>bash – 5 minutes to running</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code><span class="cm"># Clone (or create your project)</span>
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
+      <div class="code-block">
+        <div class="code-header">
+          <span>bash – 5 minutes to running</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm"># Clone (or create your project)</span>
 $ git clone &lt;repository-url&gt;
 $ cd project
 
@@ -136,11 +1303,16 @@ $ docker-compose up -d
 <span class="cm">#   http://localhost:8000</span>
 <span class="cm">#   http://localhost:8000/admin   (admin / admin123 after createsuperuser)</span>
 <span class="cm">#   http://localhost:8000/api/docs/</span>
-<span class="cm">#   http://localhost:5555          (Flower)</span></code></pre></div>
+<span class="cm">#   http://localhost:5555          (Flower)</span></code></pre>
+      </div>
 
-      <div class="ds-sub">Local setup (without Docker)</div>
-      <div class="code-block"><div class="code-header"><span>bash – virtualenv + local services</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code><span class="cm"># Create & activate virtual environment</span>
+      <div class="section-sub">Local setup (without Docker)</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span>bash – virtualenv + local services</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm"># Create & activate virtual environment</span>
 $ python -m venv venv
 $ source venv/bin/activate   # or venv\Scripts\activate
 
@@ -157,17 +1329,32 @@ $ python manage.py migrate
 $ python manage.py runserver
 
 <span class="cm"># In another terminal: start Celery worker</span>
-$ celery -A project worker --loglevel=info</code></pre></div>
-      <div class="callout tip"><strong>💡 Tip</strong> Docker setup is recommended – it starts PostgreSQL, Redis, Nginx and all services with one command.</div>
+$ celery -A project worker --loglevel=info</code></pre>
+      </div>
+      <div class="callout tip">
+        <strong>💡 Tip</strong>
+        Docker setup is recommended – it starts PostgreSQL, Redis, Nginx and all services with one command.
+      </div>
     </section>
 
-    <!-- PROJECT STRUCTURE (updated from README) -->
-    <section id="project-structure" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">04</span><span class="ds-section-tag">Layout</span></div>
+    <!-- SECTION 04: PROJECT STRUCTURE -->
+    <section id="project-structure" class="section">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <span class="section-tag">Layout</span>
+      </div>
       <h2>Project <em>structure</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="code-block"><div class="code-header"><span>tree – modular settings & domain apps</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code>project/
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
+      <div class="code-block">
+        <div class="code-header">
+          <span>tree – modular settings & domain apps</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>project/
 ├── project/                     # Main Django project
 │   ├── settings/                # Modular settings
 │   │   ├── __init__.py          # environment loader
@@ -199,26 +1386,56 @@ $ celery -A project worker --loglevel=info</code></pre></div>
 ├── Dockerfile
 ├── nginx.conf
 ├── docker-compose.yml
-└── README.md                       # this file</code></pre></div>
+└── README.md                       # this file</code></pre>
+      </div>
     </section>
 
-    <!-- ENVIRONMENT CONFIGURATION (updated) -->
-    <section id="environment" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">05</span><span class="ds-section-tag">Configuration</span></div>
+    <!-- SECTION 05: ENVIRONMENT & SETTINGS -->
+    <section id="environment" class="section">
+      <div class="section-header">
+        <span class="section-num">05</span>
+        <span class="section-tag">Configuration</span>
+      </div>
       <h2>Environment <em>& settings</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="ds-sub">Environment files</div>
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
+      <div class="section-sub">Environment files</div>
       <table class="data-table">
-        <thead><tr><th>File</th><th>Purpose</th><th>Git</th></tr></thead>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Purpose</th>
+            <th>Git</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr><td>.env.example</td><td>template with safe defaults</td><td>✅ committed</td></tr>
-          <tr><td>.env</td><td>base configuration</td><td>❌ ignored</td></tr>
-          <tr><td>.env.local</td><td>local overrides</td><td>❌ ignored</td></tr>
-          <tr><td>.env.production</td><td>production secrets</td><td>❌ ignored</td></tr>
+          <tr>
+            <td>.env.example</td>
+            <td>template with safe defaults</td>
+            <td>✅ committed</td>
+          </tr>
+          <tr>
+            <td>.env</td>
+            <td>base configuration</td>
+            <td>❌ ignored</td>
+          </tr>
+          <tr>
+            <td>.env.local</td>
+            <td>local overrides</td>
+            <td>❌ ignored</td>
+          </tr>
+          <tr>
+            <td>.env.production</td>
+            <td>production secrets</td>
+            <td>❌ ignored</td>
+          </tr>
         </tbody>
       </table>
-      <div class="ds-sub">Settings loading order</div>
-      <ol class="section-content" style="margin-left:1.5rem">
+      <div class="section-sub">Settings loading order</div>
+      <ol class="section-content" style="margin-left: 1.5rem;">
         <li><code>DJANGO_ENVIRONMENT</code> determines environment (default: 'local')</li>
         <li><code>.env</code> is loaded (base)</li>
         <li>environment‑specific file (<code>.env.local</code> or <code>.env.production</code>) overrides</li>
@@ -226,39 +1443,69 @@ $ celery -A project worker --loglevel=info</code></pre></div>
       </ol>
     </section>
 
-    <!-- DEVELOPMENT COMMANDS -->
-    <section id="development" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">06</span><span class="ds-section-tag">Dev</span></div>
+    <!-- SECTION 06: DEVELOPMENT COMMANDS -->
+    <section id="development" class="section">
+      <div class="section-header">
+        <span class="section-num">06</span>
+        <span class="section-tag">Dev</span>
+      </div>
       <h2>Common <em>commands</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
       <div class="two-col">
-        <div class="card"><h4>Database</h4><pre><code>python manage.py makemigrations
+        <div class="card">
+          <h4>Database</h4>
+          <pre><code>python manage.py makemigrations
 python manage.py migrate
-python manage.py createsuperuser</code></pre></div>
-        <div class="card"><h4>Server & Celery</h4><pre><code>python manage.py runserver
+python manage.py createsuperuser</code></pre>
+        </div>
+        <div class="card">
+          <h4>Server & Celery</h4>
+          <pre><code>python manage.py runserver
 celery -A project worker --loglevel=info
 celery -A project beat --loglevel=info
-celery -A project flower --port=5555</code></pre></div>
-        <div class="card"><h4>Testing & QA</h4><pre><code>pytest
+celery -A project flower --port=5555</code></pre>
+        </div>
+        <div class="card">
+          <h4>Testing & QA</h4>
+          <pre><code>pytest
 pytest --cov=. --cov-report=html
 black .
 isort .
 flake8
-mypy .</code></pre></div>
-        <div class="card"><h4>Docker</h4><pre><code>docker-compose up -d
+mypy .</code></pre>
+        </div>
+        <div class="card">
+          <h4>Docker</h4>
+          <pre><code>docker-compose up -d
 docker-compose logs -f web
 docker-compose exec web bash
-docker-compose down</code></pre></div>
+docker-compose down</code></pre>
+        </div>
       </div>
     </section>
 
-    <!-- MAKEFILE (from README) -->
-    <section id="makefile" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">07</span><span class="ds-section-tag">Makefile</span></div>
+    <!-- SECTION 07: MAKEFILE -->
+    <section id="makefile" class="section">
+      <div class="section-header">
+        <span class="section-num">07</span>
+        <span class="section-tag">Makefile</span>
+      </div>
       <h2>Make <em>shortcuts</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="code-block"><div class="code-header"><span>available commands</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code>make dev          # setup development environment
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
+      <div class="code-block">
+        <div class="code-header">
+          <span>available commands</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>make dev          # setup development environment
 make run          # start dev server
 make migrate      # run migrations
 make test         # run tests
@@ -266,30 +1513,50 @@ make lint         # run linters
 make format       # format code
 make type-check   # mypy
 make docker-up    # start docker services
-make docker-down  # stop docker services</code></pre></div>
+make docker-down  # stop docker services</code></pre>
+      </div>
     </section>
 
-    <!-- TESTING (updated) -->
-    <section id="testing" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">08</span><span class="ds-section-tag">Testing</span></div>
+    <!-- SECTION 08: TESTING -->
+    <section id="testing" class="section">
+      <div class="section-header">
+        <span class="section-num">08</span>
+        <span class="section-tag">Testing</span>
+      </div>
       <h2>pytest <em>& coverage</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="code-block"><div class="code-header"><span>test commands</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code><span class="cm"># run all tests</span>
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
+      <div class="code-block">
+        <div class="code-header">
+          <span>test commands</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm"># run all tests</span>
 pytest
 
 <span class="cm"># with coverage & html report</span>
 pytest --cov=. --cov-report=html
 
 <span class="cm"># specific file</span>
-pytest tests/test_api.py -v</code></pre></div>
+pytest tests/test_api.py -v</code></pre>
+      </div>
     </section>
 
-    <!-- SECURITY CHECKLIST (from README) -->
-    <section id="security-checklist" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">09</span><span class="ds-section-tag">Security</span></div>
+    <!-- SECTION 09: SECURITY CHECKLIST -->
+    <section id="security-checklist" class="section">
+      <div class="section-header">
+        <span class="section-num">09</span>
+        <span class="section-tag">Security</span>
+      </div>
       <h2>Pre‑flight <em>checklist</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
       <div class="checklist-group">
         <h4>Verify before production deploy</h4>
         <ul class="checklist">
@@ -306,23 +1573,39 @@ pytest tests/test_api.py -v</code></pre></div>
       </div>
     </section>
 
-    <!-- PRODUCTION DEPLOYMENT (updated) -->
-    <section id="deployment" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">10</span><span class="ds-section-tag">Deploy</span></div>
+    <!-- SECTION 10: PRODUCTION DEPLOYMENT -->
+    <section id="deployment" class="section">
+      <div class="section-header">
+        <span class="section-num">10</span>
+        <span class="section-tag">Deploy</span>
+      </div>
       <h2>Production <em>deployment</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="ds-sub">Using Docker Compose (on server)</div>
-      <div class="code-block"><div class="code-header"><span>bash – production start</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code><span class="cm"># On production server</span>
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
+      <div class="section-sub">Using Docker Compose (on server)</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span>bash – production start</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm"># On production server</span>
 $ cd /app
 $ docker-compose -f docker-compose.yml up -d
 
 <span class="cm"># Services started: web (gunicorn), nginx (80/443), db, redis, celery_worker, celery_beat, flower</span>
-<span class="cm"># Make sure .env.production is used (or set DJANGO_ENVIRONMENT=production)</span></code></pre></div>
+<span class="cm"># Make sure .env.production is used (or set DJANGO_ENVIRONMENT=production)</span></code></pre>
+      </div>
 
-      <div class="ds-sub">Manual deployment (without Docker)</div>
-      <div class="code-block"><div class="code-header"><span>bash – gunicorn + systemd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code><span class="cm"># Collect static & migrate</span>
+      <div class="section-sub">Manual deployment (without Docker)</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span>bash – gunicorn + systemd</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm"># Collect static & migrate</span>
 $ python manage.py collectstatic --noinput
 $ python manage.py migrate
 
@@ -331,34 +1614,83 @@ $ gunicorn project.wsgi:application \
     --bind 0.0.0.0:8000 \
     --workers 4 \
     --max-requests 1000 \
-    --timeout 120</code></pre></div>
+    --timeout 120</code></pre>
+      </div>
     </section>
 
-    <!-- DOCKER DEPLOY (specific) -->
-    <section id="docker-deploy" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">11</span><span class="ds-section-tag">Docker</span></div>
+    <!-- SECTION 11: DOCKER DEPLOY -->
+    <section id="docker-deploy" class="section">
+      <div class="section-header">
+        <span class="section-num">11</span>
+        <span class="section-tag">Docker</span>
+      </div>
       <h2>Docker <em>services</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
       <table class="data-table">
-        <thead><tr><th>Service</th><th>Image</th><th>Exposed port</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Image</th>
+            <th>Exposed port</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr><td>db</td><td>postgres:17-alpine</td><td>5432</td></tr>
-          <tr><td>redis</td><td>redis:7-alpine</td><td>6379</td></tr>
-          <tr><td>web</td><td>Dockerfile (python3.13)</td><td>8000</td></tr>
-          <tr><td>celery_worker</td><td>Dockerfile</td><td>–</td></tr>
-          <tr><td>celery_beat</td><td>Dockerfile</td><td>–</td></tr>
-          <tr><td>flower</td><td>mher/flower:2.0</td><td>5555</td></tr>
-          <tr><td>nginx</td><td>nginx:alpine</td><td>80,443</td></tr>
+          <tr>
+            <td>db</td>
+            <td>postgres:17-alpine</td>
+            <td>5432</td>
+          </tr>
+          <tr>
+            <td>redis</td>
+            <td>redis:7-alpine</td>
+            <td>6379</td>
+          </tr>
+          <tr>
+            <td>web</td>
+            <td>Dockerfile (python3.13)</td>
+            <td>8000</td>
+          </tr>
+          <tr>
+            <td>celery_worker</td>
+            <td>Dockerfile</td>
+            <td>–</td>
+          </tr>
+          <tr>
+            <td>celery_beat</td>
+            <td>Dockerfile</td>
+            <td>–</td>
+          </tr>
+          <tr>
+            <td>flower</td>
+            <td>mher/flower:2.0</td>
+            <td>5555</td>
+          </tr>
+          <tr>
+            <td>nginx</td>
+            <td>nginx:alpine</td>
+            <td>80,443</td>
+          </tr>
         </tbody>
       </table>
       <p class="section-content">All services are defined in <code>docker-compose.yml</code> with health checks and dependencies.</p>
     </section>
 
-    <!-- RESOURCES -->
-    <section id="resources" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">12</span><span class="ds-section-tag">Resources</span></div>
+    <!-- SECTION 12: RESOURCES -->
+    <section id="resources" class="section">
+      <div class="section-header">
+        <span class="section-num">12</span>
+        <span class="section-tag">Resources</span>
+      </div>
       <h2>Additional <em>references</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <div class="section-rule">
+        <div class="line"></div>
+        <div class="dot"></div>
+        <div class="line"></div>
+      </div>
       <div class="section-content">
         <ul>
           <li><strong>Last updated:</strong> February 27, 2026</li>
@@ -368,66 +1700,72 @@ $ gunicorn project.wsgi:application \
           <li><strong>Included guides:</strong> <code>guides/django_setup_guide_2026.md</code>, <code>VERSION_UPDATES_SUMMARY.md</code></li>
         </ul>
       </div>
-      <div class="callout note"><strong>📘 Note</strong> The full HTML documentation (this page) contains 60+ sections with detailed explanations for every component – from Celery to Channels, Nginx tuning, and troubleshooting.</div>
+      <div class="callout note">
+        <strong>📘 Note</strong>
+        The full HTML documentation (this page) contains 12 comprehensive sections with detailed explanations for every component – from Celery to Channels, Docker configuration, and best practices.
+      </div>
     </section>
 
-    <footer style="border-top:1px solid var(--border-light); padding:var(--sp-8) 0; margin-top:var(--sp-20); text-align:center; font-family:var(--font-code); font-size:var(--text-xs); color:var(--text-tertiary);">
-      Django 6.0 Project Template — Complete guide, updated February 27, 2026.<br>
+    <!-- FOOTER -->
+    <footer>
+      Django 6.0 Project Template — Complete guide, updated February 27, 2026.
     </footer>
   </main>
 </div>
 
 <script>
-function setTheme(theme) {
-  document.body.setAttribute('data-theme', theme);
-  document.querySelectorAll('.theme-btn').forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.textContent.toLowerCase().includes(theme)) {
-      btn.classList.add('active');
-    }
-  });
-  localStorage.setItem('theme', theme);
-}
-const savedTheme = localStorage.getItem('theme') || 'light';
-setTheme(savedTheme);
+  function setTheme(theme) {
+    document.body.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.textContent.toLowerCase().includes(theme)) {
+        btn.classList.add('active');
+      }
+    });
+    localStorage.setItem('theme', theme);
+  }
 
-function copyCode(btn) {
-  const pre = btn.closest('.code-block').querySelector('pre');
-  navigator.clipboard.writeText(pre.innerText).then(() => {
-    const orig = btn.textContent;
-    btn.textContent = 'Copied!';
-    btn.style.color = 'var(--accent)';
-    btn.style.borderColor = 'var(--accent)';
-    setTimeout(() => {
-      btn.textContent = orig;
-      btn.style.color = '';
-      btn.style.borderColor = '';
-    }, 1800);
-  });
-}
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  setTheme(savedTheme);
 
-const sections = document.querySelectorAll('.ds-section');
-const navLinks = document.querySelectorAll('.ds-sidebar nav a');
-function setActiveLink() {
-  let current = '';
-  const scrollPos = window.scrollY + 100;
-  sections.forEach(section => {
-    const sectionTop = section.offsetTop;
-    const sectionBottom = sectionTop + section.offsetHeight;
-    if (scrollPos >= sectionTop && scrollPos < sectionBottom) {
-      current = section.getAttribute('id');
-    }
-  });
-  navLinks.forEach(link => {
-    link.classList.remove('active');
-    const href = link.getAttribute('href').substring(1);
-    if (href === current) {
-      link.classList.add('active');
-    }
-  });
-}
-window.addEventListener('scroll', setActiveLink);
-window.addEventListener('load', setActiveLink);
+  function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => {
+        btn.textContent = orig;
+      }, 1800);
+    });
+  }
+
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('.nav-group nav a');
+
+  function setActiveLink() {
+    let current = '';
+    const scrollPos = window.scrollY + 150;
+
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop;
+      const sectionBottom = sectionTop + section.offsetHeight;
+      if (scrollPos >= sectionTop && scrollPos < sectionBottom) {
+        current = section.getAttribute('id');
+      }
+    });
+
+    navLinks.forEach(link => {
+      link.classList.remove('active');
+      const href = link.getAttribute('href').substring(1);
+      if (href === current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  window.addEventListener('scroll', setActiveLink);
+  window.addEventListener('load', setActiveLink);
 </script>
+
 </body>
 </html>

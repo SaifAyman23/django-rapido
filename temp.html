@@ -1,17 +1,2835 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Careerly Flows Documentation — Complete System Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --radius: 0.65rem;
+      --background: oklch(1.000 0.000 89.9);
+      --foreground: oklch(0.141 0.005 285.823);
+      --card: oklch(1 0 0);
+      --primary: oklch(0.488 0.243 264.376);
+      --secondary: oklch(0.967 0.001 286.375);
+      --muted: oklch(0.967 0.001 286.375);
+      --muted-foreground: oklch(0.552 0.016 285.938);
+      --border: oklch(0.92 0.004 286.32);
+      --chart-1: oklch(0.809 0.105 251.813);
+      --chart-2: oklch(0.623 0.214 259.815);
+      --chart-3: oklch(0.546 0.245 262.881);
+      --chart-4: oklch(0.488 0.243 264.376);
+      --chart-5: oklch(0.424 0.199 265.638);
+      --destructive: oklch(0.577 0.245 27.325);
+      --sidebar: oklch(0.985 0 0);
+      --sidebar-foreground: oklch(0.141 0.005 285.823);
+      --sidebar-primary: oklch(0.546 0.245 262.881);
+      --sidebar-border: oklch(0.92 0.004 286.32);
+    }
+
+    [data-theme="dark"] {
+      --background: oklch(0.141 0.005 285.823);
+      --foreground: oklch(0.985 0 0);
+      --card: oklch(0.21 0.006 285.885);
+      --primary: oklch(0.488 0.243 264.376);
+      --secondary: oklch(0.274 0.006 286.033);
+      --muted: oklch(0.274 0.006 286.033);
+      --muted-foreground: oklch(0.705 0.015 286.067);
+      --border: oklch(1 0 0 / 10%);
+      --chart-1: oklch(0.809 0.105 251.813);
+      --chart-2: oklch(0.623 0.214 259.815);
+      --chart-3: oklch(0.546 0.245 262.881);
+      --chart-4: oklch(0.488 0.243 264.376);
+      --chart-5: oklch(0.424 0.199 265.638);
+      --destructive: oklch(0.704 0.191 22.216);
+      --sidebar: oklch(0.21 0.006 285.885);
+      --sidebar-foreground: oklch(0.985 0 0);
+      --sidebar-primary: oklch(0.623 0.214 259.815);
+      --sidebar-border: oklch(1 0 0 / 10%);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: var(--background);
+      color: var(--foreground);
+      font-size: 1rem;
+      line-height: 1.6;
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background-color: var(--sidebar);
+      border-right: 1px solid var(--sidebar-border);
+      padding: 2rem 1.5rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background-color: var(--sidebar-border);
+      border-radius: 3px;
+    }
+
+    .sidebar-header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--sidebar-border);
+      padding-bottom: 1rem;
+    }
+
+    .sidebar-header h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--sidebar-primary);
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-header p {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+      margin-top: 0.75rem;
+    }
+
+    .theme-toggle {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+      background-color: var(--muted);
+      border: 1px solid var(--sidebar-border);
+      border-radius: calc(var(--radius) + 2px);
+      padding: 0.25rem;
+    }
+
+    .theme-btn {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted-foreground);
+      border-radius: 3px;
+      transition: all 0.2s ease;
+    }
+
+    .theme-btn:hover {
+      color: var(--sidebar-primary);
+    }
+
+    .theme-btn.active {
+      background-color: var(--sidebar);
+      color: var(--sidebar-primary);
+      border-color: var(--sidebar-primary);
+      box-shadow: 0 0 8px rgba(76, 93, 227, 0.15);
+    }
+
+    .nav-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .nav-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed var(--sidebar-border);
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .nav-group nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .nav-group nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      color: var(--sidebar-foreground);
+      text-decoration: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 400;
+      border-left: 2px solid transparent;
+      border-radius: 0 4px 4px 0;
+      transition: all 0.2s ease;
+    }
+
+    .nav-group nav a::before {
+      content: '//';
+      color: var(--sidebar-primary);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      font-size: 0.65rem;
+      font-weight: 700;
+    }
+
+    .nav-group nav a:hover {
+      color: var(--sidebar-primary);
+      border-left-color: var(--sidebar-primary);
+      background-color: rgba(76, 93, 227, 0.1);
+    }
+
+    .nav-group nav a:hover::before {
+      opacity: 1;
+    }
+
+    .nav-group nav a.active {
+      color: var(--sidebar-primary);
+      border-left-color: var(--sidebar-primary);
+      background-color: rgba(76, 93, 227, 0.15);
+      box-shadow: 0 0 8px rgba(76, 93, 227, 0.2);
+    }
+
+    .nav-group nav a.active::before {
+      opacity: 1;
+      content: '◆';
+    }
+
+    .main {
+      padding: 4rem 3rem;
+      background-color: var(--background);
+      overflow-y: auto;
+    }
+
+    .page-header {
+      margin-bottom: 4rem;
+      padding-bottom: 3rem;
+      border-bottom: 2px solid var(--border);
+      position: relative;
+    }
+
+    .page-header::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 180px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--chart-4), transparent);
+      box-shadow: 0 0 12px rgba(123, 109, 252, 0.3);
+    }
+
+    .page-header h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      color: var(--foreground);
+      letter-spacing: -0.02em;
+    }
+
+    .page-header p {
+      font-size: 1.1rem;
+      color: var(--muted-foreground);
+      max-width: 680px;
+      line-height: 1.82;
+      margin-bottom: 1.5rem;
+      font-weight: 300;
+    }
+
+    .flow-index {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .flow-card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      border-top: 3px solid var(--chart-4);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    [data-theme="dark"] .flow-card {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .flow-card:hover {
+      border-color: var(--chart-4);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(123, 109, 252, 0.15);
+    }
+
+    .flow-card h3 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--foreground);
+      margin-bottom: 0.75rem;
+    }
+
+    .flow-card .flow-id {
+      font-family: 'DM Sans', monospace;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--chart-4);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+    }
+
+    .flow-card p {
+      font-size: 0.9rem;
+      color: var(--muted-foreground);
+      line-height: 1.6;
+    }
+
+    .section {
+      margin-bottom: 5rem;
+      scroll-margin-top: 100px;
+    }
+
+    .section h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(1.9rem, 4vw, 3rem);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--foreground);
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section h3 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.35rem;
+      color: var(--foreground);
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .section h4 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      color: var(--foreground);
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .section-desc {
+      color: var(--muted-foreground);
+      margin-bottom: 2rem;
+      max-width: 720px;
+      line-height: 1.8;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      font-size: 0.9rem;
+    }
+
+    [data-theme="dark"] table {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    table th {
+      background: linear-gradient(135deg, var(--chart-4), var(--chart-3));
+      color: white;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+
+    table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted-foreground);
+      vertical-align: top;
+      background-color: var(--card);
+    }
+
+    table tr:last-child td {
+      border-bottom: none;
+    }
+
+    table tr:hover td {
+      background-color: var(--muted);
+    }
+
+    .code-block {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1.5rem 0;
+      font-size: 0.85rem;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="dark"] .code-block {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .code-block::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--chart-4), var(--chart-3));
+      opacity: 0.9;
+      z-index: 1;
+    }
+
+    .code-header {
+      background-color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+      font-family: 'DM Sans', monospace;
+      font-size: 0.65rem;
+      color: var(--muted-foreground);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .copy-btn {
+      background-color: var(--background);
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 3px;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+      font-weight: 600;
+    }
+
+    .copy-btn:hover {
+      color: var(--chart-4);
+      border-color: var(--chart-4);
+      background-color: var(--card);
+      box-shadow: 0 0 8px rgba(123, 109, 252, 0.15);
+    }
+
+    pre {
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      tab-size: 4;
+      background-color: var(--card);
+      color: var(--foreground);
+      border-top: 1px solid var(--border);
+      margin: 0;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85em;
+      background-color: var(--muted);
+      padding: 0.15em 0.4em;
+      border-radius: 3px;
+      color: var(--chart-4);
+      border: 1px solid rgba(123, 109, 252, 0.2);
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-size: 1em;
+      border: none;
+    }
+
+    .callout {
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+      border-left: 3px solid;
+      font-size: 0.95rem;
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-left-width: 3px;
+    }
+
+    .callout.note {
+      border-left-color: var(--chart-4);
+      background-color: rgba(123, 109, 252, 0.08);
+    }
+
+    .callout strong {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+      color: var(--chart-4);
+    }
+
+    .callout p {
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .mermaid {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="dark"] .mermaid {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .mermaid svg {
+      max-width: 100%;
+    }
+
+    ul, ol {
+      margin: 1.5rem 0 1.5rem 2rem;
+    }
+
+    li {
+      margin: 0.5rem 0;
+      color: var(--muted-foreground);
+      line-height: 1.7;
+    }
+
+    strong {
+      color: var(--foreground);
+      font-weight: 600;
+    }
+
+    footer {
+      background-color: var(--card);
+      border-top: 1px solid var(--border);
+      color: var(--muted-foreground);
+      padding: 2rem;
+      text-align: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      margin-top: 5rem;
+    }
+
+    .meta-info {
+      background-color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin: 1.5rem 0;
+      font-family: 'DM Sans', monospace;
+      font-size: 0.85rem;
+      color: var(--muted-foreground);
+    }
+
+    .meta-info strong {
+      color: var(--foreground);
+      display: inline-block;
+      min-width: 120px;
+    }
+
+    @media (max-width: 900px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .main {
+        padding: 2rem 1.5rem;
+      }
+
+      .flow-index {
+        grid-template-columns: 1fr;
+      }
+
+      .page-header h1 {
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: var(--border);
+      border-radius: 3px;
+    }
+  </style>
 </head>
-<body>
-    <div class="mermaid">
-        graph TD
-            A[Start] --> B[Process]
-            B --> C[End]
+<body data-theme="light">
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>Careerly</h1>
+      <p>Flows Documentation</p>
+      <div class="theme-toggle">
+        <button class="theme-btn active" onclick="setTheme('light')">Light</button>
+        <button class="theme-btn" onclick="setTheme('dark')">Dark</button>
+      </div>
     </div>
-    
-    <script>
-        mermaid.contentLoaded();
-    </script>
-</body>
-</html>
+
+    <div class="nav-group">
+      <span class="nav-label">Flows</span>
+      <nav>
+        <a href="#intro" class="active">Overview</a>
+        <a href="#flow-001">CAREERLY-001: Auth</a>
+        <a href="#flow-002">CAREERLY-002: Home</a>
+        <a href="#flow-003">CAREERLY-003: Jobs</a>
+        <a href="#flow-004">CAREERLY-004: Notifications</a>
+        <a href="#flow-005">CAREERLY-005: Profile</a>
+        <a href="#flow-006">CAREERLY-006: Subscription</a>
+        <a href="#flow-007">CAREERLY-007: Monitoring</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Careerly Flows Documentation</h1>
+      <p>Complete system design covering seven core flows: authentication, home page, job discovery, notifications, user profiles, subscriptions, and monitoring.</p>
+    </div>
+
+    <!-- INTRODUCTION SECTION -->
+    <section id="intro" class="section">
+      <h2>Overview</h2>
+      <p class="section-desc">This document specifies all Careerly flows in comprehensive detail. Each flow covers business logic, data models, API endpoints, technical architecture, and detailed developer notes for backend, frontend, mobile, and AI engineers. All diagrams use Mermaid and are fully interactive.</p>
+      <p class="section-desc">The seven flows are designed to work together as an interconnected system where each flow depends on data and state from others. The documentation is structured as: analysis (what happens), diagrams (how it flows), technical specs (how to build it), and implementation notes (how to actually code it).</p>
+    </section>
+
+    <!-- FLOW INDEX -->
+    <section class="section">
+      <h2>All Flows</h2>
+      <div class="flow-index">
+        <a href="#flow-001" class="flow-card">
+          <div class="flow-id">CAREERLY-001</div>
+          <h3>Authentication</h3>
+          <p>Register, login, password reset, email verification, and account setup with resume upload and preferences configuration.</p>
+        </a>
+        <a href="#flow-002" class="flow-card">
+          <div class="flow-id">CAREERLY-002</div>
+          <h3>Home Page</h3>
+          <p>Job scraping pipeline, personalized recommendations, job feed rendering, and viewed/new job tagging.</p>
+        </a>
+        <a href="#flow-003" class="flow-card">
+          <div class="flow-id">CAREERLY-003</div>
+          <h3>Jobs</h3>
+          <p>Job detail view, save/apply, AI Match analysis, ATS resume checking, and suitability scoring.</p>
+        </a>
+        <a href="#flow-004" class="flow-card">
+          <div class="flow-id">CAREERLY-004</div>
+          <h3>Notifications</h3>
+          <p>System and new jobs notifications, push delivery, in-app notification panel, and read/unread tracking.</p>
+        </a>
+        <a href="#flow-005" class="flow-card">
+          <div class="flow-id">CAREERLY-005</div>
+          <h3>Profile</h3>
+          <p>User profile view, edit personal info, manage multiple resumes, and aggregate AI stats display.</p>
+        </a>
+        <a href="#flow-006" class="flow-card">
+          <div class="flow-id">CAREERLY-006</div>
+          <h3>Subscription</h3>
+          <p>Subscription plans, feature gating, usage limits per plan, and upgrade/downgrade logic.</p>
+        </a>
+        <a href="#flow-007" class="flow-card">
+          <div class="flow-id">CAREERLY-007</div>
+          <h3>Monitoring</h3>
+          <p>Admin dashboard, system health metrics, scraper status, usage analytics, and historical trends.</p>
+        </a>
+      </div>
+    </section>
+
+    <!-- CAREERLY-001 -->
+    <section id="flow-001" class="section">
+      <h2>CAREERLY-001: Authentication Flow</h2>
+      
+      <div class="meta-info">
+        <strong>Flow ID:</strong> CAREERLY-001<br>
+        <strong>Status:</strong> Core flow<br>
+        <strong>Related:</strong> CAREERLY-005 (Profile), CAREERLY-006 (Subscription)
+      </div>
+
+      <h3>Overview</h3>
+      <p class="section-desc">This flow covers all three authentication routes for Careerly: registration, login, and password reset. It exists to securely onboard new job seekers and return authenticated users to the platform. The business value is establishing a verified user identity tied to a resume and preferences, which every other feature in the platform depends on.</p>
+
+      <h3>Routes</h3>
+      <h4>Route 1: Register</h4>
+      <ul>
+        <li>Job Seeker navigates to Register screen and enters email, password, confirm password</li>
+        <li>System validates all fields (format, strength, match)</li>
+        <li>System checks if email is already registered</li>
+        <li>System creates user record with status = <code>UNVERIFIED</code></li>
+        <li>System generates 6-digit OTP, stores it with 10-minute expiry</li>
+        <li>Job Seeker enters OTP and system verifies it</li>
+        <li>System marks user status = <code>VERIFIED</code>, generates auth token</li>
+        <li>Job Seeker selects job preferences (job titles, locations, job types)</li>
+        <li>Job Seeker uploads resume (PDF, required)</li>
+        <li>System validates and saves resume, dispatches Celery Task to parse it</li>
+        <li>Job Seeker is redirected to Home page with JWT tokens issued</li>
+      </ul>
+
+      <h4>Route 2: Login</h4>
+      <ul>
+        <li>Job Seeker enters email and password</li>
+        <li>System looks up email, verifies password hash</li>
+        <li>System checks user status (must be ACTIVE or SETUP_INCOMPLETE)</li>
+        <li>System issues JWT access token + refresh token</li>
+        <li>Job Seeker is redirected to Home page</li>
+      </ul>
+
+      <h4>Route 3: Password Reset</h4>
+      <ul>
+        <li>Job Seeker enters email address</li>
+        <li>System generates 6-digit OTP and sends via email</li>
+        <li>Job Seeker enters OTP and system verifies it</li>
+        <li>System issues short-lived password reset token (15 minutes, single use)</li>
+        <li>Job Seeker enters new password twice, system validates and saves</li>
+        <li>System invalidates all existing sessions (blacklists JWT tokens)</li>
+        <li>Job Seeker is redirected to Profile page (logged in automatically)</li>
+      </ul>
+
+      <h3>Data Models</h3>
+      <h4>Model: User</h4>
+      <p><strong>Purpose:</strong> Core user account — authentication identity and status</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Auto</td>
+              <td>Primary key, auto-generated</td>
+            </tr>
+            <tr>
+              <td>email</td>
+              <td>EmailField</td>
+              <td>Yes</td>
+              <td>Unique, indexed, primary login identifier</td>
+            </tr>
+            <tr>
+              <td>password</td>
+              <td>CharField</td>
+              <td>Yes</td>
+              <td>Django hashed password field</td>
+            </tr>
+            <tr>
+              <td>status</td>
+              <td>CharField</td>
+              <td>Yes</td>
+              <td>UNVERIFIED, VERIFIED, SETUP_INCOMPLETE, ACTIVE, SUSPENDED, DELETED</td>
+            </tr>
+            <tr>
+              <td>created_at</td>
+              <td>DateTimeField</td>
+              <td>Auto</td>
+              <td>Immutable creation timestamp</td>
+            </tr>
+            <tr>
+              <td>updated_at</td>
+              <td>DateTimeField</td>
+              <td>Auto</td>
+              <td>Auto-updated on save</td>
+            </tr>
+            <tr>
+              <td>last_login</td>
+              <td>DateTimeField</td>
+              <td>No</td>
+              <td>Updated on successful login</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Model: OTPRecord</h4>
+      <p><strong>Purpose:</strong> Stores OTP codes for email verification and password reset</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>user</td>
+              <td>ForeignKey(User)</td>
+              <td>Owning user — cascade delete</td>
+            </tr>
+            <tr>
+              <td>otp_hash</td>
+              <td>CharField</td>
+              <td>SHA-256 hash of 6-digit OTP — never store plain</td>
+            </tr>
+            <tr>
+              <td>purpose</td>
+              <td>CharField</td>
+              <td>EMAIL_VERIFICATION or PASSWORD_RESET</td>
+            </tr>
+            <tr>
+              <td>expires_at</td>
+              <td>DateTimeField</td>
+              <td>10 minutes from creation. Indexed.</td>
+            </tr>
+            <tr>
+              <td>attempts</td>
+              <td>PositiveIntegerField</td>
+              <td>Incremented on wrong guess, lock after 5 attempts</td>
+            </tr>
+            <tr>
+              <td>is_used</td>
+              <td>BooleanField</td>
+              <td>Marked True after successful verification</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Sequence Diagrams</h3>
+      <p>Register flow diagram:</p>
+      <div class="mermaid">
+sequenceDiagram
+  box Job Seeker
+    actor JS as Job Seeker
+  end
+  box System
+    participant FE as Frontend
+    participant BE as Backend API
+  end
+  box Database
+    participant DB as PostgreSQL
+  end
+  box Notifications
+    participant ES as Email Service
+  end
+
+  JS->>FE: Submit email, password, confirm password
+  FE->>BE: POST /api/v1/auth/register/
+  BE->>DB: Check if email exists
+  DB-->>BE: Result
+
+  alt Email already registered
+    BE-->>FE: 409 Conflict
+    FE-->>JS: "An account with this email already exists"
+  else Validation error
+    BE-->>FE: 422 Unprocessable Entity
+    FE-->>JS: Highlight invalid fields
+  else Proceed
+    BE->>DB: Create user (status=UNVERIFIED)
+    BE->>DB: Store hashed OTP + expiry
+    BE-->>FE: 201 Created
+    FE-->>JS: Redirect to OTP screen
+    BE-)ES: Django Task — send OTP email (async)
+  end
+
+  JS->>FE: Enter 6-digit OTP
+  FE->>BE: POST /api/v1/auth/verify-otp/
+  BE->>DB: Validate OTP (match + expiry)
+
+  alt OTP valid
+    BE->>DB: Update user status = VERIFIED
+    BE-->>FE: 200 OK + auth token
+    FE-->>JS: Redirect to Preferences + Resume screen
+  else OTP wrong
+    BE-->>FE: 400 Bad Request
+    FE-->>JS: "Invalid code. Please try again."
+  else OTP expired
+    BE-->>FE: 410 Gone
+    FE-->>JS: "Code expired." + show resend button
+  end
+
+  JS->>FE: Select preferences + upload resume
+  FE->>BE: POST /api/v1/auth/setup/ (multipart)
+  BE->>DB: Save preferences + resume metadata
+
+  alt Resume missing
+    BE-->>FE: 422 Unprocessable Entity
+    FE-->>JS: "Resume is required to continue"
+  else Invalid file
+    BE-->>FE: 415 Unsupported Media Type
+    FE-->>JS: "Only PDF files are accepted"
+  else Setup complete
+    BE->>DB: Link resume + preferences to user
+    BE-->>FE: 200 OK
+    FE-->>JS: Redirect to Home page
+    Note over BE: Celery Task dispatched for resume parsing
+  end
+      </div>
+
+      <p>Login flow diagram:</p>
+      <div class="mermaid">
+sequenceDiagram
+  box Job Seeker
+    actor JS as Job Seeker
+  end
+  box System
+    participant FE as Frontend
+    participant BE as Backend API
+  end
+  box Database
+    participant DB as PostgreSQL
+  end
+
+  JS->>FE: Submit email + password
+  FE->>BE: POST /api/v1/auth/login/
+  BE->>DB: Look up user by email
+  DB-->>BE: User record or null
+
+  alt Credentials valid + VERIFIED
+    BE-->>FE: 200 OK + JWT access + refresh token
+    FE-->>JS: Redirect to Home page
+  else Wrong credentials or not found
+    BE-->>FE: 401 Unauthorized
+    FE-->>JS: "Incorrect email or password"
+  else Account UNVERIFIED
+    BE-->>FE: 403 Forbidden
+    FE-->>JS: "Please verify your email first" + resend OTP option
+  else Account suspended
+    BE-->>FE: 403 Forbidden
+    FE-->>JS: "Your account has been suspended. Contact support."
+  end
+      </div>
+
+      <h3>Validations</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Rule</th>
+              <th>Error Message</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Email</td>
+              <td>Required, valid email format</td>
+              <td>"Please enter a valid email address"</td>
+            </tr>
+            <tr>
+              <td>Password (Register)</td>
+              <td>Min 8 chars, 1 uppercase, 1 number, 1 special char</td>
+              <td>"Password must be at least 8 characters..."</td>
+            </tr>
+            <tr>
+              <td>Confirm Password</td>
+              <td>Must match password field exactly</td>
+              <td>"Passwords do not match"</td>
+            </tr>
+            <tr>
+              <td>OTP</td>
+              <td>Exactly 6 digits, numeric only</td>
+              <td>"Please enter the 6-digit code"</td>
+            </tr>
+            <tr>
+              <td>Resume</td>
+              <td>PDF only, max 5MB</td>
+              <td>"Only PDF files are accepted" / "File size must be under 5MB"</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>API Endpoints</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Auth</th>
+              <th>Request</th>
+              <th>Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/auth/register/</td>
+              <td>No</td>
+              <td>{email, password, confirm_password}</td>
+              <td>201 — create unverified user, send OTP</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/auth/verify-otp/</td>
+              <td>No</td>
+              <td>{email, otp, purpose}</td>
+              <td>200 + token — verify OTP, mark user verified</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/auth/login/</td>
+              <td>No</td>
+              <td>{email, password}</td>
+              <td>200 + JWT — authenticate user</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/auth/setup/</td>
+              <td>Yes</td>
+              <td>multipart: {job_titles, locations, job_types, resume_file}</td>
+              <td>200 — save preferences + resume</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/auth/password-reset/request/</td>
+              <td>No</td>
+              <td>{email}</td>
+              <td>200 — send password reset OTP</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Developer Notes</h3>
+      <div class="callout note">
+        <strong>Backend Developer (Django)</strong>
+        <p>Use AbstractBaseUser + BaseUserManager for custom User model. Use djangorestframework-simplejwt for JWT with ACCESS_TOKEN_LIFETIME = 15 minutes and REFRESH_TOKEN_LIFETIME = 30 days. Implement token blacklist on logout and password reset. Use secrets.randbelow(1000000) for OTP generation, hash with SHA-256 before storing. Dispatch Django Tasks via transaction.on_commit() for OTP email sending. Implement rate limiting at both model level (attempts counter) and API level (django-ratelimit). Use MultiPartParser for setup endpoint handling. Resume parsing: use django-storages with S3 or local FileField. Post-save signal on UserPreferences: check if user also has resume, then set user.status = ACTIVE.</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Frontend Developer (React)</strong>
+        <p>Register screen: email, password, confirm password fields with strength indicator. OTP screen: 6 individual digit input boxes with auto-advance. Preferences + Resume screen: multi-select for job titles (searchable dropdown), checkbox group for job types, drag-and-drop file upload zone. Login screen: email + password with "Forgot password?" link. Password reset — New Password screen: 2 fields with strength indicator. Store JWT access token in memory, refresh token in HttpOnly cookie or secure storage. Redirect based on user status: if SETUP_INCOMPLETE, redirect to setup screen.</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Mobile Developer (Flutter)</strong>
+        <p>OTP input: Row of 6 TextField widgets, max_length=1, keyboardType=number. Resume upload: use file_picker package, filter to PDF only. Token storage: use flutter_secure_storage for both tokens. Implement HTTP interceptor for 401 handling and silent refresh. Register deep link: careerly://auth/verify-otp to direct users from OTP emails. Use pushReplacement after login/setup so users can't navigate back to auth screens.</p>
+      </div>
+
+      <div class="callout note">
+        <strong>AI Engineer</strong>
+        <p>On successful setup (resume uploaded + preferences saved), dispatch Celery task to parse resume. Input: resume file (PDF), user ID. Output: extracted fields — job titles, skills, years of experience, education level as structured JSON on Resume model. This parsed data feeds job recommendations. Latency: async — show "We're setting up your recommendations" on first home page visit if parsing still in progress. Fallback: if parsing fails, flag resume as parse_status=FAILED and retry later. Recommendations fall back to preferences-only matching until re-parsed.</p>
+      </div>
+    </section>
+
+    <!-- CAREERLY-002 -->
+    <section id="flow-002" class="section">
+      <h2>CAREERLY-002: Home Page Flow</h2>
+      
+      <div class="meta-info">
+        <strong>Flow ID:</strong> CAREERLY-002<br>
+        <strong>Status:</strong> Core flow<br>
+        <strong>Related:</strong> CAREERLY-001 (Auth), CAREERLY-003 (Job Detail)
+      </div>
+
+      <h3>Overview</h3>
+      <p class="section-desc">The home page is the core discovery surface of Careerly. It serves two sections: a personalized recommendations section (driven by the user's resume and preferences) and a general job listing section (all scraped jobs, paginated). Jobs are scraped every 15 minutes via a Celery Beat task that pulls from Indeed, LinkedIn, Glassdoor, and Naukri. Each job in the feed is tagged as "new" if it was added in the last 2 hours, or "viewed" if the user has previously opened that job's detail page.</p>
+
+      <h3>Sub-flows</h3>
+      <h4>Sub-flow A: Scraper Pipeline (background, runs every 15 minutes)</h4>
+      <ul>
+        <li>Celery Beat triggers <code>scrape_all_platforms</code> task every 15 minutes</li>
+        <li>Celery Task runs scrapers for Indeed, LinkedIn, Glassdoor, Naukri in parallel (Celery group)</li>
+        <li>Each scraper fetches latest job listings, normalizes data</li>
+        <li>System checks if jobs already exist by <code>external_id + platform</code></li>
+        <li>New jobs: inserts with <code>status=ACTIVE, scraped_at=now</code></li>
+        <li>Duplicates: skips insertion, updates <code>last_seen_at</code> only</li>
+        <li>System notifies users whose preferences/resume keywords match newly added jobs</li>
+        <li>System logs scrape cycle results per platform</li>
+      </ul>
+
+      <h4>Sub-flow B: Home Page Load (user-triggered)</h4>
+      <ul>
+        <li>Job Seeker lands on home page (authenticated)</li>
+        <li>System checks if resume parsing is still in progress — shows loading state if so</li>
+        <li>System checks Redis cache for this user's recommendations</li>
+        <li>Cache hit: returns cached recommendations immediately</li>
+        <li>Cache miss: triggers recommendation generation asynchronously, returns loading state</li>
+        <li>System returns first page of general job listing (paginated, 20 per page, sorted by scraped_at DESC)</li>
+        <li>System checks user's JobView history and applies tags: "viewed" if viewed before, "new" if added in last 2 hours AND not viewed</li>
+        <li>Job Seeker sees recommendations section and job listing with tags</li>
+      </ul>
+
+      <h4>Sub-flow C: Recommendation Generation (async)</h4>
+      <ul>
+        <li>System fetches user's parsed resume data and preferences</li>
+        <li>System queries jobs DB for jobs matching user's profile</li>
+        <li>AI/ML Service scores and ranks matched jobs by suitability (resume embedding vs job embedding)</li>
+        <li>Takes top N recommendations (default 10)</li>
+        <li>Stores in Redis cache with TTL 30 minutes</li>
+        <li>Returns recommendations to home page response</li>
+      </ul>
+
+      <h3>Data Models</h3>
+      <h4>Model: Company</h4>
+      <p><strong>Purpose:</strong> Represents a company extracted from scraped job data — shared across multiple job listings</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>name</td>
+              <td>CharField</td>
+              <td>Company name, indexed, case-insensitive for deduplication</td>
+            </tr>
+            <tr>
+              <td>industry</td>
+              <td>CharField</td>
+              <td>Optional — e.g. Technology, Healthcare</td>
+            </tr>
+            <tr>
+              <td>url</td>
+              <td>URLField</td>
+              <td>Company website</td>
+            </tr>
+            <tr>
+              <td>logo</td>
+              <td>URLField</td>
+              <td>Logo image URL from the platform</td>
+            </tr>
+            <tr>
+              <td>rating</td>
+              <td>DecimalField</td>
+              <td>Employer rating e.g. 4.2</td>
+            </tr>
+            <tr>
+              <td>updated_at</td>
+              <td>DateTimeField</td>
+              <td>Updated when new scrape brings fresher company data</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Model: Job</h4>
+      <p><strong>Purpose:</strong> Represents a scraped job listing from any supported platform</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>external_id</td>
+              <td>CharField</td>
+              <td>Job ID from source platform, indexed</td>
+            </tr>
+            <tr>
+              <td>platform</td>
+              <td>CharField</td>
+              <td>INDEED, LINKEDIN, GLASSDOOR, NAUKRI</td>
+            </tr>
+            <tr>
+              <td>company</td>
+              <td>ForeignKey(Company)</td>
+              <td>SET_NULL if company record deleted</td>
+            </tr>
+            <tr>
+              <td>title</td>
+              <td>CharField</td>
+              <td>Job title, indexed for search</td>
+            </tr>
+            <tr>
+              <td>location</td>
+              <td>CharField</td>
+              <td>City/region — null for fully remote roles</td>
+            </tr>
+            <tr>
+              <td>description</td>
+              <td>TextField</td>
+              <td>Full job description — not provided by all platforms</td>
+            </tr>
+            <tr>
+              <td>skills</td>
+              <td>ArrayField</td>
+              <td>Required skills — not provided by all platforms</td>
+            </tr>
+            <tr>
+              <td>salary_source</td>
+              <td>CharField</td>
+              <td>"employer", "estimated", etc.</td>
+            </tr>
+            <tr>
+              <td>min_amount</td>
+              <td>DecimalField</td>
+              <td>Minimum salary amount</td>
+            </tr>
+            <tr>
+              <td>max_amount</td>
+              <td>DecimalField</td>
+              <td>Maximum salary amount</td>
+            </tr>
+            <tr>
+              <td>currency</td>
+              <td>CharField</td>
+              <td>e.g. USD, EGP</td>
+            </tr>
+            <tr>
+              <td>status</td>
+              <td>CharField</td>
+              <td>ACTIVE, EXPIRED, ARCHIVED</td>
+            </tr>
+            <tr>
+              <td>scraped_at</td>
+              <td>DateTimeField</td>
+              <td>When first scraped, indexed</td>
+            </tr>
+            <tr>
+              <td>last_seen_at</td>
+              <td>DateTimeField</td>
+              <td>Updated every scrape cycle, indexed</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Model: JobView</h4>
+      <p><strong>Purpose:</strong> Tracks which jobs a user has viewed</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>user</td>
+              <td>ForeignKey(User)</td>
+              <td>The viewing user</td>
+            </tr>
+            <tr>
+              <td>job</td>
+              <td>ForeignKey(Job)</td>
+              <td>The viewed job</td>
+            </tr>
+            <tr>
+              <td>viewed_at</td>
+              <td>DateTimeField</td>
+              <td>Indexed, used for weekly stats</td>
+            </tr>
+            <tr>
+              <td>unique_together</td>
+              <td>—</td>
+              <td>[(user, job)] — one record per user-job pair</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Scraper Pipeline Diagram</h3>
+      <div class="mermaid">
+sequenceDiagram
+  box System
+    participant CB as Celery Beat
+    participant CW as Celery Worker
+    participant SC as Scrapers
+  end
+  box Database
+    participant DB as PostgreSQL
+    participant RD as Redis Cache
+  end
+  box Notifications
+    participant NS as Notification Service
+  end
+
+  CB->>CW: Trigger scrape_all_platforms (every 15 min)
+  Note over CW: Celery group — runs all platform scrapers in parallel
+
+  par Indeed Scraper
+    CW->>SC: scrape_indeed()
+  and LinkedIn Scraper
+    CW->>SC: scrape_linkedin()
+  and Glassdoor Scraper
+    CW->>SC: scrape_glassdoor()
+  and Naukri Scraper
+    CW->>SC: scrape_naukri()
+  end
+
+  SC-->>CW: Normalized job data (partial data allowed)
+
+  loop For each scraped job
+    CW->>DB: Check exists by external_id + platform
+    alt New job
+      CW->>DB: INSERT job (status=ACTIVE, scraped_at=now)
+    else Duplicate
+      CW->>DB: UPDATE last_seen_at only
+    end
+  end
+
+  CW->>DB: Query users with matching preferences/keywords
+  DB-->>CW: Matched user list
+  CW->>RD: Invalidate recommendation cache for matched users
+  CW-)NS: Django Task — send new jobs notification per matched user
+
+  CW->>DB: Log scrape cycle results (per platform)
+      </div>
+
+      <h3>Home Page Load Diagram</h3>
+      <div class="mermaid">
+sequenceDiagram
+  box Job Seeker
+    actor JS as Job Seeker
+  end
+  box System
+    participant FE as Frontend
+    participant BE as Backend API
+    participant AI as AI Service
+  end
+  box Database
+    participant DB as PostgreSQL
+    participant RD as Redis Cache
+  end
+
+  JS->>FE: Navigate to Home page
+  FE->>BE: GET /api/v1/home/ (JWT auth)
+  BE->>DB: Check user status + resume parse status
+
+  alt User not ACTIVE
+    BE-->>FE: 403 Forbidden
+    FE-->>JS: Redirect to setup screen
+  end
+
+  BE->>RD: GET recommendations:user:{id}
+
+  alt Cache hit
+    RD-->>BE: Cached recommendations
+  else Cache miss
+    BE->>DB: Fetch resume data + preferences
+    BE->>AI: Score + rank matching jobs
+    alt AI available
+      AI-->>BE: Ranked job list
+    else AI unavailable
+      BE->>DB: Keyword-based fallback query
+      DB-->>BE: Fallback job list
+    end
+    BE->>RD: SET recommendations:user:{id} (TTL 30 min)
+  end
+
+  BE->>DB: Query job listing (page 1, 20 jobs, sorted by scraped_at DESC)
+  BE->>DB: Query JobView records for this user (batch check)
+  DB-->>BE: Viewed job IDs
+
+  Note over BE: Apply tags per job:<br/>viewed → if in JobView<br/>new → if scraped_at > now-2h AND not viewed
+
+  BE-->>FE: 200 OK — {recommendations[], job_listing[], pagination}
+  FE-->>JS: Render recommendations section + job listing
+
+  opt User scrolls / loads more
+    JS->>FE: Request next page
+    FE->>BE: GET /api/v1/home/jobs/?page=N
+    BE->>DB: Query page N
+    BE-->>FE: 200 OK — next page jobs
+    FE-->>JS: Append jobs to listing
+  end
+      </div>
+
+      <h3>Job Tag Logic</h3>
+      <div class="mermaid">
+flowchart TD
+    A([Job in feed]) --> B{In user's<br/>JobView history?}
+    B -- Yes --> C["🔵 Tag: viewed"]
+    B -- No --> D{scraped_at ><br/>now - 2 hours?}
+    D -- Yes --> E["🟢 Tag: new"]
+    D -- No --> F[No tag]
+
+    style C fill:#cce5ff,stroke:#0066cc
+    style E fill:#d4edda,stroke:#28a745
+    style F fill:#e2e3e5,stroke:#6c757d
+      </div>
+
+      <h3>API Endpoints</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Auth</th>
+              <th>Params</th>
+              <th>Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>GET</td>
+              <td>/api/v1/home/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>200 — {recommendations[], job_listing[], pagination}</td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td>/api/v1/home/jobs/</td>
+              <td>Yes</td>
+              <td>?page=N&page_size=20</td>
+              <td>200 — {jobs[], pagination}</td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td>/api/v1/home/recommendations/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>200 — {jobs[]}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Developer Notes</h3>
+      <div class="callout note">
+        <strong>Backend Developer (Django)</strong>
+        <p>Celery Beat: schedule scrape_all_platforms every 15 minutes via crontab(minute='*/15'). Use celery.group to run all 4 platform scrapers in parallel. Company upsert first, then Job upsert. For each scraped job: (1) get_or_create Company by name__iexact, (2) update_or_create Job by (external_id, platform), only update last_seen_at on re-scrape. Never overwrite existing non-null Job fields. All nullable fields store null, never empty string. Use select_related('company') and only() for job listing query. Compute job tags from pre-fetched viewed_ids set, not per-job DB queries. Daily Celery Beat task: mark jobs EXPIRED if last_seen_at < now-48h, ARCHIVED if last_seen_at < now-7d. Cache recommendation results in Redis with key recommendations:user:{id}, TTL 30 min. Invalidate when new matching jobs are scraped.</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Frontend Developer (React)</strong>
+        <p>Home page: two sections — Recommendations (horizontal scroll or grid) and Job Listing (vertical infinite scroll). Each job card: title, company name/logo, location, platform badge, job type, remote badge, "new"/"viewed" tag, date_posted. Recommendations section: skeleton loader. If resume parsing in progress, show banner. Job listing: infinite scroll with 80% trigger for next page load. Read job.tag from API response — "new" green badge, "viewed" grey badge, null nothing. Show platform logo. Salary: show only if min/max available, format as "$X – $Y /year" using interval and currency. Cache home page data with 5-minute stale time (React Query/SWR).</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Mobile Developer (Flutter)</strong>
+        <p>Recommendations section: ListView with scrollDirection: Axis.horizontal. Job listing: ListView.builder with lazy loading next page when user reaches last 5 items. Job cards: Card widget with platform icon, title, company, location, tag badge. Tag badges: Chip widget — read job.tag from API. Pull-to-refresh: RefreshIndicator wrapper calling GET /api/v1/home/. If recommendations loading: show Shimmer effect. Store first page in local cache (hive/isar) for offline. Platform icons: bundle as local assets.</p>
+      </div>
+
+      <div class="callout note">
+        <strong>AI Engineer</strong>
+        <p>Recommendation generation: given user's resume data (skills list, job titles, experience level), query ACTIVE jobs and score by relevance using embedding similarity. Pre-compute job embeddings using pgvector on PostgreSQL or separate vector store. On recommendation request, compute user's profile embedding and run nearest-neighbor search. Fallback to PostgreSQL full-text search if vector DB unavailable. Cache with 30-minute TTL. Invalidate when new matching jobs arrive.</p>
+      </div>
+    </section>
+
+    <!-- CAREERLY-003 -->
+    <section id="flow-003" class="section">
+      <h2>CAREERLY-003: Jobs Flow</h2>
+      
+      <div class="meta-info">
+        <strong>Flow ID:</strong> CAREERLY-003<br>
+        <strong>Status:</strong> Core flow<br>
+        <strong>Related:</strong> CAREERLY-002 (Home Page), CAREERLY-004 (Notifications)
+      </div>
+
+      <h3>Overview</h3>
+      <p class="section-desc">This flow covers everything that happens after a user selects a job. The job detail page presents scraped and organized data about the job, and offers four actions: save for later, apply now (external redirect), AI Match (resume vs job suitability scoring), and Check Your Resume (general ATS scoring). Both AI features are analysis sessions — they persist to the user's history and contribute to profile stats. The AI Match session is scoped to a specific job; the Check Resume session is general. Both support uploading additional resumes for comparison within the same session, and both render AI responses in markdown.</p>
+
+      <h3>Routes</h3>
+      <h4>Route 1: View Job Detail</h4>
+      <ul>
+        <li>Job Seeker clicks on a job card</li>
+        <li>System records a JobView for this user + job (upsert)</li>
+        <li>System fetches job details from DB</li>
+        <li>System shows "This job is no longer available" if job doesn't exist or is archived</li>
+        <li>Job Seeker sees job detail page with all available scraped fields</li>
+        <li>System shows notice for fields not available from source platform</li>
+      </ul>
+
+      <h4>Route 2: Save Job</h4>
+      <ul>
+        <li>Job Seeker clicks the Save button on detail page</li>
+        <li>System checks if job is already saved</li>
+        <li>If already saved: toggles to unsave, removes from saved jobs</li>
+        <li>If not saved: saves the job, button state changes to "Saved"</li>
+        <li>Job Seeker stays on detail page</li>
+      </ul>
+
+      <h4>Route 3: Apply Now</h4>
+      <ul>
+        <li>Job Seeker clicks "Apply Now" button</li>
+        <li>System retrieves external_url for this job</li>
+        <li>System opens external job page in new tab/in-app browser</li>
+      </ul>
+
+      <h4>Route 4: AI Match</h4>
+      <ul>
+        <li>Job Seeker clicks "AI Match" button on job detail page</li>
+        <li>System checks if user has resume on file — prompts upload if not</li>
+        <li>System creates new AISession record with type=JOB_MATCH, status=PENDING</li>
+        <li>Job Seeker navigated to AI Match screen</li>
+        <li>System dispatches Celery Task to analyze resume against this job</li>
+        <li>AI/ML Service returns markdown report with: suitability score (0-100), verdict tier, strengths/gaps, top 3 recommended job titles</li>
+        <li>System resolves top 3 recommended titles against jobs DB</li>
+        <li>System updates AISession with score, verdict, report_markdown, top_jobs, status=COMPLETE</li>
+        <li>Job Seeker sees rendered markdown report, score, verdict badge, 3 recommended jobs</li>
+        <li>Job Seeker can upload second resume to compare</li>
+      </ul>
+
+      <h4>Route 5: Check Your Resume (ATS Analysis)</h4>
+      <ul>
+        <li>Job Seeker clicks "Check Your Resume" button</li>
+        <li>System checks if user has resume on file</li>
+        <li>System creates new AISession record with type=ATS_CHECK, status=PENDING</li>
+        <li>Job Seeker navigated to Check Resume screen</li>
+        <li>System dispatches Celery Task for ATS analysis</li>
+        <li>AI/ML Service returns markdown report with: ATS score (0-100), verdict tier, keyword coverage, formatting recommendations, skills gap suggestions</li>
+        <li>System updates AISession with score, verdict, report_markdown, status=COMPLETE</li>
+        <li>Job Seeker sees rendered markdown report, ATS score, verdict badge</li>
+        <li>Job Seeker can upload second resume to compare ATS scores</li>
+      </ul>
+
+      <h3>Data Models</h3>
+      <h4>Model: AISession</h4>
+      <p><strong>Purpose:</strong> Represents one AI analysis session — either a job match or ATS check</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>user</td>
+              <td>ForeignKey(User)</td>
+              <td>Owning user</td>
+            </tr>
+            <tr>
+              <td>session_type</td>
+              <td>CharField</td>
+              <td>JOB_MATCH or ATS_CHECK</td>
+            </tr>
+            <tr>
+              <td>job</td>
+              <td>ForeignKey(Job)</td>
+              <td>Only for JOB_MATCH sessions, SET_NULL if deleted</td>
+            </tr>
+            <tr>
+              <td>resume</td>
+              <td>ForeignKey(Resume)</td>
+              <td>The primary resume analyzed</td>
+            </tr>
+            <tr>
+              <td>score</td>
+              <td>PositiveSmallIntegerField</td>
+              <td>0-100, set on completion</td>
+            </tr>
+            <tr>
+              <td>verdict</td>
+              <td>CharField</td>
+              <td>POOR, FAIR, GOOD, EXCELLENT</td>
+            </tr>
+            <tr>
+              <td>report_markdown</td>
+              <td>TextField</td>
+              <td>Full AI-generated markdown report</td>
+            </tr>
+            <tr>
+              <td>status</td>
+              <td>CharField</td>
+              <td>PENDING, RUNNING, COMPLETE, FAILED</td>
+            </tr>
+            <tr>
+              <td>created_at</td>
+              <td>DateTimeField</td>
+              <td>Indexed for session history</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Model: AISessionResume</h4>
+      <p><strong>Purpose:</strong> Tracks additional resumes analyzed within same session (for comparison)</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>session</td>
+              <td>ForeignKey(AISession)</td>
+              <td>Parent session, cascade delete</td>
+            </tr>
+            <tr>
+              <td>resume</td>
+              <td>ForeignKey(Resume)</td>
+              <td>The additional resume</td>
+            </tr>
+            <tr>
+              <td>score</td>
+              <td>PositiveSmallIntegerField</td>
+              <td>Score for this resume in this session</td>
+            </tr>
+            <tr>
+              <td>verdict</td>
+              <td>CharField</td>
+              <td>Verdict for this resume</td>
+            </tr>
+            <tr>
+              <td>report_markdown</td>
+              <td>TextField</td>
+              <td>Separate markdown report</td>
+            </tr>
+            <tr>
+              <td>status</td>
+              <td>CharField</td>
+              <td>PENDING, RUNNING, COMPLETE, FAILED</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>AI Match Sequence Diagram</h3>
+      <div class="mermaid">
+sequenceDiagram
+  box Job Seeker
+    actor JS as Job Seeker
+  end
+  box System
+    participant FE as Frontend
+    participant BE as Backend API
+    participant CW as Celery Worker
+  end
+  box Database
+    participant DB as PostgreSQL
+  end
+  box AI Service
+    participant AI as AI/ML Model
+  end
+
+  JS->>FE: Click "AI Match" on job detail
+  FE->>BE: POST /api/v1/ai/match/ {job_id}
+  BE->>DB: Check user has resume
+
+  alt No resume
+    BE-->>FE: 422 Unprocessable Entity
+    FE-->>JS: "You need a resume to use AI Match"
+  else Resume available
+    BE->>DB: Create AISession (type=JOB_MATCH, status=PENDING)
+    BE-->>FE: 202 Accepted — {session_id}
+    FE-->>JS: Navigate to AI Match screen (loading state)
+    BE-)CW: Celery Task — run_ai_match(session_id)
+  end
+
+  Note over CW: Async — user sees loading indicator
+
+  CW->>DB: Fetch resume file + job details
+  CW->>AI: Analyze resume vs job description
+  AI-->>CW: {score, verdict, report_markdown, recommended_titles[3]}
+
+  CW->>DB: Resolve top 3 titles → best matching Jobs
+  CW->>DB: Update AISession (score, verdict, report_markdown, top_jobs, status=COMPLETE)
+
+  loop Poll for result (every 3s)
+    FE->>BE: GET /api/v1/ai/sessions/{session_id}/
+    BE->>DB: Fetch session status
+    alt Status = COMPLETE
+      BE-->>FE: 200 OK — full session result
+      FE-->>JS: Render markdown report + score + top 3 jobs
+    else Status = PENDING or RUNNING
+      BE-->>FE: 200 OK — {status: PENDING}
+      FE-->>JS: Keep loading indicator
+    else Status = FAILED
+      BE-->>FE: 200 OK — {status: FAILED}
+      FE-->>JS: Show retry option
+    end
+  end
+
+  opt Upload second resume
+    JS->>FE: Upload new resume file
+    FE->>BE: POST /api/v1/ai/sessions/{session_id}/resume/ (multipart)
+    BE->>DB: Create AISessionResume record
+    BE-)CW: Celery Task — run_ai_match for new resume vs same job
+    FE-->>JS: Show second analysis loading state
+  end
+      </div>
+
+      <h3>AI Session State Diagram</h3>
+      <div class="mermaid">
+stateDiagram-v2
+  direction LR
+  [*] --> PENDING : Session created
+
+  PENDING --> RUNNING : Celery task picked up
+  RUNNING --> COMPLETE : AI returns result
+  RUNNING --> FAILED : Timeout or AI error
+
+  FAILED --> PENDING : User retries
+  COMPLETE --> COMPLETE : Additional resume added (new child analysis)
+
+  style PENDING fill:#fff3cd,stroke:#cc8800
+  style RUNNING fill:#cce5ff,stroke:#0066cc
+  style COMPLETE fill:#d4edda,stroke:#28a745
+  style FAILED fill:#f8d7da,stroke:#dc3545
+      </div>
+
+      <h3>API Endpoints</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Auth</th>
+              <th>Request</th>
+              <th>Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>GET</td>
+              <td>/api/v1/jobs/{id}/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>200 — job detail, records view</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/jobs/{id}/save/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>201/200 — {saved: bool}</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/ai/match/</td>
+              <td>Yes</td>
+              <td>{job_id}</td>
+              <td>202 — {session_id}</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/ai/ats-check/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>202 — {session_id}</td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td>/api/v1/ai/sessions/{id}/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>200 — session data (poll for status)</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/ai/sessions/{id}/resume/</td>
+              <td>Yes</td>
+              <td>multipart: {resume_file}</td>
+              <td>202 — {sub_session_id}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Developer Notes</h3>
+      <div class="callout note">
+        <strong>Backend Developer (Django)</strong>
+        <p>GET /api/v1/jobs/{id}/ should upsert JobView inside the view using update_or_create. POST /api/v1/jobs/{id}/save/ should toggle save using get_or_create then delete. AI sessions return 202 Accepted immediately — async via Celery. Celery task run_ai_match: fetch session, fetch resume file, send to AI, parse response, compute verdict (85-100=EXCELLENT, 70-84=GOOD, 50-69=FAIR, 0-49=POOR), resolve top 3 jobs, update session. Set CELERY_TASK_SOFT_TIME_LIMIT=280 and CELERY_TASK_TIME_LIMIT=300 (5 min). Wrap in try/except — on exception, set status=FAILED. Store markdown exactly as returned by AI — do not sanitize. Top 3 job resolution: DB query inside Celery task. Average score computation: use Django Avg aggregation, cache in Redis 10 min. Resume is_default uniqueness: use UniqueConstraint(fields=['user'], condition=Q(is_default=True)). Post-delete signal on Resume: if deleted was default, set latest remaining as default.</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Frontend Developer (React)</strong>
+        <p>Job detail: header (title, company, location, platform badge, save button, apply button), body (description with null notice, skills chips, job type, salary), AI actions (AI Match, Check Resume buttons). Save button: optimistic UI toggle, revert on error. AI/Check buttons disabled with tooltip if no resume. AI result screen: render report_markdown with react-markdown + remark-gfm for tables/lists. Polling: setInterval every 3s while PENDING/RUNNING, clear on COMPLETE/FAILED. Score display: large circular progress with color (red=POOR, orange=FAIR, blue=GOOD, green=EXCELLENT). Verdict badge: pill component. Top 3 jobs: horizontal cards below report. Second resume: two columns or tabs with separate score/verdict/report. Apply: always open in new tab with target="_blank" rel="noopener noreferrer".</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Mobile Developer (Flutter)</strong>
+        <p>Job detail: SingleChildScrollView with sections. Skills as Chip widgets. Null fields shown as "Not available" in grey. Apply: use url_launcher, try external browser first, fallback to webview. Save: IconButton with bookmark icon — filled when saved, outlined when not. Optimistic toggle. AI result: flutter_markdown for rendering. CircularProgressIndicator styled as score ring, color from verdict. Polling: Timer.periodic, cancel on COMPLETE/FAILED. Second resume: TabBar with two tabs. AI unavailable (no resume): show BottomSheet prompting upload.</p>
+      </div>
+
+      <div class="callout note">
+        <strong>AI Engineer</strong>
+        <p>AI Match: input (resume text, job title, description, skills), output JSON {score: int, recommended_titles: [str, str, str], report_markdown: str}. If description null, base on title+skills only — note limitation in report. Report must include: executive summary, strengths, gaps, recommendations. Use structured prompting for explicit markdown formatting. ATS Check: input (resume text), output {score: int, report_markdown: str}. Report: ATS compatibility, keyword coverage, formatting issues, improvements. Verdict: backend computes from score. Fallback: if AI unavailable, exception in Celery task — retry logic handles it. After 3 retries, mark session FAILED. Target latency: 30-60 seconds. If resume >3 pages, truncate to first 3.</p>
+      </div>
+    </section>
+
+    <!-- CAREERLY-004 -->
+    <section id="flow-004" class="section">
+      <h2>CAREERLY-004: Notifications Flow</h2>
+      
+      <div class="meta-info">
+        <strong>Flow ID:</strong> CAREERLY-004<br>
+        <strong>Status:</strong> Core flow<br>
+        <strong>Related:</strong> All flows trigger notifications
+      </div>
+
+      <h3>Overview</h3>
+      <p class="section-desc">Careerly has two categories of notifications: system notifications (triggered by specific user-related events like AI analysis completion or account changes) and new jobs notifications (triggered at the end of each Celery scrape cycle when relevant new jobs are found for a user). System notifications are dispatched as Django Tasks — lightweight, event-driven, tied directly to user actions. New jobs notifications are dispatched from within the Celery scrape pipeline. All notifications are stored in the database for in-app display and marked as read/unread. Push notifications to mobile are delivered via Firebase Cloud Messaging.</p>
+
+      <h3>System Notification Triggers</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Trigger Event</th>
+              <th>Notification Type</th>
+              <th>Message</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>AI Match analysis complete</td>
+              <td>AI_MATCH_COMPLETE</td>
+              <td>"Your AI Match for [Job Title] at [Company] is ready"</td>
+            </tr>
+            <tr>
+              <td>ATS Check analysis complete</td>
+              <td>ATS_CHECK_COMPLETE</td>
+              <td>"Your resume ATS check is ready"</td>
+            </tr>
+            <tr>
+              <td>Resume uploaded successfully</td>
+              <td>RESUME_UPLOADED</td>
+              <td>"Your resume '[filename]' was uploaded successfully"</td>
+            </tr>
+            <tr>
+              <td>Resume parsing failed</td>
+              <td>RESUME_PARSE_FAILED</td>
+              <td>"We couldn't process your resume. Please try re-uploading."</td>
+            </tr>
+            <tr>
+              <td>Account email changed</td>
+              <td>ACCOUNT_UPDATED</td>
+              <td>"Your email address was updated successfully"</td>
+            </tr>
+            <tr>
+              <td>Password changed</td>
+              <td>ACCOUNT_UPDATED</td>
+              <td>"Your password was changed successfully"</td>
+            </tr>
+            <tr>
+              <td>Account suspended</td>
+              <td>ACCOUNT_SUSPENDED</td>
+              <td>"Your account has been suspended. Contact support."</td>
+            </tr>
+            <tr>
+              <td>New jobs match found</td>
+              <td>NEW_JOBS</td>
+              <td>"X new jobs matching your profile were just added"</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Data Models</h3>
+      <h4>Model: Notification</h4>
+      <p><strong>Purpose:</strong> Stores all in-app notifications for a user</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>user</td>
+              <td>ForeignKey(User)</td>
+              <td>Recipient</td>
+            </tr>
+            <tr>
+              <td>type</td>
+              <td>CharField</td>
+              <td>AI_MATCH_COMPLETE, ATS_CHECK_COMPLETE, RESUME_UPLOADED, etc.</td>
+            </tr>
+            <tr>
+              <td>title</td>
+              <td>CharField</td>
+              <td>Short title shown in panel</td>
+            </tr>
+            <tr>
+              <td>body</td>
+              <td>TextField</td>
+              <td>Full notification message</td>
+            </tr>
+            <tr>
+              <td>related_object_id</td>
+              <td>UUIDField</td>
+              <td>ID of related entity (session_id, job_id) for deep link navigation</td>
+            </tr>
+            <tr>
+              <td>related_object_type</td>
+              <td>CharField</td>
+              <td>Type hint: 'ai_session', 'job'</td>
+            </tr>
+            <tr>
+              <td>is_read</td>
+              <td>BooleanField</td>
+              <td>Indexed for unread badge count</td>
+            </tr>
+            <tr>
+              <td>created_at</td>
+              <td>DateTimeField</td>
+              <td>Indexed for sorting</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Model: PushToken</h4>
+      <p><strong>Purpose:</strong> Stores FCM push tokens per user device</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>user</td>
+              <td>ForeignKey(User)</td>
+              <td>Token owner</td>
+            </tr>
+            <tr>
+              <td>token</td>
+              <td>CharField</td>
+              <td>FCM registration token, unique</td>
+            </tr>
+            <tr>
+              <td>device_type</td>
+              <td>CharField</td>
+              <td>ANDROID or IOS</td>
+            </tr>
+            <tr>
+              <td>created_at</td>
+              <td>DateTimeField</td>
+              <td>Registration date</td>
+            </tr>
+            <tr>
+              <td>last_used_at</td>
+              <td>DateTimeField</td>
+              <td>Updated on each notification attempt</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Notification Dispatch Flow</h3>
+      <div class="mermaid">
+sequenceDiagram
+  box System
+    participant EV as Event Source (View / Celery)
+    participant DT as Django Task
+    participant BE as Backend API
+  end
+  box Database
+    participant DB as PostgreSQL
+  end
+  box Push Service
+    participant FCM as Firebase FCM
+  end
+  box Job Seeker
+    actor JS as Job Seeker
+  end
+
+  EV->>EV: Event occurs (AI complete, resume uploaded, etc.)
+  EV->>DT: transaction.on_commit → dispatch Django Task
+
+  DT->>DB: Create Notification record (is_read=False)
+  DT->>DB: Fetch user FCM token
+
+  alt FCM token exists
+    DT->>FCM: Send push notification payload
+    FCM-->>JS: Push notification delivered to device
+  else No FCM token
+    Note over DT: Skip push — in-app only
+  end
+
+  JS->>BE: GET /api/v1/notifications/ (opens panel)
+  BE->>DB: Fetch notifications for user (unread first)
+  DB-->>BE: Notification list
+  BE-->>JS: 200 OK — notification list
+
+  JS->>BE: PATCH /api/v1/notifications/{id}/read/
+  BE->>DB: Update is_read=True
+  BE-->>JS: 200 OK
+
+  opt Mark all read
+    JS->>BE: POST /api/v1/notifications/read-all/
+    BE->>DB: Bulk update is_read=True for all unread
+    BE-->>JS: 200 OK
+  end
+      </div>
+
+      <h3>New Jobs Notification (Post-Scrape)</h3>
+      <div class="mermaid">
+sequenceDiagram
+  box System
+    participant CW as Celery Worker
+    participant DT as Django Task
+  end
+  box Database
+    participant DB as PostgreSQL
+  end
+  box Push Service
+    participant FCM as Firebase FCM
+  end
+  box Job Seeker
+    actor JS as Job Seeker
+  end
+
+  CW->>DB: Collect new job IDs from this scrape cycle
+  CW->>DB: Query all ACTIVE users with preferences
+
+  loop For each user
+    CW->>DB: Check if new jobs match user preferences/resume keywords
+    alt Jobs match found
+      CW->>DT: Dispatch Django Task — send_new_jobs_notification(user_id, match_count)
+      DT->>DB: Create Notification (type=NEW_JOBS, body="X new jobs for you")
+      DT->>DB: Fetch user FCM token
+      alt Token exists
+        DT->>FCM: Send push notification
+        FCM-->>JS: Push delivered
+      end
+    else No match
+      Note over CW: Skip this user
+    end
+  end
+
+  JS->>JS: Taps notification
+  Note over JS: Navigates to Home page
+      </div>
+
+      <h3>Notification Dispatch Decision Logic</h3>
+      <div class="mermaid">
+flowchart TD
+    A([Event occurs]) --> B{Event type?}
+
+    B -- System event --> C[Dispatch Django Task immediately<br/>via transaction.on_commit]
+    B -- Post-scrape new jobs --> D[Celery Worker checks<br/>user matching]
+
+    C --> E[Create Notification record in DB]
+    D --> F{Any new jobs<br/>match user?}
+    F -- No --> G([Skip — no notification])
+    F -- Yes --> E
+
+    E --> H[Fetch FCM token for user]
+    H --> I{Token exists?}
+    I -- Yes --> J[Send FCM push notification]
+    I -- No --> K([In-app only — done])
+    J --> L{Push delivered?}
+    L -- Yes --> K
+    L -- No --> M[Log failure — do not retry]
+    M --> K
+
+    style G fill:#e2e3e5,stroke:#6c757d
+    style K fill:#d4edda,stroke:#28a745
+    style M fill:#f8d7da,stroke:#dc3545
+      </div>
+
+      <h3>API Endpoints</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Auth</th>
+              <th>Params</th>
+              <th>Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>GET</td>
+              <td>/api/v1/notifications/</td>
+              <td>Yes</td>
+              <td>?page=N</td>
+              <td>200 — {notifications[], unread_count, pagination}</td>
+            </tr>
+            <tr>
+              <td>PATCH</td>
+              <td>/api/v1/notifications/{id}/read/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>200 — mark single as read</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/notifications/read-all/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>200 — mark all as read</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/notifications/push-token/</td>
+              <td>Yes</td>
+              <td>{token, device_type}</td>
+              <td>200 — register/update FCM token</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Developer Notes</h3>
+      <div class="callout note">
+        <strong>Backend Developer (Django)</strong>
+        <p>Create notifications app with Notification and PushToken models. Write utility create_notification(user, type, title, body, related_object_id, related_object_type). Write dispatch_push(user, title, body, data={}) — fetches all tokens, calls FCM for each. On FCM "invalid token" error, auto-delete token. Use firebase-admin Python SDK (pip install firebase-admin). Use transaction.on_commit() before Django Task dispatch. New jobs notification: run inside scrape task after all platforms done. Batch process users — don't query per user. Cache unread count in Redis, invalidate on post_save signal. Cleanup task (weekly): delete notifications older than 90 days. On logout, call DELETE push-token endpoint automatically.</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Frontend Developer (React)</strong>
+        <p>Notification bell icon in top nav with unread count badge. Notifications panel: slide-in drawer or dropdown. Fetch unread count on load, cache it. Refresh when panel opens. List items: title, body, timestamp ("2 minutes ago"), read/unread visual. On click: PATCH to mark read, navigate using related_object_type. "Mark all as read" button. On web, use browser Notification API for push (optional — fallback to in-app).</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Mobile Developer (Flutter)</strong>
+        <p>Use firebase_messaging package. On app launch (after login): get FCM token via FirebaseMessaging.instance.getToken(), POST to /api/v1/notifications/push-token/. On logout: DELETE with current token. Handle three states: foreground (show in-app banner with flutter_local_notifications), background/terminated (FCM delivers system notification, tap opens app and navigates). Implement NotificationRouter reading related_object_type for routing. Notification panel: ListView with NotificationTile widgets. Badge count on bell icon. Request permissions on iOS.</p>
+      </div>
+    </section>
+
+    <!-- CAREERLY-005 -->
+    <section id="flow-005" class="section">
+      <h2>CAREERLY-005: Profile Flow</h2>
+      
+      <div class="meta-info">
+        <strong>Flow ID:</strong> CAREERLY-005<br>
+        <strong>Status:</strong> Core flow<br>
+        <strong>Related:</strong> CAREERLY-001 (Auth), CAREERLY-003 (AI sessions)
+      </div>
+
+      <h3>Overview</h3>
+      <p class="section-desc">The profile flow covers both viewing and editing a job seeker's profile. The profile view is a summary dashboard showing the user's personal info, computed stats (average ATS score, average suitability score, total jobs viewed), their uploaded resumes, and a list of jobs they have viewed. The edit profile page allows the user to update their personal information and manage multiple resume files. Biography field supports markdown. Stats are aggregated from AISession and JobView records.</p>
+
+      <h3>Routes</h3>
+      <h4>Route 1: View Profile</h4>
+      <ul>
+        <li>Job Seeker navigates to profile screen</li>
+        <li>System fetches user data, computed stats, resumes, viewed jobs list</li>
+        <li>System computes stats:
+          <ul>
+            <li>Average ATS score: average of all completed ATS_CHECK sessions</li>
+            <li>Average suitability score: average of all completed JOB_MATCH sessions</li>
+            <li>Total jobs viewed: count of JobView records</li>
+          </ul>
+        </li>
+        <li>Job Seeker sees profile image, name, position, scores, biography (markdown), resumes list, viewed jobs list</li>
+      </ul>
+
+      <h4>Route 2: Edit Profile</h4>
+      <ul>
+        <li>Job Seeker taps "Edit Profile"</li>
+        <li>System loads current profile data into form</li>
+        <li>Job Seeker updates: profile image, name, email, phone, position, country, biography</li>
+        <li>System validates all updated fields</li>
+        <li>If email changed: updates email, dispatches Django Task for notification, no re-verification needed</li>
+        <li>System saves updated profile</li>
+      </ul>
+
+      <h4>Route 3: Manage Resumes</h4>
+      <ul>
+        <li>Job Seeker navigates to resumes section</li>
+        <li>System lists all uploaded resumes (filename, size, upload date, parse status)</li>
+        <li>Job Seeker uploads new resume (PDF or DOCX, max 5MB)</li>
+        <li>System validates file</li>
+        <li>System saves resume, dispatches Celery Task to parse it</li>
+        <li>If first resume, sets as default automatically</li>
+        <li>Job Seeker can set any resume as default</li>
+        <li>Job Seeker can delete resume — if deleting default and others exist, system auto-sets most recent as new default</li>
+      </ul>
+
+      <h3>Data Models</h3>
+      <h4>Model: UserProfile</h4>
+      <p><strong>Purpose:</strong> Extended profile data for a job seeker</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>user</td>
+              <td>OneToOneField(User)</td>
+              <td>One profile per user</td>
+            </tr>
+            <tr>
+              <td>full_name</td>
+              <td>CharField</td>
+              <td>Display name, 2-100 chars</td>
+            </tr>
+            <tr>
+              <td>phone_number</td>
+              <td>CharField</td>
+              <td>E.164 format, optional</td>
+            </tr>
+            <tr>
+              <td>position</td>
+              <td>CharField</td>
+              <td>Current or desired job title, optional</td>
+            </tr>
+            <tr>
+              <td>country</td>
+              <td>CharField</td>
+              <td>From validated country list, optional</td>
+            </tr>
+            <tr>
+              <td>biography</td>
+              <td>TextField</td>
+              <td>Supports markdown, max 2000 chars</td>
+            </tr>
+            <tr>
+              <td>profile_image</td>
+              <td>ImageField</td>
+              <td>Stored in S3/media, optional</td>
+            </tr>
+            <tr>
+              <td>updated_at</td>
+              <td>DateTimeField</td>
+              <td>Auto-updated on save</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Model: Resume</h4>
+      <p><strong>Purpose:</strong> Resume files uploaded by user</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>user</td>
+              <td>ForeignKey(User)</td>
+              <td>Owner</td>
+            </tr>
+            <tr>
+              <td>file</td>
+              <td>FileField</td>
+              <td>Stored in S3 or local media</td>
+            </tr>
+            <tr>
+              <td>original_filename</td>
+              <td>CharField</td>
+              <td>Displayed in UI and sessions</td>
+            </tr>
+            <tr>
+              <td>file_size</td>
+              <td>PositiveIntegerField</td>
+              <td>In bytes</td>
+            </tr>
+            <tr>
+              <td>parsed_data</td>
+              <td>JSONField</td>
+              <td>AI-extracted: skills, titles, experience_level, education</td>
+            </tr>
+            <tr>
+              <td>parse_status</td>
+              <td>CharField</td>
+              <td>PENDING, COMPLETE, FAILED</td>
+            </tr>
+            <tr>
+              <td>is_default</td>
+              <td>BooleanField</td>
+              <td>One default per user (UniqueConstraint)</td>
+            </tr>
+            <tr>
+              <td>uploaded_at</td>
+              <td>DateTimeField</td>
+              <td>Auto-set on creation</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>API Endpoints</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Auth</th>
+              <th>Request</th>
+              <th>Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>GET</td>
+              <td>/api/v1/profile/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>200 — full profile + stats</td>
+            </tr>
+            <tr>
+              <td>PATCH</td>
+              <td>/api/v1/profile/</td>
+              <td>Yes</td>
+              <td>multipart: {full_name, email, phone, position, country, biography, profile_image}</td>
+              <td>200 — updated profile</td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td>/api/v1/profile/resumes/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>200 — resume list</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/profile/resumes/</td>
+              <td>Yes</td>
+              <td>multipart: {resume_file}</td>
+              <td>201 — resume metadata</td>
+            </tr>
+            <tr>
+              <td>PATCH</td>
+              <td>/api/v1/profile/resumes/{id}/default/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>200 — set as default</td>
+            </tr>
+            <tr>
+              <td>DELETE</td>
+              <td>/api/v1/profile/resumes/{id}/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>204 — delete resume</td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td>/api/v1/profile/viewed-jobs/</td>
+              <td>Yes</td>
+              <td>?page=N</td>
+              <td>200 — paginated viewed jobs</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Developer Notes</h3>
+      <div class="callout note">
+        <strong>Backend Developer (Django)</strong>
+        <p>Create UserProfile via post_save signal on User — use get_or_create. PATCH profile: use partial=True in DRF serializer, only update fields present in request. Profile image processing: use Pillow to strip EXIF and resize to 500x500 max in serializer validate_profile_image. Resume upload: FileField with upload_to='resumes/{user_id}/'. Validate MIME type using python-magic. Parse resume: extract text via pdfplumber (PDF) or python-docx (DOCX). Send to AI service. Cache stats in Redis profile_stats:user:{id}, TTL 10 min. Invalidate on post_save AISession (status=COMPLETE) and post_save JobView. Default resume reassignment: post_delete signal on Resume — if deleted was default, set latest remaining as default. Is_default uniqueness: UniqueConstraint(fields=['user'], condition=Q(is_default=True)).</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Frontend Developer (React)</strong>
+        <p>Profile page sections: top card (image, name, position, stats row), bio section (render with react-markdown), resumes section (file cards), viewed jobs section (paginated). Stats: three blocks — Avg ATS Score, Avg Match Score, Jobs Viewed. Show "—" if no data. Edit form: controlled inputs pre-filled from GET /api/v1/profile/. Only send changed fields in PATCH. Biography: markdown textarea with live preview toggle. Resume list: each shows filename, upload date, parse status badge, "Set as Default", "Delete". Profile image: click-to-upload circle avatar with preview. Viewed jobs: reuse JobCard components, paginate with "Load More".</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Mobile Developer (Flutter)</strong>
+        <p>Profile screen: CustomScrollView with SliverAppBar showing profile image, then SliverList for sections. Profile image: CircleAvatar with CachedNetworkImage. Tap opens image picker (image_picker package). Biography: flutter_markdown for rendering. In edit mode, plain TextField with preview toggle. Stats: Row of three StatCard widgets with color-coded scores. Resume list: ListView with swipe-to-delete (Dismissible widget), long-press context menu for "Set as Default". Edit form: same fields as web, use TextInputType.phone and TextInputType.emailAddress. Profile tab: preserve scroll state using IndexedStack.</p>
+      </div>
+
+      <div class="callout note">
+        <strong>AI Engineer</strong>
+        <p>Resume parsing Celery task: input resume_id, fetch file from storage, extract text. PDF: use pdfplumber (handles multi-column better). DOCX: use python-docx. Send extracted text to AI parsing model. Output JSON: {skills: [], job_titles: [], years_experience: int, education_level: str}. Store in Resume.parsed_data, set parse_status=COMPLETE. On failure: parse_status=FAILED, dispatch Django Task for RESUME_PARSE_FAILED notification. Parsed data feeds: home recommendations, AI Match, ATS Check. Target: < 10 seconds. If resume > 5000 tokens, truncate before sending.</p>
+      </div>
+    </section>
+
+    <!-- CAREERLY-006 -->
+    <section id="flow-006" class="section">
+      <h2>CAREERLY-006: Subscription Flow</h2>
+      
+      <div class="meta-info">
+        <strong>Flow ID:</strong> CAREERLY-006<br>
+        <strong>Status:</strong> Core flow<br>
+        <strong>Related:</strong> CAREERLY-003 (AI features gated)
+      </div>
+
+      <h3>Overview</h3>
+      <p class="section-desc">Careerly uses a subscription model to govern access to premium features. Every user starts on the FREE plan. Plans define feature flags and usage limits (e.g. number of AI Match sessions per month). The feature configuration is stored in the database and can be changed by admin without code deployment. This flow covers plan assignment, upgrade, and feature gate enforcement. Payment processing is out of scope for this version.</p>
+
+      <h3>Routes</h3>
+      <h4>Route 1: Plan Assignment at Registration</h4>
+      <ul>
+        <li>System — when new user completes registration, automatically assigns FREE plan</li>
+        <li>System — creates UserSubscription record with plan=FREE, status=ACTIVE, start_date=today</li>
+      </ul>
+
+      <h4>Route 2: View Plans & Upgrade</h4>
+      <ul>
+        <li>Job Seeker navigates to Subscription screen</li>
+        <li>System fetches all available plans with features and limits</li>
+        <li>Job Seeker sees current plan (highlighted) and upgrade options</li>
+        <li>Job Seeker selects a plan to upgrade to</li>
+        <li>System updates UserSubscription with new plan and start_date=today</li>
+        <li>Job Seeker immediately has access to new plan's features</li>
+      </ul>
+
+      <h4>Route 3: Feature Gate Enforcement</h4>
+      <ul>
+        <li>Job Seeker attempts to use a feature (e.g. AI Match)</li>
+        <li>System checks user's active plan</li>
+        <li>System checks if feature is enabled for this plan</li>
+        <li>System checks if user has remaining usage for this feature</li>
+        <li>If usage limit reached: blocks action, shows upgrade prompt</li>
+        <li>If allowed: allows action, increments usage counter</li>
+      </ul>
+
+      <h3>Data Models</h3>
+      <h4>Model: Plan</h4>
+      <p><strong>Purpose:</strong> Defines a subscription tier and feature configuration</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>name</td>
+              <td>CharField</td>
+              <td>Unique — FREE, PRO, PREMIUM</td>
+            </tr>
+            <tr>
+              <td>display_name</td>
+              <td>CharField</td>
+              <td>Shown in UI</td>
+            </tr>
+            <tr>
+              <td>price_monthly</td>
+              <td>DecimalField</td>
+              <td>0 for free plan</td>
+            </tr>
+            <tr>
+              <td>is_active</td>
+              <td>BooleanField</td>
+              <td>Inactive plans hidden from upgrade screen</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Model: PlanFeature</h4>
+      <p><strong>Purpose:</strong> Configurable feature flags and limits per plan</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>plan</td>
+              <td>ForeignKey(Plan)</td>
+              <td>Cascade delete</td>
+            </tr>
+            <tr>
+              <td>feature_key</td>
+              <td>CharField</td>
+              <td>Indexed — e.g. ai_match, ats_check, saved_jobs</td>
+            </tr>
+            <tr>
+              <td>is_enabled</td>
+              <td>BooleanField</td>
+              <td>Whether available at all</td>
+            </tr>
+            <tr>
+              <td>monthly_limit</td>
+              <td>PositiveIntegerField</td>
+              <td>Null = unlimited, e.g. 5 for ai_match on FREE</td>
+            </tr>
+            <tr>
+              <td>unique_together</td>
+              <td>—</td>
+              <td>[(plan, feature_key)]</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Model: UserSubscription</h4>
+      <p><strong>Purpose:</strong> Active subscription record for a user</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>user</td>
+              <td>OneToOneField(User)</td>
+              <td>One subscription per user</td>
+            </tr>
+            <tr>
+              <td>plan</td>
+              <td>ForeignKey(Plan)</td>
+              <td>PROTECT — do not delete plans with active subscribers</td>
+            </tr>
+            <tr>
+              <td>status</td>
+              <td>CharField</td>
+              <td>ACTIVE, EXPIRED, CANCELLED</td>
+            </tr>
+            <tr>
+              <td>start_date</td>
+              <td>DateField</td>
+              <td>When period started</td>
+            </tr>
+            <tr>
+              <td>end_date</td>
+              <td>DateField</td>
+              <td>Null for ongoing, set for fixed-term</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Model: FeatureUsage</h4>
+      <p><strong>Purpose:</strong> Tracks monthly usage of limited features</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>UUIDField</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>user</td>
+              <td>ForeignKey(User)</td>
+              <td>The user</td>
+            </tr>
+            <tr>
+              <td>feature_key</td>
+              <td>CharField</td>
+              <td>Same key as PlanFeature.feature_key</td>
+            </tr>
+            <tr>
+              <td>month</td>
+              <td>DateField</td>
+              <td>First day of month — e.g. 2025-06-01. Indexed.</td>
+            </tr>
+            <tr>
+              <td>count</td>
+              <td>PositiveIntegerField</td>
+              <td>Incremented on each use</td>
+            </tr>
+            <tr>
+              <td>unique_together</td>
+              <td>—</td>
+              <td>[(user, feature_key, month)]</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Feature Gate Check Flow</h3>
+      <div class="mermaid">
+sequenceDiagram
+  box Job Seeker
+    actor JS as Job Seeker
+  end
+  box System
+    participant FE as Frontend
+    participant BE as Backend API
+  end
+  box Database
+    participant DB as PostgreSQL
+    participant RD as Redis Cache
+  end
+
+  JS->>FE: Attempt to use gated feature (e.g. AI Match)
+  FE->>BE: POST /api/v1/ai/match/ {job_id}
+  BE->>RD: GET subscription:user:{id}
+
+  alt Cache hit
+    RD-->>BE: Cached plan + usage
+  else Cache miss
+    BE->>DB: Fetch UserSubscription + FeatureLimits
+    DB-->>BE: Plan data
+    BE->>RD: SET subscription:user:{id} (TTL 5 min)
+  end
+
+  alt Feature not in plan
+    BE-->>FE: 403 Forbidden — {reason: FEATURE_NOT_IN_PLAN}
+    FE-->>JS: Show upgrade prompt modal
+  else Usage limit reached
+    BE-->>FE: 403 Forbidden — {reason: USAGE_LIMIT_REACHED, limit: N, used: N}
+    FE-->>JS: Show "Limit reached" prompt with upgrade CTA
+  else Allowed
+    BE->>DB: Increment FeatureUsage counter
+    BE->>RD: Invalidate subscription:user:{id}
+    Note over BE: Proceed with the feature request
+  end
+      </div>
+
+      <h3>API Endpoints</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Auth</th>
+              <th>Request</th>
+              <th>Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>GET</td>
+              <td>/api/v1/subscriptions/plans/</td>
+              <td>No</td>
+              <td>—</td>
+              <td>200 — list of active plans with features</td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td>/api/v1/subscriptions/me/</td>
+              <td>Yes</td>
+              <td>—</td>
+              <td>200 — current subscription + usage</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td>/api/v1/subscriptions/upgrade/</td>
+              <td>Yes</td>
+              <td>{plan_id}</td>
+              <td>200 — updated subscription</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Developer Notes</h3>
+      <div class="callout note">
+        <strong>Backend Developer (Django)</strong>
+        <p>Create reusable can_use_feature(user, feature_key) utility in subscriptions/utils.py. Create DRF permission class HasFeatureAccess(feature_key) calling can_use_feature. Use as permission on gated views. Post-save signal on User (status=ACTIVE): create UserSubscription with FREE plan. Use select_related('plan') on UserSubscription queries. Cache subscription:user:{id} as dict {plan_name, features: {key: {is_enabled, monthly_limit, used}}}, TTL 5 min. Invalidate on subscription change. No monthly reset job needed — usage tracked by month field, get_or_create on new month naturally starts at 0. Register Plan, PlanFeature, UserSubscription, FeatureUsage in Django admin. Use inline for PlanFeature under Plan.</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Frontend Developer (React)</strong>
+        <p>Subscription screen: plan cards side-by-side. Current plan has "Current Plan" badge. Others have "Upgrade" CTA. Each card: name, price, feature list (checkmarks for included, crossed for excluded), monthly limits inline. When feature gate hit (API returns 403 FEATURE_NOT_IN_PLAN or USAGE_LIMIT_REACHED): show modal with reason and "Upgrade" button. On subscription page: show usage bar for limited features ("3 of 5 AI Matches used this month"). Fetch plans on app load, store in global state — conditionally show/hide feature buttons (UX enhancement only — server enforces).</p>
+      </div>
+
+      <div class="callout note">
+        <strong>Mobile Developer (Flutter)</strong>
+        <p>Subscription screen: PageView or Column of plan cards with feature comparison. Gate enforcement: intercept 403 responses in HTTP interceptor — if reason is FEATURE_NOT_IN_PLAN or USAGE_LIMIT_REACHED, show BottomSheet with upgrade prompt. Cache plan and feature access in local state after login, refresh on subscription change. Usage bars: LinearProgressIndicator for each limited feature.</p>
+      </div>
+    </section>
+
+    <!-- CAREERLY-007 -->
+    <section id="flow-007" class="section">
+      <h2>CAREERLY-007: Monitoring Flow</h2>
+      
+      <div class="meta-info">
+        <strong>Flow ID:</strong> CAREERLY-007<br>
+        <strong>Status:</strong> Admin only<br>
+        <strong>Related:</strong> All flows contribute data to monitoring
+      </div>
+
+      <h3>Overview</h3>
+      <p class="section-desc">The monitoring flow provides admins with a real-time and historical view of Careerly's health and usage. It extends Django admin with custom views rendering area charts, stat cards, and color-coded health indicators. The dashboard covers platform health (scraper success rates), user activity (registrations, active users, jobs viewed), AI usage (resumes checked, ATS scores, match scores), and subscription metrics. Data is aggregated from existing models — no separate analytics database needed. This flow is admin-only and does not affect any user-facing features.</p>
+
+      <h3>Dashboard Load</h3>
+      <ul>
+        <li>Admin navigates to monitoring section in Django admin</li>
+        <li>System loads custom admin monitoring view</li>
+        <li>System checks Redis cache for pre-computed metrics</li>
+        <li>Cache hit: returns cached metrics immediately</li>
+        <li>Cache miss: computes metrics from DB and caches them</li>
+        <li>Admin sees dashboard with:
+          <ul>
+            <li>Platform health cards (scraper status per platform — green/yellow/red)</li>
+            <li>Key stats row (total users, new users today, total jobs, new jobs today)</li>
+            <li>Area charts: jobs viewed per day (week), new registrations (30d), new jobs per platform (30d), AI sessions (30d)</li>
+            <li>Stat cards: total AI sessions, avg ATS score, avg match score</li>
+            <li>Subscription conversion: free vs paid user ratio</li>
+            <li>Active users per day (7d), scraper success rate per platform</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3>Data Models</h3>
+      <h4>Model: MetricSnapshot (optional)</h4>
+      <p><strong>Purpose:</strong> Pre-aggregated daily metric snapshots for fast historical charts</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr
