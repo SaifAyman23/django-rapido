@@ -68,7 +68,7 @@ services:
     init: true
     build: 
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     container_name: project_web
     restart: unless-stopped
     
