@@ -37,9 +37,9 @@ urlpatterns = (
         path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
         path("", HomeView.as_view(), name="home"),
         path("__debug__/", include("debug_toolbar.urls")),
-        path('admin/', admin.site.urls),
-        # path('i18n/', include('django.conf.urls.i18n')),
+        path('i18n/', include('django.conf.urls.i18n')),
     ] + i18n_patterns(
+        path('admin/', admin.site.urls),
         # Your language-specific URLs...
         # ...
     )
