@@ -608,16 +608,16 @@ The home page is the core discovery surface of Careerly. It serves two sections:
 
 ```mermaid
 sequenceDiagram
-  box LightGreen System
+  box System
     participant CB as Celery Beat
     participant CW as Celery Worker
     participant SC as Scrapers
   end
-  box LightYellow Database
+  box Database
     participant DB as PostgreSQL
     participant RD as Redis Cache
   end
-  box LightSalmon Notifications
+  box Notifications
     participant NS as Notification Service
   end
 
@@ -657,15 +657,15 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-  box LightBlue Job Seeker
+  box Job Seeker
     actor JS as Job Seeker
   end
-  box LightGreen System
+  box System
     participant FE as Frontend
     participant BE as Backend API
     participant AI as AI Service
   end
-  box LightYellow Database
+  box Database
     participant DB as PostgreSQL
     participant RD as Redis Cache
   end
