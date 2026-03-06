@@ -109,6 +109,12 @@ seed:
 	python manage.py seed
 	@echo "$(GREEN)✓ Database seeded$(NC)"
 
+secret-key:
+	@echo Generating production-ready Django secret key...
+	@py -c "from django.core.management.utils import get_random_secret_key; print(f'SECRET_KEY=django-insecure-{get_random_secret_key()}')" >> .env
+	@echo Secret key appended to .env file
+	@echo Note: If SECRET_KEY already exists, you'll have duplicates - edit manually
+
 # ===========================
 # Testing
 # ===========================
