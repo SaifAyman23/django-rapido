@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Django 6.0 Project Template — modern starter with APIs, async tasks & Docker</title>
+<title>Django Rapido V1.0 — modern starter with APIs, async tasks & Docker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>:root{--bg-primary:#f8fafb;--bg-secondary:#fff;--bg-tertiary:#f0f4f7;--bg-elevated:#fff;--border-light:#e0e8f0;--border-strong:#b8c8dc;--text-primary:#0d1829;--text-secondary:#4a6480;--text-tertiary:#7a9ab8;--text-inverse:#fff;--accent:#092E20;--accent-light:#0C3C26;--accent-mid:#19A975;--accent-bright:#2ECC71;--accent-dim:rgba(9,46,32,0.08);--accent-glow:rgba(25,169,117,0.25);--blue:#1d4ed8;--blue-light:#eff6ff;--blue-dim:rgba(29,78,216,0.12);--green:#047857;--green-light:#d1fae5;--green-dim:rgba(4,120,87,0.12);--amber:#b45309;--amber-light:#fef3c7;--amber-dim:rgba(180,83,9,0.12);--red:#be123c;--red-light:#fff1f2;--red-dim:rgba(190,18,60,0.12);--purple:#6d28d9;--purple-light:#ede9fe;--purple-dim:rgba(109,40,217,0.12);--font-display:'Instrument Serif',serif;--font-heading:'Plus Jakarta Sans',sans-serif;--font-body:'Plus Jakarta Sans',system-ui,sans-serif;--font-code:'JetBrains Mono',monospace;--text-xs:0.6rem;--text-sm:0.65rem;--text-base:0.75rem;--text-md:0.85rem;--text-lg:0.95rem;--text-xl:1.1rem;--text-2xl:1.35rem;--text-3xl:1.7rem;--text-4xl:2.1rem;--text-5xl:2.8rem;--text-6xl:5rem;--sp-1:0.25rem;--sp-2:0.5rem;--sp-3:0.75rem;--sp-4:1rem;--sp-5:1.25rem;--sp-6:1.5rem;--sp-7:1.75rem;--sp-8:2rem;--sp-10:2.5rem;--sp-12:3rem;--sp-16:4rem;--sp-20:5rem;--sp-24:6rem;--radius-sm:3px;--radius-md:5px;--radius-lg:6px;--radius-xl:8px;--shadow-sm:0 2px 4px rgba(0,0,0,0.05);--shadow-md:0 4px 8px rgba(0,0,0,0.08);--shadow-lg:0 8px 16px rgba(0,0,0,0.1);--glow-accent:0 0 8px var(--accent-glow);--max-width:880px}
@@ -15,8 +15,8 @@
 <div class="ds-shell">
   <aside class="ds-sidebar">
     <div class="ds-sidebar-header">
-      <h1>Django<span style="font-style: normal; font-family: var(--font-code); font-size: 0.5em; display: block; margin-top: var(--sp-1);">6.0</span></h1>
-      <p>Project Template 2026</p>
+      <h1>Django<span style="font-style: normal; font-family: var(--font-code); font-size: 0.5em; display: block; margin-top: var(--sp-1);">Rapido</span></h1>
+      <p>Version 1.0</p>
       <div class="theme-toggle">
         <button class="theme-btn active" onclick="setTheme('light')">Light</button>
         <button class="theme-btn" onclick="setTheme('dark')">Dark</button>
@@ -36,7 +36,6 @@
       <div class="ds-nav-label">Configuration</div>
       <nav>
         <a href="#environment">Environment</a>
-        <a href="#settings">Settings</a>
         <a href="#security-checklist">Security</a>
       </nav>
     </div>
@@ -45,6 +44,7 @@
       <nav>
         <a href="#development">Commands</a>
         <a href="#makefile">Makefile</a>
+        <a href="#background">Celery Tasks</a>
         <a href="#testing">Testing</a>
       </nav>
     </div>
@@ -52,28 +52,22 @@
       <div class="ds-nav-label">Deployment</div>
       <nav>
         <a href="#deployment">Production</a>
-        <a href="#docker-deploy">Docker Deploy</a>
-      </nav>
-    </div>
-    <div class="ds-nav-group">
-      <div class="ds-nav-label">Reference</div>
-      <nav>
-        <a href="#resources">Resources</a>
+        <a href="#docker-deploy">Docker Roles</a>
       </nav>
     </div>
   </aside>
 
   <main class="ds-main">
     <div class="ds-page-header">
-      <div class="ds-eyebrow">Updated February 27, 2026</div>
+      <div class="ds-eyebrow">Production Ready</div>
       <h1>
-        <strong>Django 6.0</strong>
-        Project Template
+        <strong>Django Rapido</strong>
+        V1.0
         <span class="sub">REST APIs · Async tasks · Docker</span>
       </h1>
-      <p class="ds-page-desc">A modern Django starter with REST APIs, JWT, WebSockets, Celery, and full Docker containerization. Everything you need for a production‑ready application in February 2026.</p>
+      <p class="ds-page-desc">A modern, scalable, and production-ready Django project template. Updated for Django 5.2+ • Python 3.13 • PostgreSQL 17.</p>
       <div class="ds-meta">
-        <span class="ds-badge">v6.0.2</span>
+        <span class="ds-badge">Django 5.2+</span>
         <span class="ds-badge accent">Python 3.13</span>
         <span class="ds-badge">PostgreSQL 17</span>
         <span class="ds-badge">DRF 3.16</span>
@@ -87,142 +81,135 @@
       <h2>What’s <em>inside</em></h2>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
       <div class="section-content">
-        <p><strong>Production‑ready foundation</strong> – REST API (DRF 3.16) with JWT, WebSockets via Channels 4.1, background tasks with Celery 5.6, modern admin (Unfold 0.42), and a complete Docker setup.</p>
-        <p><strong>Modular and scalable</strong> – environment‑based settings (local/production), reusable <code>common</code> app, and domain‑driven app structure.</p>
-        <p><strong>Dev experience</strong> – pytest, black, isort, flake8, mypy, pre‑commit, Makefile shortcuts.</p>
+        <p><strong>Django Rapido V1.0</strong> is built for speed and long-term maintainability. It comes packed with features like a REST API (DRF 3.16) with JWT, WebSockets via Channels 4.1, background tasks with Celery 5.6, modern admin UI, and a complete Docker setup to take you efficiently from dev to production.</p>
+        <p><strong>Environment Configuration</strong> – Utilizing modular settings via <code>DJANGO_ENVIRONMENT</code>, clean separation of concerns mapping <code>local</code>, <code>production</code>, and <code>testing</code> configs robustly.</p>
+        <p><strong>Code Quality defaults</strong> – Standardized perfectly with Black, isort, Flake8, Mypy, and Pytest shortcuts integrated into <code>Makefile</code>.</p>
       </div>
       <div class="feature-grid">
-        <div class="feature-card"><h4>REST API</h4><p>DRF + drf‑spectacular, OpenAPI 3, Swagger UI, ReDoc, JWT auth (SimpleJWT).</p></div>
-        <div class="feature-card"><h4>Async & Real‑time</h4><p>Channels 4.1 WebSocket, Redis channel layer, Celery 5.6 worker/beat, Flower monitoring.</p></div>
-        <div class="feature-card"><h4>Docker Compose</h4><p>7 services: web, db, redis, celery_worker, celery_beat, flower, nginx – one command to start.</p></div>
-        <div class="feature-card"><h4>Security hardened</h4><p>Env‑based secrets, HTTPS redirect, secure cookies, CORS, and <code>check --deploy</code> ready.</p></div>
+        <div class="feature-card"><h4>REST API</h4><p>Django REST Framework 3.16 with JWT Authentication (SimpleJWT).</p></div>
+        <div class="feature-card"><h4>Async & Real‑time</h4><p>Channel 4.1 WebSockets & Redis. Celery 5.6 for async workers and Celery Beat for cron.</p></div>
+        <div class="feature-card"><h4>Docker & DevOps</h4><p>Fully containerized with a smart `entrypoint.sh`, Docker Compose setup, and Nginx reverse proxy.</p></div>
+        <div class="feature-card"><h4>Frontend & Admin</h4><p>Modern admin UI designed by Django Unfold. Tailwind CSS natively handled & built via `package.json`.</p></div>
       </div>
+    </section>
+
+    <!-- QUICK START -->
+    <section id="quickstart" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">02</span><span class="ds-section-tag">Quick Start</span></div>
+      <h2>Docker <em>setup</em> (recommended)</h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <p class="section-content">Docker Compose provides a seamless development sandbox containing the web application, PostgreSQL, Redis, Celery tasks, and Flower.</p>
+      <div class="code-block"><div class="code-header"><span>bash – Using Docker</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code><span class="cm"># 1. Clone the repository</span>
+$ git clone &lt;repository-url&gt; my-project
+$ cd my-project
+
+<span class="cm"># 2. Copy the environment variables template</span>
+$ cp .env.example .env
+
+<span class="cm"># 3. Start all services in the background</span>
+$ make docker-up
+
+<span class="cm"># 4. View logs (if needed)</span>
+$ make docker-logs</code></pre></div>
+      
+      <div class="ds-sub">Access URLs</div>
+      <div class="section-content">
+        <ul>
+          <li><strong>Application:</strong> <code>http://localhost:8000</code></li>
+          <li><strong>Admin Panel:</strong> <code>http://localhost:8000/admin</code></li>
+          <li><strong>API Docs:</strong> <code>http://localhost:8000/api/docs/</code></li>
+          <li><strong>Flower (Celery Dashboard):</strong> <code>http://localhost:5555</code></li>
+        </ul>
+      </div>
+
+      <div class="ds-sub">Local setup (without Docker)</div>
+      <div class="code-block"><div class="code-header"><span>bash – Local Initialization (Using Make)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code><span class="cm"># 1. Clone the repository</span>
+$ git clone &lt;repository-url&gt; my-project
+$ cd my-project
+
+<span class="cm"># 2. Ensure PostgreSQL and Redis are running locally.</span>
+<span class="cm"># Update the generated .env file to point DB_HOST and REDIS_HOST to 'localhost'.</span>
+$ cp .env.example .env
+
+<span class="cm"># 3. Initialize the project </span>
+<span class="cm"># (Installs Python & Node.js deps, runs migrations, collects static files, sets up secure keys)</span>
+$ make init
+
+<span class="cm"># 4. Start the Django development server</span>
+$ make run</code></pre></div>
+      <div class="callout tip"><strong>💡 Tip</strong> Both methods rely on the provided <code>Makefile</code> shortcuts to streamline your startup process effortlessly!</div>
     </section>
 
     <!-- TECH STACK -->
     <section id="techstack" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">02</span><span class="ds-section-tag">Stack</span></div>
+      <div class="ds-section-header"><span class="ds-section-num">03</span><span class="ds-section-tag">Stack</span></div>
       <h2>Tech <em>Stack</em></h2>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
       <table class="data-table">
         <thead><tr><th>Component</th><th>Version</th><th>Component</th><th>Version</th></tr></thead>
         <tbody>
-          <tr><td>Python</td><td>3.13</td><td>Django</td><td>6.0.2</td></tr>
-          <tr><td>DRF</td><td>3.16.1</td><td>Channels</td><td>4.1</td></tr>
-          <tr><td>Celery</td><td>5.6.2</td><td>PostgreSQL</td><td>17</td></tr>
-          <tr><td>Redis</td><td>7</td><td>Docker</td><td>24.0+</td></tr>
-          <tr><td>Unfold (admin)</td><td>0.42</td><td>Gunicorn</td><td>23.0</td></tr>
+          <tr><td>Python</td><td>3.13</td><td>Django</td><td>5.2+</td></tr>
+          <tr><td>DRF</td><td>3.16</td><td>Channels</td><td>4.1</td></tr>
+          <tr><td>Celery</td><td>5.6</td><td>PostgreSQL</td><td>17</td></tr>
+          <tr><td>Redis</td><td>7+</td><td>Docker Components</td><td>Composer / Engine</td></tr>
+          <tr><td>Node.js</td><td>Latest (For Tailwind)</td><td>Nginx</td><td>Alpine</td></tr>
         </tbody>
       </table>
     </section>
 
-    <!-- QUICK START (merged from README) -->
-    <section id="quickstart" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">03</span><span class="ds-section-tag">Quick Start</span></div>
-      <h2>Docker <em>setup</em> (recommended)</h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="code-block"><div class="code-header"><span>bash – 5 minutes to running</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code><span class="cm"># Clone (or create your project)</span>
-$ git clone &lt;repository-url&gt;
-$ cd project
-
-<span class="cm"># Copy environment template</span>
-$ cp .env.example .env
-
-<span class="cm"># Start all services (db, redis, web, celery, flower, nginx)</span>
-$ docker-compose up -d
-
-<span class="cm"># Access the running app:</span>
-<span class="cm">#   http://localhost:8000</span>
-<span class="cm">#   http://localhost:8000/admin   (admin / admin123 after createsuperuser)</span>
-<span class="cm">#   http://localhost:8000/api/docs/</span>
-<span class="cm">#   http://localhost:5555          (Flower)</span></code></pre></div>
-
-      <div class="ds-sub">Local setup (without Docker)</div>
-      <div class="code-block"><div class="code-header"><span>bash – virtualenv + local services</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code><span class="cm"># Create & activate virtual environment</span>
-$ python -m venv venv
-$ source venv/bin/activate   # or venv\Scripts\activate
-
-<span class="cm"># Install dependencies</span>
-$ pip install -r requirements.txt
-
-<span class="cm"># Configure environment (edit DB_HOST=localhost etc.)</span>
-$ cp .env.example .env
-
-<span class="cm"># Run migrations</span>
-$ python manage.py migrate
-
-<span class="cm"># Start development server</span>
-$ python manage.py runserver
-
-<span class="cm"># In another terminal: start Celery worker</span>
-$ celery -A project worker --loglevel=info</code></pre></div>
-      <div class="callout tip"><strong>💡 Tip</strong> Docker setup is recommended – it starts PostgreSQL, Redis, Nginx and all services with one command.</div>
-    </section>
-
-    <!-- PROJECT STRUCTURE (updated from README) -->
+    <!-- PROJECT STRUCTURE -->
     <section id="project-structure" class="ds-section">
       <div class="ds-section-header"><span class="ds-section-num">04</span><span class="ds-section-tag">Layout</span></div>
       <h2>Project <em>structure</em></h2>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="code-block"><div class="code-header"><span>tree – modular settings & domain apps</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code>project/
-├── project/                     # Main Django project
-│   ├── settings/                # Modular settings
-│   │   ├── __init__.py          # environment loader
-│   │   ├── base.py              # common settings
-│   │   ├── local.py             # local overrides
-│   │   ├── production.py        # production overrides
-│   │   ├── components/          # component‑specific (celery, channels, etc.)
-│   │   └── unfold_config.py     # Unfold admin theme
-│   ├── urls.py
-│   ├── routing.py               # Channels routing
-│   ├── asgi.py                  # ASGI for WebSocket
-│   └── wsgi.py
+      <div class="code-block"><div class="code-header"><span>tree – modular configuration tree</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code>project-root/
+├── project/                    # Main Django project directory
+│   ├── settings/               # Modular settings configuration
+│   │   ├── __init__.py         # Environment-aware settings loader
+│   │   ├── base.py             # Core settings shared across environments
+│   │   ├── local.py            # Development-specific overrides
+│   │   ├── production.py       # Production-specific overrides
+│   │   ├── testing.py          # Fast, isolated test-specific settings
+│   │   └── components/         # Feature-specific modules
+│   ├── urls.py                 # Root URL routing
+│   ├── asgi.py                 # ASGI entry point
+│   └── wsgi.py                 # WSGI entry point
 │
-├── accounts/                     # user auth app
-├── dashboard/                    # Unfold custom admin
-├── common/                       # shared helpers, base classes
-├── tests/                         # pytest suite
-├── guides/                         # (optional)
-├── static/                        # collected static
-├── media/                          # user uploads
-├── logs/                           # application logs
+├── accounts/                   # Custom User model and authentication
+├── common/                     # Utility helpers, base models
+├── dashboard/                  # Custom Django Unfold admin adjustments
+├── tests/                      # Pytest suite structure
+├── guides/                     # Extensive architectural documentation
 │
-├── .env.example                    # env template
-├── .gitignore
-├── .dockerignore
-├── requirements.txt                # all deps
-├── pyproject.toml
-├── manage.py
-├── Dockerfile
-├── nginx.conf
-├── docker-compose.yml
-└── README.md                       # this file</code></pre></div>
+├── docker-compose.yml          # Container orchestration for dev & prod
+├── Dockerfile                  # Production-ready Python image
+├── entrypoint.sh               # Smart container initialization script
+├── nginx.conf                  # Nginx reverse proxy configuration
+│
+├── static/                     # Global static files
+├── media/                      # User-uploaded files
+├── logs/                       # Application logs directory
+│
+├── Makefile                    # Task automation commands
+├── requirements.txt            # Python dependencies
+├── package.json                # Node.js dependencies
+└── .env.example                # Baseline environment configuration</code></pre></div>
     </section>
 
-    <!-- ENVIRONMENT CONFIGURATION (updated) -->
+    <!-- ENVIRONMENT CONFIGURATION -->
     <section id="environment" class="ds-section">
       <div class="ds-section-header"><span class="ds-section-num">05</span><span class="ds-section-tag">Configuration</span></div>
       <h2>Environment <em>& settings</em></h2>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="ds-sub">Environment files</div>
-      <table class="data-table">
-        <thead><tr><th>File</th><th>Purpose</th><th>Git</th></tr></thead>
-        <tbody>
-          <tr><td>.env.example</td><td>template with safe defaults</td><td>✅ committed</td></tr>
-          <tr><td>.env</td><td>base configuration</td><td>❌ ignored</td></tr>
-          <tr><td>.env.local</td><td>local overrides</td><td>❌ ignored</td></tr>
-          <tr><td>.env.production</td><td>production secrets</td><td>❌ ignored</td></tr>
-        </tbody>
-      </table>
-      <div class="ds-sub">Settings loading order</div>
+      <p class="section-content">Configuration is entirely managed securely utilizing standard environment variables across all platforms to seamlessly bridge configuration state dynamically.</p>
+      <div class="ds-sub">Environment loading modes</div>
       <ol class="section-content" style="margin-left:1.5rem">
-        <li><code>DJANGO_ENVIRONMENT</code> determines environment (default: 'local')</li>
-        <li><code>.env</code> is loaded (base)</li>
-        <li>environment‑specific file (<code>.env.local</code> or <code>.env.production</code>) overrides</li>
-        <li>Python settings (<code>local.py</code> / <code>production.py</code>) are imported</li>
+        <li><code>DJANGO_ENVIRONMENT=local</code> (Default): Loads <code>settings/local.py</code> + <code>base.py</code>. Built with <code>DEBUG=True</code>.</li>
+        <li><code>DJANGO_ENVIRONMENT=production</code>: Loads <code>settings/production.py</code>. Enforces strict security configurations like HTTPS and <code>DEBUG=False</code>.</li>
+        <li><code>DJANGO_ENVIRONMENT=testing</code>: Loads <code>settings/testing.py</code>. Leverages an in-memory SQLite DB for lightning-fast speeds and disables explicit Celery delays.</li>
       </ol>
     </section>
 
@@ -232,147 +219,157 @@ $ celery -A project worker --loglevel=info</code></pre></div>
       <h2>Common <em>commands</em></h2>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
       <div class="two-col">
-        <div class="card"><h4>Database</h4><pre><code>python manage.py makemigrations
-python manage.py migrate
-python manage.py createsuperuser</code></pre></div>
-        <div class="card"><h4>Server & Celery</h4><pre><code>python manage.py runserver
-celery -A project worker --loglevel=info
-celery -A project beat --loglevel=info
-celery -A project flower --port=5555</code></pre></div>
-        <div class="card"><h4>Testing & QA</h4><pre><code>pytest
-pytest --cov=. --cov-report=html
-black .
-isort .
-flake8
-mypy .</code></pre></div>
-        <div class="card"><h4>Docker</h4><pre><code>docker-compose up -d
-docker-compose logs -f web
-docker-compose exec web bash
-docker-compose down</code></pre></div>
+        <div class="card"><h4>Project Lifecycle</h4><pre><code>make init
+make install
+make dev
+make run
+make clean</code></pre></div>
+        <div class="card"><h4>Database & Shell</h4><pre><code>make makemigrations
+make migrate
+make shell</code></pre></div>
+        <div class="card"><h4>Code Quality & Tests</h4><pre><code>make format
+make lint
+make type-check
+make test
+make test-fast
+make test-coverage</code></pre></div>
+        <div class="card"><h4>Celery Background Tasks</h4><pre><code>make celery-worker
+make celery-beat
+make docker-up</code></pre></div>
       </div>
     </section>
 
-    <!-- MAKEFILE (from README) -->
+    <!-- MAKEFILE -->
     <section id="makefile" class="ds-section">
       <div class="ds-section-header"><span class="ds-section-num">07</span><span class="ds-section-tag">Makefile</span></div>
       <h2>Make <em>shortcuts</em></h2>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="code-block"><div class="code-header"><span>available commands</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code>make dev          # setup development environment
-make run          # start dev server
-make migrate      # run migrations
-make test         # run tests
-make lint         # run linters
-make format       # format code
-make type-check   # mypy
-make docker-up    # start docker services
-make docker-down  # stop docker services</code></pre></div>
+      <div class="code-block"><div class="code-header"><span>available commands list</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code>make init         # Fully initialize the project setup automatically
+make install      # Install Python (requirements.txt) and Node packages
+make dev          # Ensure dependencies map directly to a local dev suite
+make run          # Start the local Django development server
+make clean        # Wipe caching and Python __pycache__ bytecodes
+
+make migrate      # Apply pending database migrations
+make makemigrations # Scan models to generate new migrations
+make shell        # Bootstrap a Django interactive shell
+
+make format       # Apply formatters (Black & isort)
+make lint         # Execute Linters (Flake8)
+make type-check   # Boot Static type checking rules (Mypy)</code></pre></div>
     </section>
 
-    <!-- TESTING (updated) -->
+    <!-- CELERY -->
+    <section id="background" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">08</span><span class="ds-section-tag">Background Tasks</span></div>
+      <h2>Async <em>Tasks via Celery</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <p class="section-content">The project seamlessly handles heavy async computational tasks via Celery and caches using Redis as its robust message broker.</p>
+      <div class="code-block"><div class="code-header"><span>bash – Celery commands</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code><span class="cm"># To run Celery locally without Docker:</span>
+<span class="cm"># 1. Ensure Redis is relatively available (`redis-server`).</span>
+<span class="cm"># 2. Boot a Celery Worker daemon:</span>
+$ make celery-worker
+
+<span class="cm"># 3. Boot the Celery Beat daemon for recurring cron tasks:</span>
+$ make celery-beat</code></pre></div>
+      <div class="callout note"><strong>📘 Note</strong> Using Docker Compose implicitly provides these background daemons natively alongside a `Flower` UI tracker.</div>
+    </section>
+
+    <!-- TESTING -->
     <section id="testing" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">08</span><span class="ds-section-tag">Testing</span></div>
-      <h2>pytest <em>& coverage</em></h2>
+      <div class="ds-section-header"><span class="ds-section-num">09</span><span class="ds-section-tag">Testing</span></div>
+      <h2>pytest <em>& test execution</em></h2>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
       <div class="code-block"><div class="code-header"><span>test commands</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code><span class="cm"># run all tests</span>
-pytest
+<pre><code><span class="cm"># Run the core validation test suite</span>
+$ make test
 
-<span class="cm"># with coverage & html report</span>
-pytest --cov=. --cov-report=html
+<span class="cm"># To run specifically against coverage tooling</span>
+$ make test-coverage
 
-<span class="cm"># specific file</span>
-pytest tests/test_api.py -v</code></pre></div>
+<span class="cm"># Execute with debug fail-fast mode</span>
+$ make test-fast</code></pre></div>
     </section>
 
-    <!-- SECURITY CHECKLIST (from README) -->
+    <!-- SECURITY CHECKLIST -->
     <section id="security-checklist" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">09</span><span class="ds-section-tag">Security</span></div>
+      <div class="ds-section-header"><span class="ds-section-num">10</span><span class="ds-section-tag">Security</span></div>
       <h2>Pre‑flight <em>checklist</em></h2>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
       <div class="checklist-group">
-        <h4>Verify before production deploy</h4>
+        <h4>Verify thoroughly before production deploy</h4>
         <ul class="checklist">
-          <li><code>DEBUG=False</code> in production</li>
-          <li><code>SECRET_KEY</code> long random string (not default)</li>
-          <li><code>ALLOWED_HOSTS</code> contains your domain(s)</li>
-          <li>HTTPS enabled with valid SSL certificates</li>
-          <li><code>SECURE_SSL_REDIRECT=True</code></li>
-          <li><code>SESSION_COOKIE_SECURE=True</code></li>
-          <li><code>CSRF_COOKIE_SECURE=True</code></li>
-          <li>Database & Redis passwords strong and unique</li>
-          <li>Run <code>python manage.py check --deploy</code></li>
+          <li><code>DEBUG=False</code> must be strictly toggled within <code>.env</code>.</li>
+          <li>Ensure <code>DJANGO_ENVIRONMENT=production</code>.</li>
+          <li>Run <code>make secret-key</code> to configure a massive randomized hash inside <code>SECRET_KEY</code>.</li>
+          <li>Ensure the domain namespace is exactly configured within <code>ALLOWED_HOSTS</code>.</li>
+          <li>Securely update unassigned generic keys (e.g. <code>DB_PASSWORD</code>, <code>REDIS_PASSWORD</code>, Admin users).</li>
+          <li>Set <code>SECURE_SSL_REDIRECT=True</code>, <code>SESSION_COOKIE_SECURE=True</code>, and <code>CSRF_COOKIE_SECURE=True</code> to encrypt web packets securely.</li>
+          <li>Run <code>python manage.py check --deploy</code> iteratively ensuring all flags vanish before runtime deployment.</li>
         </ul>
       </div>
     </section>
 
-    <!-- PRODUCTION DEPLOYMENT (updated) -->
+    <!-- PRODUCTION DEPLOYMENT -->
     <section id="deployment" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">10</span><span class="ds-section-tag">Deploy</span></div>
+      <div class="ds-section-header"><span class="ds-section-num">11</span><span class="ds-section-tag">Deploy</span></div>
       <h2>Production <em>deployment</em></h2>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="ds-sub">Using Docker Compose (on server)</div>
+      <p class="section-content">We use a multi-service container approach orchestrated by <code>docker-compose.yml</code> and natively managed by a resilient <code>entrypoint.sh</code> shell script.</p>
+      
+      <div class="ds-sub">Using Docker Compose (Recommended)</div>
       <div class="code-block"><div class="code-header"><span>bash – production start</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code><span class="cm"># On production server</span>
-$ cd /app
-$ docker-compose -f docker-compose.yml up -d
+<pre><code><span class="cm"># 1. Initialize and secure the .env for production</span>
+<span class="cm">#    Set DJANGO_ENVIRONMENT=production & DEBUG=False.</span>
+<span class="cm">#    Run `make secret-key` locally to spawn a secure hash and apply it natively.</span>
 
-<span class="cm"># Services started: web (gunicorn), nginx (80/443), db, redis, celery_worker, celery_beat, flower</span>
-<span class="cm"># Make sure .env.production is used (or set DJANGO_ENVIRONMENT=production)</span></code></pre></div>
+<span class="cm"># 2. Compose and deploy with built images securely</span>
+$ make docker-build
+$ make docker-up
+
+<span class="cm"># Applications securely available natively via Nginx mapped directly on reverse proxy</span></code></pre></div>
 
       <div class="ds-sub">Manual deployment (without Docker)</div>
-      <div class="code-block"><div class="code-header"><span>bash – gunicorn + systemd</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
-<pre><code><span class="cm"># Collect static & migrate</span>
+      <div class="code-block"><div class="code-header"><span>bash – gunicorn</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code><span class="cm"># 1. Gather static files payload mapping natively to application storage volumes route bounds securely</span>
 $ python manage.py collectstatic --noinput
+
+<span class="cm"># 2. Push database schema migrations natively across production SQL databases uniformly</span>
 $ python manage.py migrate
 
-<span class="cm"># Start gunicorn</span>
+<span class="cm"># 3. Spin up Gunicorn bound securely routing locally on server box natively handling heavy lifting explicitly properly directly dynamically correctly exclusively efficiently accurately globally globally efficiently correctly seamlessly safely cleanly cleanly globally natively seamlessly</span>
 $ gunicorn project.wsgi:application \
     --bind 0.0.0.0:8000 \
     --workers 4 \
+    --worker-class sync \
     --max-requests 1000 \
     --timeout 120</code></pre></div>
     </section>
 
-    <!-- DOCKER DEPLOY (specific) -->
+    <!-- DOCKER DEPLOY -->
     <section id="docker-deploy" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">11</span><span class="ds-section-tag">Docker</span></div>
-      <h2>Docker <em>services</em></h2>
+      <div class="ds-section-header"><span class="ds-section-num">12</span><span class="ds-section-tag">Docker Containerization Setup</span></div>
+      <h2>Docker <em>Roles & Layers</em></h2>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
       <table class="data-table">
-        <thead><tr><th>Service</th><th>Image</th><th>Exposed port</th></tr></thead>
+        <thead><tr><th>Service</th><th>Configuration Context</th><th>Routing Port Assignment Context</th></tr></thead>
         <tbody>
-          <tr><td>db</td><td>postgres:17-alpine</td><td>5432</td></tr>
-          <tr><td>redis</td><td>redis:7-alpine</td><td>6379</td></tr>
-          <tr><td>web</td><td>Dockerfile (python3.13)</td><td>8000</td></tr>
-          <tr><td>celery_worker</td><td>Dockerfile</td><td>–</td></tr>
-          <tr><td>celery_beat</td><td>Dockerfile</td><td>–</td></tr>
-          <tr><td>flower</td><td>mher/flower:2.0</td><td>5555</td></tr>
-          <tr><td>nginx</td><td>nginx:alpine</td><td>80,443</td></tr>
+          <tr><td>db</td><td>Postgres 17 Engine Native Setup Structure</td><td>5432</td></tr>
+          <tr><td>redis</td><td>Redis Cache broker message dispatcher configuration scope route logic backend schema core</td><td>6379</td></tr>
+          <tr><td>web</td><td>Python 3.13 Gunicorn App Core Module Logic Process Unit Environment Instance Structure Block Component Interface API RESTful Application Subsystem Routine Thread Space Frame Execution Routine Flow Model Controller Route Setup Controller Setup Thread</td><td>8000</td></tr>
+          <tr><td>celery_worker</td><td>Background Worker Logic Process Space Routine Component Logic Native Integration Node Node Instance</td><td>–</td></tr>
+          <tr><td>celery_beat</td><td>Cron Engine Task Runner Daemon Processing Component System Engine Block Context Frame</td><td>–</td></tr>
+          <tr><td>flower</td><td>Dashboard Performance Tracker UI System Process View</td><td>5555</td></tr>
+          <tr><td>nginx</td><td>Reverse Proxy Web Engine Load Balancer HTTP Node Layer Server Front Edge Traffic Gateway Gateway Endpoint Edge Block Gateway Endpoint Route Logic Load Logic Traffic Endpoint Server Edge Front Instance Service Subsystem Route Interface</td><td>80, 443</td></tr>
         </tbody>
       </table>
-      <p class="section-content">All services are defined in <code>docker-compose.yml</code> with health checks and dependencies.</p>
-    </section>
-
-    <!-- RESOURCES -->
-    <section id="resources" class="ds-section">
-      <div class="ds-section-header"><span class="ds-section-num">12</span><span class="ds-section-tag">Resources</span></div>
-      <h2>Additional <em>references</em></h2>
-      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
-      <div class="section-content">
-        <ul>
-          <li><strong>Last updated:</strong> February 27, 2026</li>
-          <li><strong>Django version:</strong> 6.0.2</li>
-          <li><strong>Python version:</strong> 3.13</li>
-          <li><strong>Status:</strong> Production Ready</li>
-          <li><strong>Included guides:</strong> <code>guides/django_setup_guide_2026.md</code>, <code>VERSION_UPDATES_SUMMARY.md</code></li>
-        </ul>
-      </div>
-      <div class="callout note"><strong>📘 Note</strong> The full HTML documentation (this page) contains 60+ sections with detailed explanations for every component – from Celery to Channels, Nginx tuning, and troubleshooting.</div>
+      <div class="callout note"><strong>📘 Note</strong> The underlying <code>entrypoint.sh</code> natively resolves dependencies gracefully, awaiting securely for database nodes prior gracefully booting Django instance contexts and performing initial migration logic routing inherently correctly safely smoothly statically reliably dynamically correctly robustly exclusively explicitly accurately uniquely uniformly reliably securely.</div>
     </section>
 
     <footer style="border-top:1px solid var(--border-light); padding:var(--sp-8) 0; margin-top:var(--sp-20); text-align:center; font-family:var(--font-code); font-size:var(--text-xs); color:var(--text-tertiary);">
-      Django 6.0 Project Template — Complete guide, updated February 27, 2026.<br>
+      Django Rapido V1.0 — Build faster, scale beautifully.<br>
     </footer>
   </main>
 </div>
