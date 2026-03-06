@@ -19,7 +19,7 @@ else:
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # SECRET_KEY - keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-prdsrp-u5zg&9ea&9#qaqbz2!0=pj!tv-&wyc+#q0250wmxz@9")
+SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-token")
 
 # Debug mode (overridden by environment-specific settings)
 DEBUG = os.getenv("DEBUG", "True") == "True"
