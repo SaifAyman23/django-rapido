@@ -347,7 +347,25 @@ SPECTACULAR_SETTINGS = {
                 "scheme": "bearer",
                 "bearerFormat": "JWT",
             }
+        },
+        # Added schemas for token responses (this doesn't conflict)
+        "schemas": {
+            "Token": {
+                "type": "object",
+                "properties": {
+                    "token": {
+                        "type": "string",
+                        "description": "Authentication token",
+                        "example": "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+                    }
+                }
+            }
         }
+    },
+    # Added Swagger UI customization (this is fine)
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,
+        "tryItOutEnabled": True,
     },
 }
 
