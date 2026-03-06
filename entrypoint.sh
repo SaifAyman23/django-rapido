@@ -67,19 +67,15 @@ if [ "${SKIP_REDIS:-false}" != "true" ]; then
 fi
 
 # ===========================
-# 3. DJANGO SETUP (web and workers only)
+# 3. DJANGO SETUP (web only)
 # ===========================
-if [ "$CONTAINER_ROLE" = "web" ] || [ "$CONTAINER_ROLE" = "celery_worker" ]; then
+if [ "$CONTAINER_ROLE" = "web" ]; then
     echo ""
     echo "Running Django setup tasks..."
     
     # Collect static files
     echo "  Collecting static files..."
     python manage.py collectstatic --noinput --clear 2>&1 | grep -v "^Copying\|^Installed"
-    
-    # Create migrations
-    echo "  Creating migrations..."
-    python manage.py makemigrations --noinput 2>&1 | grep -v "No changes detected"
     
     # Apply migrations
     echo "  Applying migrations..."

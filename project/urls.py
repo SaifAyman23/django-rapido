@@ -24,6 +24,7 @@ from drf_spectacular.views import (
 )
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
 from dashboard.views import HomeView
 from django.conf.urls.i18n import i18n_patterns
 
@@ -35,6 +36,7 @@ urlpatterns = (
         path('api/schema/', SpectacularAPIView.as_view(), name='schema'),  # OpenAPI schema
         path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
         path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+        path("health/", lambda request: HttpResponse("healthy"), name="health"),
         path("", HomeView.as_view(), name="home"),
         path("__debug__/", include("debug_toolbar.urls")),
         path('admin/', admin.site.urls),
