@@ -105,8 +105,22 @@ class BaseViewSetMixin(ViewSetMixin):
         class ArticleViewSet(BaseViewSetMixin, viewsets.ModelViewSet): ...
     """
 
-    LOG_REQUESTS: bool = False          # flip to True for debug logging
+    LOG_REQUESTS: bool = True          # flip to True for debug logging
     SAFE_DB_ERRORS: bool = True         # convert DB errors → 500 (not leaking SQL)
+
+    # ------------------------------------------------------------------
+    # Dispatch override to ensure error handling
+    # ------------------------------------------------------------------
+    
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Override dispatch to ensure our handle_exception is always called.
+        """
+        try:
+            response = super().dispatch(request, *args, **kwargs)
+        except Exception as exc:
+            response = self.handle_exception(exc)
+        return response
 
     # ------------------------------------------------------------------
     # Error handling
@@ -123,11 +137,78 @@ class BaseViewSetMixin(ViewSetMixin):
 
         if isinstance(exc, DRFValidationError):
             logger.debug("Validation error: %s", exc.detail)
+            
+            # Normalize exc.detail to handle ErrorDetail objects
+            def normalize_error_detail(detail):
+                """Convert ErrorDetail objects to plain strings/dicts."""
+                from rest_framework.exceptions import ErrorDetail
+                import re
+                
+                def unwrap_nested_errordetail(text):
+                    """
+                    Unwrap nested ErrorDetail string representations.
+                    Handles: "[ErrorDetail(string='message', code='invalid')]"
+                    Returns: "message"
+                    """
+                    if not isinstance(text, str):
+                        return text
+                    
+                    # Pattern to match ErrorDetail string representation
+                    pattern = r"ErrorDetail\(string=['\"](.+?)['\"],\s*code=['\"].*?['\"]\)"
+                    
+                    # Keep unwrapping until no more nested ErrorDetails
+                    prev_text = None
+                    while prev_text != text:
+                        prev_text = text
+                        # Remove list brackets if present
+                        text = text.strip()
+                        if text.startswith('[') and text.endswith(']'):
+                            text = text[1:-1].strip()
+                        if text.startswith("'") and text.endswith("'"):
+                            text = text[1:-1]
+                        if text.startswith('"') and text.endswith('"'):
+                            text = text[1:-1]
+                        # Extract from ErrorDetail pattern
+                        match = re.match(pattern, text)
+                        if match:
+                            text = match.group(1)
+                    
+                    return text
+                
+                if isinstance(detail, list):
+                    result = []
+                    for item in detail:
+                        if isinstance(item, ErrorDetail):
+                            unwrapped = unwrap_nested_errordetail(str(item))
+                            result.append(unwrapped)
+                        elif isinstance(item, str):
+                            result.append(unwrap_nested_errordetail(item))
+                        elif isinstance(item, dict):
+                            result.append(normalize_error_detail(item))
+                        else:
+                            result.append(str(item))
+                    return result
+                    
+                elif isinstance(detail, dict):
+                    return {key: normalize_error_detail(val) for key, val in detail.items()}
+                    
+                elif isinstance(detail, ErrorDetail):
+                    unwrapped = unwrap_nested_errordetail(str(detail))
+                    return unwrapped
+                    
+                else:
+                    # Single value (string or other)
+                    if isinstance(detail, str):
+                        return unwrap_nested_errordetail(detail)
+                    return str(detail)
+            
+            normalized_errors = normalize_error_detail(exc.detail)
+            
             return _error_response(
                 message="Invalid input.",
                 code="validation_error",
                 status_code=status.HTTP_400_BAD_REQUEST,
-                errors=exc.detail,
+                errors=normalized_errors,
             )
 
         if isinstance(exc, ParseError):
@@ -246,6 +327,7 @@ class BaseViewSetMixin(ViewSetMixin):
                 if hasattr(exc, "message_dict")
                 else {"non_field_errors": exc.messages}
             )
+            
             return _error_response(
                 message="Invalid input.",
                 code="validation_error",
@@ -329,7 +411,7 @@ class BaseViewSetMixin(ViewSetMixin):
             code="internal_server_error",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-
+    
     # ------------------------------------------------------------------
     # Logging
     # ------------------------------------------------------------------
@@ -413,7 +495,12 @@ class BaseViewSetMixin(ViewSetMixin):
 
     def perform_create(self, serializer):
         self.before_perform_create(serializer)
-        instance = serializer.save(**self.get_create_kwargs(serializer))
+
+        all_kwargs = {**self.get_create_kwargs(serializer)}
+        all_kwargs['created_by'] = self.request.user
+        all_kwargs['updated_by'] = self.request.user
+
+        instance = serializer.save(**all_kwargs)
         self.after_perform_create(instance, serializer)
         return instance
 
@@ -437,7 +524,11 @@ class BaseViewSetMixin(ViewSetMixin):
 
     def perform_update(self, serializer):
         self.before_perform_update(serializer)
-        instance = serializer.save(**self.get_update_kwargs(serializer))
+
+        all_kwargs = {**self.get_update_kwargs(serializer)}
+        all_kwargs['updated_by'] = self.request.user
+
+        instance = serializer.save(**all_kwargs)
         self.after_perform_update(instance, serializer)
         return instance
 
