@@ -375,12 +375,25 @@ class SEOModel(TimestampedModel):
 class CustomUser(AbstractUser):
     """Custom user model with enhanced features"""
 
+    # UNVERIFIED → cannot log in
+    # VERIFIED → can log in but will be redirected to setup if UserPreferences or resume is missing
+    # SETUP_INCOMPLETE → logged in but gated — only setup screen accessible
+    # ACTIVE → full access
+    # SUSPENDED → read-only or full block depending on admin decision
+
+    class Status(models.TextChoices):
+        UNVERIFIED = "unverified", _("Unverified")
+        VERIFIED = "verified", _("Verified")
+        SETUP_INCOMPLETE = "setup_incomplete", _("Setup Incomplete")
+        ACTIVE = "active", _("Active")
+        SUSPENDED = "suspended", _("Suspended")
+
     # Identity
     email = models.EmailField(unique=True, db_index=True)
     phone_number = models.CharField(
         max_length=20,
         blank=True,
-        help_text="User phone number",
+        help_text=_("User phone number"),
     )
 
     # Media & Profile
@@ -388,35 +401,41 @@ class CustomUser(AbstractUser):
         upload_to="avatars/%Y/%m/%d/",
         null=True,
         blank=True,
-        help_text="User avatar image",
+        help_text=_("User avatar image"),
     )
     bio = models.TextField(
         max_length=500,
         blank=True,
-        help_text="User biography",
+        help_text=_("User biography"),
     )
 
     # Verification & Security
     is_verified = models.BooleanField(
         default=False,
         db_index=True,
-        help_text="Email verified status",
+        help_text=_("Email verified status"),
     )
     verified_at = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="Email verification timestamp",
+        help_text=_("Email verification timestamp"),
     )
     verification_token = models.CharField(
         max_length=255,
         blank=True,
-        help_text="Email verification token",
+        help_text=_("Email verification token"),
     )
     two_factor_enabled = models.BooleanField(
         default=False,
-        help_text="Two-factor authentication status",
+        help_text=_("Two-factor authentication status"),
     )
-
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.UNVERIFIED,
+        db_index=True,
+        help_text=_("User status"),
+    )
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)

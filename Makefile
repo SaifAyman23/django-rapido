@@ -1,7 +1,12 @@
-# Makefile for Django 6.0 Project (Feb 2026)
+# Makefile for Django Rapido MINI V1.0
+# A simplified Django project template for quick project setup
 # Usage: make [target]
+#
+# NOTE: This Makefile uses bash syntax. On Windows:
+#       - Use Git Bash, WSL (Windows Subsystem for Linux), or PowerShell
+#       - Or run commands manually (see individual targets)
 
-.PHONY: help install migrate run test clean docker-up docker-down celery-worker celery-beat flower lint format
+.PHONY: help install migrate runserver test clean docker-up docker-down celery-worker celery-beat flower lint format
 
 # Colors for output
 CYAN := \033[0;36m
@@ -10,15 +15,18 @@ YELLOW := \033[0;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
 
+# Python command (works on Windows and Unix)
+PY := py
+
 help:
-	@echo "$(CYAN)Django 6.0 Project Management Commands$(NC)"
+	@echo "$(CYAN)Django Rapido MINI V1.0 - Project Management Commands$(NC)"
 	@echo ""
 	@echo "$(GREEN)Setup & Installation:$(NC)"
 	@echo "  make install           Install dependencies"
-	@echo "  make init              Initialize project (migrations + superuser)"
+	@echo "  make init              Initialize project (creates .env, secret key, migrations, superuser)"
 	@echo ""
 	@echo "$(GREEN)Development:$(NC)"
-	@echo "  make run               Run development server"
+	@echo "  make runserver         Run development server"
 	@echo "  make migrate           Run migrations"
 	@echo "  make makemigrations    Create migrations"
 	@echo "  make shell             Open Django shell"
@@ -34,12 +42,6 @@ help:
 	@echo "  make format            Format code (black, isort)"
 	@echo "  make check-format      Check code format without changes"
 	@echo "  make type-check        Run type checking (mypy)"
-	@echo ""
-	@echo "$(GREEN)Celery Tasks:$(NC)"
-	@echo "  make celery-worker     Start Celery worker"
-	@echo "  make celery-beat       Start Celery beat scheduler"
-	@echo "  make flower            Start Celery Flower monitoring"
-	@echo "  make celery-purge      Purge all Celery tasks"
 	@echo ""
 	@echo "$(GREEN)Docker:$(NC)"
 	@echo "  make docker-up         Start Docker services"
@@ -59,120 +61,120 @@ help:
 # Installation & Setup
 # ===========================
 install:
-	@echo "$(CYAN)Installing dependencies...$(NC)"
-	pip install --upgrade pip setuptools wheel
-	pip install -r requirements.txt
-	@echo "$(GREEN)✓ Dependencies installed$(NC)"
+	@echo "$(CYAN)Installing Python dependencies...$(NC)"
+	$(PY) -m pip install --upgrade pip setuptools wheel
+	$(PY) -m pip install -r requirements.txt
+	@echo "$(GREEN)Python dependencies installed$(NC)"
+	@if [ -f package.json ]; then \
+		echo "$(CYAN)Installing Node.js dependencies...$(NC)"; \
+		npm install; \
+		echo "$(GREEN)Node.js dependencies installed$(NC)"; \
+	fi
 
-init: migrate
-	@echo "$(CYAN)Initializing project...$(NC)"
-	python manage.py createsuperuser
-	python manage.py collectstatic --noinput
-	@echo "$(GREEN)✓ Project initialized$(NC)"
+# Initialize the project:
+# 1. Create .env from .env.example (if .env doesn't exist)
+# 2. Generate SECRET_KEY if not present in .env
+# 3. Run migrations
+# 4. Create superuser (non-interactive using env vars from .env)
+# 5. Collect static files
+# Note: This uses bash syntax - on Windows use Git Bash, WSL, or PowerShell
+init:
+	@echo "$(CYAN)Initializing Django Rapido MINI project...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Step 0: Installing dependencies...$(NC)"
+	@$(MAKE) install
+	@echo ""
+	@echo "$(YELLOW)Step 1: Creating .env from .env.example...$(NC)"
+	@if [ ! -f .env ]; then \
+		if [ -f .env.example ]; then \
+			cp .env.example .env; \
+			echo "$(GREEN)  - .env created from .env.example$(NC)"; \
+		else \
+			echo "$(RED)  - .env.example not found!$(NC)"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "$(GREEN)  - .env already exists, skipping...$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)Step 2: Generating SECRET_KEY...$(NC)"
+	@if grep -q "^SECRET_KEY=" .env 2>/dev/null; then \
+		echo "$(GREEN)  - SECRET_KEY already exists in .env$(NC)"; \
+	else \
+		$(PY) -c "from django.core.management.utils import get_random_secret_key; print('SECRET_KEY=django-insecure-' + get_random_secret_key())" >> .env; \
+		echo "$(GREEN)  - SECRET_KEY generated and added to .env$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)Step 3: Running migrations...$(NC)"
+	$(PY) manage.py migrate --noinput
+	@echo "$(GREEN)  - Migrations completed$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Step 4: Creating superuser...$(NC)"
+	$(PY) manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); import os; u, created = User.objects.get_or_create(username=os.getenv('DJANGO_SUPERUSER_USERNAME', 'admin'), defaults={'email': os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@example.com'), 'is_staff': True, 'is_superuser': True}); u.set_password(os.getenv('DJANGO_SUPERUSER_PASSWORD', 'admin123')); u.save(); print('Superuser ready!' if created else 'Superuser already exists')"
+	@echo ""
+	@echo "$(YELLOW)Step 5: Collecting static files...$(NC)"
+	$(PY) manage.py collectstatic --noinput
+	@echo "$(GREEN)  - Static files collected$(NC)"
+	@echo ""
+	@echo "$(GREEN)========================================$(NC)"
+	@echo "$(GREEN)  Django Rapido MINI V1.0 Initialized!$(NC)"
+	@echo "$(GREEN)========================================$(NC)"
+	@echo ""
+	@echo "$(CYAN)Next steps:$(NC)"
+	@echo "  1. Edit .env with your configuration"
+	@echo "  2. Run: make runserver"
+	@echo "  3. Visit: http://localhost:8000/admin"
+	@echo ""
+	@echo "$(YELLOW)Default admin credentials:$(NC)"
+	@echo "  Username: admin (or from DJANGO_SUPERUSER_USERNAME in .env)"
+	@echo "  Password: admin123 (or from DJANGO_SUPERUSER_PASSWORD in .env)"
+	@echo ""
+	@echo "$(YELLOW)Note:$(NC) To switch to PostgreSQL, see guides/Settings guide.md"
 
 # ===========================
 # Django Management
 # ===========================
-run:
+runserver:
 	@echo "$(CYAN)Starting Django development server...$(NC)"
-	python manage.py runserver
+	$(PY) manage.py runserver
 
 migrate:
 	@echo "$(CYAN)Running migrations...$(NC)"
-	python manage.py migrate
-	@echo "$(GREEN)✓ Migrations completed$(NC)"
+	$(PY) manage.py migrate
+	@echo "$(GREEN)Migrations completed$(NC)"
 
 makemigrations:
 	@echo "$(CYAN)Creating migrations...$(NC)"
-	python manage.py makemigrations
-	@echo "$(GREEN)✓ Migrations created$(NC)"
+	$(PY) manage.py makemigrations
+	@echo "$(GREEN)Migrations created$(NC)"
 
 shell:
 	@echo "$(CYAN)Opening Django shell...$(NC)"
-	python manage.py shell
+	$(PY) manage.py shell
 
 createsuperuser:
 	@echo "$(CYAN)Creating superuser...$(NC)"
-	python manage.py createsuperuser
+	$(PY) manage.py createsuperuser
 
 collectstatic:
 	@echo "$(CYAN)Collecting static files...$(NC)"
-	python manage.py collectstatic --noinput
-	@echo "$(GREEN)✓ Static files collected$(NC)"
+	$(PY) manage.py collectstatic --noinput
+	@echo "$(GREEN)Static files collected$(NC)"
 
 check:
 	@echo "$(CYAN)Running Django system checks...$(NC)"
-	python manage.py check --deploy
+	$(PY) manage.py check --deploy
 
 seed:
 	@echo "$(CYAN)Seeding database...$(NC)"
-	python manage.py seed
-	@echo "$(GREEN)✓ Database seeded$(NC)"
+	$(PY) manage.py seed
+	@echo "$(GREEN)Database seeded$(NC)"
 
-# ===========================
-# Testing
-# ===========================
-test:
-	@echo "$(CYAN)Running tests...$(NC)"
-	pytest -v
-
-test-coverage:
-	@echo "$(CYAN)Running tests with coverage...$(NC)"
-	pytest --cov=. --cov-report=html --cov-report=term-missing
-	@echo "$(GREEN)✓ Coverage report generated in htmlcov/$(NC)"
-
-test-fast:
-	@echo "$(CYAN)Running tests (fail fast)...$(NC)"
-	pytest -x -v
-
-test-file:
-	@echo "$(CYAN)Running tests for specific file...$(NC)"
-	pytest $(FILE) -v
-
-# ===========================
-# Code Quality
-# ===========================
-lint:
-	@echo "$(CYAN)Running code linting...$(NC)"
-	flake8 --config=.flake8 --max-line-length=100 .
-	@echo "$(GREEN)✓ Linting completed$(NC)"
-
-format:
-	@echo "$(CYAN)Formatting code...$(NC)"
-	black . --line-length=100
-	isort . --profile=black --line-length=100
-	@echo "$(GREEN)✓ Code formatted$(NC)"
-
-check-format:
-	@echo "$(CYAN)Checking code format...$(NC)"
-	black . --line-length=100 --check
-	isort . --profile=black --line-length=100 --check-only
-	@echo "$(GREEN)✓ Code format check passed$(NC)"
-
-type-check:
-	@echo "$(CYAN)Running type checking...$(NC)"
-	mypy . --ignore-missing-imports
-	@echo "$(GREEN)✓ Type check completed$(NC)"
-
-# ===========================
-# Celery Tasks
-# ===========================
-celery-worker:
-	@echo "$(CYAN)Starting Celery worker...$(NC)"
-	celery -A project worker --loglevel=info --concurrency=4
-
-celery-beat:
-	@echo "$(CYAN)Starting Celery beat scheduler...$(NC)"
-	celery -A project beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-
-flower:
-	@echo "$(CYAN)Starting Celery Flower monitoring...$(NC)"
-	@echo "$(YELLOW)Flower will be available at http://localhost:5555$(NC)"
-	celery -A project flower --port=5555
-
-celery-purge:
-	@echo "$(RED)Purging all Celery tasks...$(NC)"
-	celery -A project purge -f
+secret-key:
+	@echo Generating production-ready Django secret key...
+	@$(PY) -c "from django.core.management.utils import get_random_secret_key; print(f'SECRET_KEY=django-insecure-{get_random_secret_key()}')" >> .env
+	@echo Secret key appended to .env file
+	@echo Note: If SECRET_KEY already exists, you will have duplicates - edit manually
 
 # ===========================
 # Docker
@@ -180,22 +182,21 @@ celery-purge:
 docker-up:
 	@echo "$(CYAN)Starting Docker services...$(NC)"
 	docker-compose up -d
-	@echo "$(GREEN)✓ Docker services started$(NC)"
+	@echo "$(GREEN)Docker services started$(NC)"
 	@echo "$(YELLOW)Services:$(NC)"
 	@echo "  Django:  http://localhost:8000"
 	@echo "  Admin:   http://localhost:8000/admin"
 	@echo "  Docs:    http://localhost:8000/api/docs/"
-	@echo "  Flower:  http://localhost:5555"
 
 docker-down:
 	@echo "$(CYAN)Stopping Docker services...$(NC)"
 	docker-compose down
-	@echo "$(GREEN)✓ Docker services stopped$(NC)"
+	@echo "$(GREEN)Docker services stopped$(NC)"
 
 docker-build:
 	@echo "$(CYAN)Building Docker images...$(NC)"
 	docker-compose build --no-cache
-	@echo "$(GREEN)✓ Docker images built$(NC)"
+	@echo "$(GREEN)Docker images built$(NC)"
 
 docker-logs:
 	@echo "$(CYAN)Viewing Docker logs...$(NC)"
@@ -211,16 +212,16 @@ docker-shell:
 
 docker-migrate:
 	@echo "$(CYAN)Running migrations in Docker...$(NC)"
-	docker-compose exec web python manage.py migrate
+	docker-compose exec web $(PY) manage.py migrate
 
 docker-createsuperuser:
 	@echo "$(CYAN)Creating superuser in Docker...$(NC)"
-	docker-compose exec web python manage.py createsuperuser
+	docker-compose exec web $(PY) manage.py createsuperuser
 
 docker-clean:
 	@echo "$(RED)Removing Docker containers and volumes...$(NC)"
 	docker-compose down -v
-	@echo "$(GREEN)✓ Docker cleaned$(NC)"
+	@echo "$(GREEN)Docker cleaned$(NC)"
 
 # ===========================
 # Utilities
@@ -233,28 +234,28 @@ clean:
 	find . -type f -name "*.egg-info" -delete
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
-	@echo "$(GREEN)✓ Cache cleaned$(NC)"
+	@echo "$(GREEN)Cache cleaned$(NC)"
 
 requirements:
 	@echo "$(CYAN)Freezing requirements...$(NC)"
 	pip freeze > requirements.txt
-	@echo "$(GREEN)✓ Requirements updated$(NC)"
+	@echo "$(GREEN)Requirements updated$(NC)"
 
 db-reset:
 	@echo "$(RED)WARNING: This will delete all data!$(NC)"
 	@read -p "Are you sure? (y/N) " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		python manage.py flush; \
-		python manage.py migrate; \
-		python manage.py createsuperuser; \
-		@echo "$(GREEN)✓ Database reset$(NC)"; \
+		$(PY) manage.py flush; \
+		$(PY) manage.py migrate; \
+		$(PY) manage.py createsuperuser; \
+		echo "$(GREEN)Database reset$(NC)"; \
 	fi
 
 db-backup:
 	@echo "$(CYAN)Backing up database...$(NC)"
 	pg_dump project_db > backup_$(shell date +%Y%m%d_%H%M%S).sql
-	@echo "$(GREEN)✓ Database backed up$(NC)"
+	@echo "$(GREEN)Database backed up$(NC)"
 
 # ===========================
 # Pre-commit Hooks
@@ -262,7 +263,7 @@ db-backup:
 install-hooks:
 	@echo "$(CYAN)Installing pre-commit hooks...$(NC)"
 	pre-commit install
-	@echo "$(GREEN)✓ Pre-commit hooks installed$(NC)"
+	@echo "$(GREEN)Pre-commit hooks installed$(NC)"
 
 run-hooks:
 	@echo "$(CYAN)Running pre-commit hooks...$(NC)"
@@ -274,13 +275,13 @@ run-hooks:
 docs:
 	@echo "$(CYAN)Building documentation...$(NC)"
 	cd docs && make html
-	@echo "$(GREEN)✓ Documentation built in docs/_build/html/$(NC)"
+	@echo "$(GREEN)Documentation built in docs/_build/html/$(NC)"
 
 # ===========================
 # Development Workflow
 # ===========================
 dev: install migrate
-	@echo "$(GREEN)✓ Development environment ready!$(NC)"
+	@echo "$(GREEN)Development environment ready!$(NC)"
 	@echo "$(CYAN)Starting development servers...$(NC)"
 	@echo "  - Django server (terminal 1): make run"
 	@echo "  - Celery worker (terminal 2): make celery-worker"

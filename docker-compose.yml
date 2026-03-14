@@ -1,4 +1,4 @@
-version: '3.10'
+version: "3.10"
 
 volumes:
   postgres_data:
@@ -28,11 +28,15 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_here}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
     ports:
-      - "5432:5432"  # Remove in production to hide from host
+      - "5432:5432" # Remove in production to hide from host
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-project_user} -d ${DB_NAME:-project_db}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-project_user} -d ${DB_NAME:-project_db}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,7 +53,7 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD:-redis_password}"
     ports:
-      - "6379:6379"  # Remove in production to hide from host
+      - "6379:6379" # Remove in production to hide from host
     volumes:
       - redis_data:/data
     healthcheck:
@@ -66,25 +70,25 @@ services:
   # ===========================
   web:
     init: true
-    build: 
+    build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     container_name: project_web
     restart: unless-stopped
-    
+
     # LOCAL: runserver with hot reload
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ..:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-    
+
     # PRODUCTION: Replace command and volumes with:
     # command: gunicorn project.wsgi:application --bind 0.0.0.0:8000 --workers 4 --worker-class sync --max-requests 1000 --timeout 120
     # volumes:
     #   - static_volume:/app/staticfiles
     #   - media_volume:/app/media
-    
+
     ports:
       - "8000:8000"
     environment:
@@ -99,7 +103,7 @@ services:
     networks:
       - project_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -110,17 +114,17 @@ services:
   # ===========================
   celery_worker:
     init: true
-    build: 
+    build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     container_name: project_celery_worker
     restart: unless-stopped
-    
+
     # LOCAL: autoreload for development
     command: celery -A project worker --loglevel=info --autoreload
     volumes:
       - ..:/app
-    
+
     # PRODUCTION: Replace command with:
     # command: celery -A project worker --loglevel=info --concurrency=4 --max-tasks-per-child=100 --time-limit=1800
     # volumes: []
@@ -142,19 +146,19 @@ services:
   # ===========================
   celery_beat:
     init: true
-    build: 
+    build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     container_name: project_celery_beat
     restart: unless-stopped
-    
+
     command: celery -A project beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - ..:/app
-    
+
     # PRODUCTION: Remove volume mount
     # volumes: []
-    
+
     environment:
       - CONTAINER_ROLE=celery_beat
     env_file:
@@ -172,20 +176,20 @@ services:
   # ===========================
   flower:
     init: true
-    build: 
+    build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     container_name: project_flower
     restart: unless-stopped
-    
+
     command: celery -A project flower --port=5555 --broker=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
     ports:
       - "5555:5555"
-    
+
     # PRODUCTION: Use persistent storage and proxy through nginx
     # command: celery -A project flower --port=5555 --broker=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123} --persistent --db=/data/flower.db
     # ports: []  # Proxy through nginx instead of exposing directly
-    
+
     environment:
       - CONTAINER_ROLE=flower
     env_file:
@@ -203,14 +207,14 @@ services:
     image: nginx:alpine
     container_name: project_nginx
     restart: unless-stopped
-    
+
     ports:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
-    
+
     # PRODUCTION: Add HTTPS with SSL certificate
     # ports:
     #   - "80:80"
@@ -220,13 +224,21 @@ services:
     #   - ./ssl:/etc/nginx/ssl:ro
     #   - static_volume:/app/staticfiles:ro
     #   - media_volume:/app/media:ro
-    
+
     depends_on:
       - web
     networks:
       - project_network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health/"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost/health/",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

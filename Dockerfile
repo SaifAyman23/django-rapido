@@ -36,7 +36,7 @@ RUN mkdir -p /app/logs /app/staticfiles /app/media
 RUN python manage.py collectstatic --noinput
 
 # Copy entrypoint and set permissions
-COPY ./docker/entrypoint.sh /entrypoint.sh
+COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Change ownership and switch to non-root user

@@ -105,8 +105,22 @@ class BaseViewSetMixin(ViewSetMixin):
         class ArticleViewSet(BaseViewSetMixin, viewsets.ModelViewSet): ...
     """
 
-    LOG_REQUESTS: bool = False          # flip to True for debug logging
+    LOG_REQUESTS: bool = True          # flip to True for debug logging
     SAFE_DB_ERRORS: bool = True         # convert DB errors → 500 (not leaking SQL)
+
+    # ------------------------------------------------------------------
+    # Dispatch override to ensure error handling
+    # ------------------------------------------------------------------
+    
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Override dispatch to ensure our handle_exception is always called.
+        """
+        try:
+            response = super().dispatch(request, *args, **kwargs)
+        except Exception as exc:
+            response = self.handle_exception(exc)
+        return response
 
     # ------------------------------------------------------------------
     # Error handling
@@ -194,7 +208,7 @@ class BaseViewSetMixin(ViewSetMixin):
                 message="Invalid input.",
                 code="validation_error",
                 status_code=status.HTTP_400_BAD_REQUEST,
-                errors=exc.detail,
+                errors=normalized_errors,
             )
 
         if isinstance(exc, ParseError):
@@ -313,6 +327,7 @@ class BaseViewSetMixin(ViewSetMixin):
                 if hasattr(exc, "message_dict")
                 else {"non_field_errors": exc.messages}
             )
+            
             return _error_response(
                 message="Invalid input.",
                 code="validation_error",
@@ -396,7 +411,7 @@ class BaseViewSetMixin(ViewSetMixin):
             code="internal_server_error",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-
+    
     # ------------------------------------------------------------------
     # Logging
     # ------------------------------------------------------------------
@@ -480,7 +495,15 @@ class BaseViewSetMixin(ViewSetMixin):
 
     def perform_create(self, serializer):
         self.before_perform_create(serializer)
-        instance = serializer.save(**self.get_create_kwargs(serializer))
+        
+        all_kwargs = {**self.get_create_kwargs(serializer)}
+        model = serializer.Meta.model   
+        if hasattr(model, 'created_by'):
+            all_kwargs['created_by'] = self.request.user
+        if hasattr(model, 'updated_by'):
+            all_kwargs['updated_by'] = self.request.user
+
+        instance = serializer.save(**all_kwargs)
         self.after_perform_create(instance, serializer)
         return instance
 
@@ -504,7 +527,13 @@ class BaseViewSetMixin(ViewSetMixin):
 
     def perform_update(self, serializer):
         self.before_perform_update(serializer)
-        instance = serializer.save(**self.get_update_kwargs(serializer))
+
+        all_kwargs = {**self.get_update_kwargs(serializer)} 
+        model = serializer.Meta.model   
+        if hasattr(model, 'updated_by'):
+            all_kwargs['updated_by'] = self.request.user
+
+        instance = serializer.save(**all_kwargs)
         self.after_perform_update(instance, serializer)
         return instance
 
