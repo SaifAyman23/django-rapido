@@ -495,10 +495,13 @@ class BaseViewSetMixin(ViewSetMixin):
 
     def perform_create(self, serializer):
         self.before_perform_create(serializer)
-
+        
         all_kwargs = {**self.get_create_kwargs(serializer)}
-        all_kwargs['created_by'] = self.request.user
-        all_kwargs['updated_by'] = self.request.user
+        model = serializer.Meta.model   
+        if hasattr(model, 'created_by'):
+            all_kwargs['created_by'] = self.request.user
+        if hasattr(model, 'updated_by'):
+            all_kwargs['updated_by'] = self.request.user
 
         instance = serializer.save(**all_kwargs)
         self.after_perform_create(instance, serializer)
@@ -525,8 +528,10 @@ class BaseViewSetMixin(ViewSetMixin):
     def perform_update(self, serializer):
         self.before_perform_update(serializer)
 
-        all_kwargs = {**self.get_update_kwargs(serializer)}
-        all_kwargs['updated_by'] = self.request.user
+        all_kwargs = {**self.get_update_kwargs(serializer)} 
+        model = serializer.Meta.model   
+        if hasattr(model, 'updated_by'):
+            all_kwargs['updated_by'] = self.request.user
 
         instance = serializer.save(**all_kwargs)
         self.after_perform_update(instance, serializer)
