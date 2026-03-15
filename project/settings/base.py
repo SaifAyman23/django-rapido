@@ -19,7 +19,7 @@ else:
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # SECRET_KEY - keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-prdsrp-u5zg&9ea&9#qaqbz2!0=pj!tv-&wyc+#q0250wmxz@9")
+SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-token")
 
 # Debug mode (overridden by environment-specific settings)
 DEBUG = os.getenv("DEBUG", "True") == "True"
@@ -117,6 +117,38 @@ AUTH_USER_MODEL = "common.CustomUser"
 
 # Default auto field
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# https://docs.djangoproject.com/en/5.1/ref/settings/#date-input-formats
+DATE_INPUT_FORMATS = [
+    "%d.%m.%Y",  # Custom input
+    "%Y-%m-%d",  # '2006-10-25'
+    "%m/%d/%Y",  # '10/25/2006'
+    "%m/%d/%y",  # '10/25/06'
+    "%b %d %Y",  # 'Oct 25 2006'
+    "%b %d, %Y",  # 'Oct 25, 2006'
+    "%d %b %Y",  # '25 Oct 2006'
+    "%d %b, %Y",  # '25 Oct, 2006'
+    "%B %d %Y",  # 'October 25 2006'
+    "%B %d, %Y",  # 'October 25, 2006'
+    "%d %B %Y",  # '25 October 2006'
+    "%d %B, %Y",  # '25 October, 2006'
+]
+
+# https://docs.djangoproject.com/en/5.1/ref/settings/#datetime-input-formats
+DATETIME_INPUT_FORMATS = [
+    "%d.%m.%Y %H:%M:%S",  # Custom input
+    "%Y-%m-%d %H:%M:%S",  # '2006-10-25 14:30:59'
+    "%Y-%m-%d %H:%M:%S.%f",  # '2006-10-25 14:30:59.000200'
+    "%Y-%m-%d %H:%M",  # '2006-10-25 14:30'
+    "%m/%d/%Y %H:%M:%S",  # '10/25/2006 14:30:59'
+    "%m/%d/%Y %H:%M:%S.%f",  # '10/25/2006 14:30:59.000200'
+    "%m/%d/%Y %H:%M",  # '10/25/2006 14:30'
+    "%m/%d/%y %H:%M:%S",  # '10/25/06 14:30:59'
+    "%m/%d/%y %H:%M:%S.%f",  # '10/25/06 14:30:59.000200'
+    "%m/%d/%y %H:%M",  # '10/25/06 14:30'
+]
+
 
 # Internationalization
 LANGUAGE_CODE = "en-us"
@@ -261,6 +293,11 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
+    'DATE_FORMAT': '%d.%m.%Y',  # Output format for dates
+    'DATETIME_FORMAT': '%d.%m.%Y %H:%M:%S',  # Output format for datetimes
+    'TIME_FORMAT': '%H:%M:%S',
+    'DATE_INPUT_FORMATS': DATE_INPUT_FORMATS,  # Input formats
+    'DATETIME_INPUT_FORMATS': DATETIME_INPUT_FORMATS,
 }
 
 # JWT Configuration (5.4.0)
@@ -335,7 +372,25 @@ SPECTACULAR_SETTINGS = {
                 "scheme": "bearer",
                 "bearerFormat": "JWT",
             }
+        },
+        # Added schemas for token responses (this doesn't conflict)
+        "schemas": {
+            "Token": {
+                "type": "object",
+                "properties": {
+                    "token": {
+                        "type": "string",
+                        "description": "Authentication token",
+                        "example": "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+                    }
+                }
+            }
         }
+    },
+    # Added Swagger UI customization (this is fine)
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,
+        "tryItOutEnabled": True,
     },
 }
 

@@ -411,3 +411,79 @@ def log_audit(
     )
     logger.debug(f"Audit log created: {audit.id} for {action} on {instance}")
     return audit
+
+def serialize_arg(arg):
+    """
+    Serialize an argument to a JSON-compatible format.
+    Handles Django model instances, querysets, and other complex types.
+    """
+    from django.db import models as django_models
+    
+    if isinstance(arg, django_models.Model):
+        # Store model instances as a dict with type info
+        return {
+            '__type__': 'model_instance',
+            '__app_label__': arg._meta.app_label,
+            '__model_name__': arg._meta.model_name,
+            '__pk__': arg.pk
+        }
+    elif isinstance(arg, django_models.QuerySet):
+        # Store querysets as list of PKs
+        return {
+            '__type__': 'queryset',
+            '__app_label__': arg.model._meta.app_label,
+            '__model_name__': arg.model._meta.model_name,
+            '__pks__': list(arg.values_list('pk', flat=True))
+        }
+    elif isinstance(arg, (list, tuple)):
+        serialized = [serialize_arg(item) for item in arg]
+        # Preserve tuple type
+        if isinstance(arg, tuple):
+            return {'__type__': 'tuple', '__value__': serialized}
+        return serialized
+    elif isinstance(arg, dict):
+        return {key: serialize_arg(value) for key, value in arg.items()}
+    else:
+        # Primitive types (str, int, float, bool, None) are JSON-serializable
+        return arg
+
+
+def deserialize_arg(arg):
+    """
+    Deserialize an argument from JSON-compatible format back to original type.
+    """
+    from django.apps import apps
+    
+    if isinstance(arg, dict):
+        arg_type = arg.get('__type__')
+        
+        if arg_type == 'model_instance':
+            # Reconstruct model instance
+            try:
+                model = apps.get_model(arg['__app_label__'], arg['__model_name__'])
+                return model.objects.get(pk=arg['__pk__'])
+            except (LookupError, model.DoesNotExist):
+                # Model doesn't exist or instance was deleted
+                return None
+                
+        elif arg_type == 'queryset':
+            # Reconstruct queryset
+            try:
+                model = apps.get_model(arg['__app_label__'], arg['__model_name__'])
+                return model.objects.filter(pk__in=arg['__pks__'])
+            except LookupError:
+                # Model doesn't exist
+                return None
+                
+        elif arg_type == 'tuple':
+            # Restore tuple type
+            return tuple(deserialize_arg(item) for item in arg['__value__'])
+            
+        else:
+            # Regular dict - deserialize values recursively
+            return {key: deserialize_arg(value) for key, value in arg.items()}
+            
+    elif isinstance(arg, list):
+        return [deserialize_arg(item) for item in arg]
+    else:
+        return arg
