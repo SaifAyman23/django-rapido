@@ -60,99 +60,99 @@ UNFOLD = {
     ],
     "COLORS": {
         "base": {
-            "50": "oklch(0.985 0 0)",              # Near white
-            "100": "oklch(0.967 0.001 286.375)",   # Secondary/muted (light theme)
-            "200": "oklch(0.92 0.004 286.32)",     # Border/input
-            "300": "oklch(0.705 0.015 286.067)",   # Muted foreground (dark theme)
-            "400": "oklch(0.552 0.016 285.938)",   # Muted foreground (light theme)
-            "500": "oklch(0.488 0.243 264.376)",   # Primary purple
-            "600": "oklch(0.424 0.199 265.638)",   # Chart-5
-            "700": "oklch(0.274 0.006 286.033)",   # Secondary (dark theme)
-            "800": "oklch(0.21 0.006 285.885)",    # Card/popover (dark theme)
-            "850": "oklch(0.183 0.005 285.85)",    # Interpolated
-            "900": "oklch(0.141 0.005 285.823)",   # Background (dark) / Foreground (light)
-            "925": "oklch(0.12 0.004 285.8)",      # Interpolated
-            "950": "oklch(0.1 0.003 285.78)",      # Deeper dark
-            "975": "oklch(0.08 0.002 285.76)"      # Almost black
+            "50": "oklch(98.5% 0.015 145)",        # #f2ffe7 - Obsidian white */
+            "100": "oklch(96.5% 0.028 148)",       # #e0ffd0 - Obsidian light */
+            "200": "oklch(92.5% 0.042 151)",       # #c5ffb1 - Obsidian soft */
+            "300": "oklch(85.5% 0.055 154)",       # #a1f58a - Obsidian medium */
+            "400": "oklch(72.5% 0.06 157)",        # #72d458 - Obsidian green */
+            "500": "oklch(55.5% 0.065 160)",       # #46a735 - Obsidian forest */
+            "600": "oklch(38.5% 0.07 163)",        # #247b1f - Obsidian deep */
+            "700": "oklch(28.5% 0.075 166)",       # #115a16 - Obsidian dark */
+            "800": "oklch(20.5% 0.08 169)",        # #074110 - Obsidian deeper */
+            "850": "oklch(16.5% 0.085 172)",       # #03320b - Obsidian almost black */
+            "900": "oklch(13.5% 0.08 175)",        # #012308 - Obsidian black-green */
+            "925": "oklch(11.5% 0.07 178)",        # #001b06 - Dark obsidian */
+            "950": "oklch(9.5% 0.06 181)",         # #001304 - True obsidian black */
+            "975": "oklch(7.5% 0.05 184)"          # #000c02 - Pure obsidian */
         },
         "primary": {
-            "50": "oklch(0.97 0.014 254.604)",     # Primary foreground
-            "100": "oklch(0.809 0.105 251.813)",   # Chart-1
-            "200": "oklch(0.708 0 0)",             # Ring (light theme)
-            "300": "oklch(0.623 0.214 259.815)",   # Chart-2
-            "400": "oklch(0.556 0 0)",             # Ring (dark theme)
-            "500": "oklch(0.546 0.245 262.881)",   # Chart-3 / Primary variant
-            "600": "oklch(0.488 0.243 264.376)",   # Primary
-            "700": "oklch(0.424 0.199 265.638)",   # Chart-5
-            "800": "oklch(0.35 0.16 266)",         # Darker primary
-            "900": "oklch(0.28 0.13 267)",         # Deep primary
-            "950": "oklch(0.21 0.1 268)"           # Almost black primary
+            "50": "oklch(97% 0.025 145)",          # #f0faea - Obsidian mint */
+            "100": "oklch(92% 0.045 148)",         # #d3f0ce - Obsidian seafoam */
+            "200": "oklch(85% 0.065 151)",         # #ade0a4 - Obsidian sage */
+            "300": "oklch(75% 0.085 154)",         # #80c77a - Obsidian medium */
+            "400": "oklch(65% 0.095 157)",         # #56aa53 - Obsidian forest */
+            "500": "oklch(45% 0.09 160)",          # #2a822b - Obsidian deep green */
+            "600": "oklch(38% 0.085 163)",         # #1b691f - Obsidian pine */
+            "700": "oklch(31% 0.08 166)",          # #0f5117 - Obsidian dark forest */
+            "800": "oklch(24% 0.075 169)",         # #073c11 - Obsidian deeper */
+            "900": "oklch(18% 0.07 172)",          # #022b0b - Obsidian almost black */
+            "950": "oklch(13% 0.06 175)"           # #011d07 - Obsidian black-green */
         },
         "font": {
-            "subtle-light": "oklch(0.552 0.016 285.938)",    # Muted foreground (light)
-            "subtle-dark": "oklch(0.705 0.015 286.067)",     # Muted foreground (dark)
-            "default-light": "oklch(0.141 0.005 285.823)",   # Foreground (light)
-            "default-dark": "oklch(0.985 0 0)",              # Foreground (dark)
-            "important-light": "oklch(0.488 0.243 264.376)", # Primary
-            "important-dark": "oklch(0.97 0.014 254.604)"    # Primary foreground
+            "subtle-light": "var(--color-base-500)",   # #46a735 - Obsidian forest */
+            "subtle-dark": "var(--color-base-400)",    # #72d458 - Obsidian green */
+            "default-light": "var(--color-base-700)",  # #115a16 - Obsidian dark */
+            "default-dark": "var(--color-base-300)",   # #a1f58a - Obsidian medium */
+            "important-light": "var(--color-base-900)", # #012308 - Obsidian black-green */
+            "important-dark": "var(--color-base-100)"   # #e0ffd0 - Obsidian light */
         },
         "semantic": {
-            "accent": "oklch(0.488 0.243 264.376)",          # Primary purple
-            "accent-light": "oklch(0.623 0.214 259.815)",    # Chart-2
-            "accent-dark": "oklch(0.424 0.199 265.638)",     # Chart-5
-            "accent-bright": "oklch(0.809 0.105 251.813)",   # Chart-1
-            "accent-dim": "oklch(0.488 0.243 264.376 / 0.08)",
-            "accent-glow": "oklch(0.546 0.245 262.881 / 0.25)",
+            "accent": "var(--color-primary-500)",         # #2a822b - Obsidian deep green */
+            "accent-light": "var(--color-primary-300)",   # #80c77a - Obsidian medium */
+            "accent-dark": "var(--color-primary-700)",    # #0f5117 - Obsidian dark forest */
+            "accent-bright": "oklch(75% 0.18 145)",       # #8fe080 - Bright obsidian */
+            "accent-dim": "oklch(45% 0.09 160 / 0.08)",   # #2a822b with 8% opacity */
+            "accent-glow": "oklch(65% 0.095 157 / 0.25)", # #56aa53 with 25% opacity */
             
-            "blue": "oklch(0.55 0.15 250)",
-            "blue-light": "oklch(0.92 0.02 250)",
-            "blue-dim": "oklch(0.55 0.15 250 / 0.12)",
+            "blue": "oklch(55% 0.15 250)",                 # #3a7eb0 - Muted tech blue */
+            "blue-light": "oklch(92% 0.02 250)",           # #e1ecf9 - Pale blue */
+            "blue-dim": "oklch(55% 0.15 250 / 0.12)",      # #3a7eb0 with 12% opacity */
             
-            "green": "oklch(0.607 0.226 289.4)",             # Purple-secondary from CSS
-            "green-light": "oklch(0.85 0.15 289.4)",
-            "green-dim": "oklch(0.607 0.226 289.4 / 0.12)",
+            "green": "var(--color-primary-500)",           # #2a822b - Obsidian deep green */
+            "green-light": "var(--color-primary-100)",     # #d3f0ce - Obsidian seafoam */
+            "green-dim": "var(--color-primary-500 / 0.12)", # #2a822b with 12% opacity */
             
-            "amber": "oklch(0.70 0.15 75)",
-            "amber-light": "oklch(0.95 0.03 75)",
-            "amber-dim": "oklch(0.70 0.15 75 / 0.12)",
+            "amber": "oklch(70% 0.15 75)",                  # #c98a2b - Warm amber */
+            "amber-light": "oklch(95% 0.03 75)",            # #fff1d6 - Pale amber */
+            "amber-dim": "oklch(70% 0.15 75 / 0.12)",       # #c98a2b with 12% opacity */
             
-            "red": "oklch(0.577 0.245 27.325)",              # Destructive
-            "red-light": "oklch(0.95 0.02 25)",
-            "red-dim": "oklch(0.577 0.245 27.325 / 0.12)",
+            "red": "oklch(55% 0.18 25)",                     # #c43a4b - Muted crimson */
+            "red-light": "oklch(95% 0.02 25)",               # #ffe6e8 - Pale pink */
+            "red-dim": "oklch(55% 0.18 25 / 0.12)",          # #c43a4b with 12% opacity */
             
-            "purple": "oklch(0.488 0.243 264.376)",          # Primary
-            "purple-light": "oklch(0.95 0.02 290)",
-            "purple-dim": "oklch(0.488 0.243 264.376 / 0.12)",
+            "purple": "oklch(55% 0.15 290)",                  # #7a5fb0 - Muted purple */
+            "purple-light": "oklch(95% 0.02 290)",            # #f0e8ff - Lavender */
+            "purple-dim": "oklch(55% 0.15 290 / 0.12)",       # #7a5fb0 with 12% opacity */
             
-            "electric": "oklch(0.75 0.15 195)",
-            "navy": "oklch(0.21 0.006 285.885)",             # Card/popover dark
-            "ink": "oklch(0.141 0.005 285.823)"              # Background dark
+            "electric": "oklch(75% 0.15 195)",                # #4dc9c9 - Electric teal */
+            "navy": "var(--color-base-850)",                  # #03320b - Obsidian almost black */
+            "ink": "var(--color-base-950)"                    # #001304 - True obsidian black */
         },
         "background": {
-            "primary-light": "oklch(1.000 0.000 89.9)",      # Background (light)
-            "primary-dark": "oklch(0.141 0.005 285.823)",    # Background (dark)
-            "secondary-light": "oklch(0.967 0.001 286.375)", # Secondary (light)
-            "secondary-dark": "oklch(0.21 0.006 285.885)",   # Card (dark)
-            "tertiary-light": "oklch(0.92 0.004 286.32)",    # Border
-            "tertiary-dark": "oklch(0.274 0.006 286.033)",   # Secondary (dark)
-            "elevated-light": "oklch(1 0 0)",                # Card (light)
-            "elevated-dark": "oklch(0.21 0.006 285.885)"     # Card (dark)
+            "primary-light": "var(--color-base-50)",          # #f2ffe7 - Obsidian white */
+            "primary-dark": "var(--color-base-950)",          # #001304 - True obsidian black */
+            "secondary-light": "var(--color-base-100)",       # #e0ffd0 - Obsidian light */
+            "secondary-dark": "var(--color-base-900)",        # #012308 - Obsidian black-green */
+            "tertiary-light": "var(--color-base-200)",        # #c5ffb1 - Obsidian soft */
+            "tertiary-dark": "var(--color-base-850)",         # #03320b - Obsidian almost black */
+            "elevated-light": "oklch(100% 0 0)",              # #ffffff - Pure white */
+            "elevated-dark": "var(--color-base-800)"          # #074110 - Obsidian deeper */
         },
         "border": {
-            "light-light": "oklch(0.92 0.004 286.32)",       # Border (light)
-            "light-dark": "oklch(1 0 0 / 10%)",              # Border (dark)
-            "strong-light": "oklch(0.552 0.016 285.938)",    # Muted foreground
-            "strong-dark": "oklch(0.705 0.015 286.067)"      # Muted foreground dark
+            "light-light": "var(--color-base-200)",           # #c5ffb1 - Obsidian soft */
+            "light-dark": "var(--color-base-700)",            # #115a16 - Obsidian dark */
+            "strong-light": "var(--color-base-400)",          # #72d458 - Obsidian green */
+            "strong-dark": "var(--color-base-600)"            # #247b1f - Obsidian deep */
         },
         "text": {
-            "primary-light": "oklch(0.141 0.005 285.823)",   # Foreground (light)
-            "primary-dark": "oklch(0.985 0 0)",              # Foreground (dark)
-            "secondary-light": "oklch(0.21 0.006 285.885)",  # Secondary foreground
-            "secondary-dark": "oklch(0.705 0.015 286.067)",  # Muted foreground dark
-            "tertiary-light": "oklch(0.552 0.016 285.938)",  # Muted foreground light
-            "tertiary-dark": "oklch(0.705 0.015 286.067)",   # Muted foreground dark
-            "inverse-light": "oklch(0.985 0 0)",             # White
-            "inverse-dark": "oklch(0.141 0.005 285.823)"     # Dark
+            "primary-light": "var(--color-base-900)",         # #012308 - Obsidian black-green */
+            "primary-dark": "var(--color-base-100)",          # #e0ffd0 - Obsidian light */
+            "secondary-light": "var(--color-base-700)",       # #115a16 - Obsidian dark */
+            "secondary-dark": "var(--color-base-300)",        # #a1f58a - Obsidian medium */
+            "tertiary-light": "var(--color-base-500)",        # #46a735 - Obsidian forest */
+            "tertiary-dark": "var(--color-base-400)",         # #72d458 - Obsidian green */
+            "inverse-light": "var(--color-base-950)",         # #001304 - True obsidian black */
+            "inverse-dark": "var(--color-base-50)"            # #f2ffe7 - Obsidian white */
         },
     },
     "SIDEBAR": {

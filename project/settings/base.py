@@ -49,8 +49,6 @@ INSTALLED_APPS = [
     'corsheaders',
     "rest_framework",
     "rest_framework_simplejwt",
-    # Required only if using token blacklisting:
-    'rest_framework_simplejwt.token_blacklist',
     "django_filters",
     "drf_spectacular",
     "channels",
@@ -75,20 +73,20 @@ Database configuration.
 PostgreSQL setup with connection pooling.
 """
 
-DATABASES = {
-    "default": {
-        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
-        "NAME": os.getenv("DB_NAME", "project_db"),
-        "USER": os.getenv("DB_USER", "project_user"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "password123"),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5432"),
-        "CONN_MAX_AGE": 600,
-        "OPTIONS": {
-            "connect_timeout": 10,
-        }
-    }
-}
+# DATABASES = {
+#     "default": {
+#         "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
+#         "NAME": os.getenv("DB_NAME", "project_db"),
+#         "USER": os.getenv("DB_USER", "project_user"),
+#         "PASSWORD": os.getenv("DB_PASSWORD", "password123"),
+#         "HOST": os.getenv("DB_HOST", "localhost"),
+#         "PORT": os.getenv("DB_PORT", "5432"),
+#         "CONN_MAX_AGE": 600,
+#         "OPTIONS": {
+#             "connect_timeout": 10,
+#         }
+#     }
+# }
 
 DATABASES = {
     "default": {
@@ -304,45 +302,22 @@ REST_FRAMEWORK = {
 # Import SECRET_KEY from base (it's already loaded)
 
 SIMPLE_JWT = {
-    # Token lifetimes
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
-
-    # Rotation & blacklisting
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': True,
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": False,
     "UPDATE_LAST_LOGIN": True,
-
-    # Signing
-    "ALGORITHM": os.getenv("JWT_ALGORITHM", "HS256"),   
-    "SIGNING_KEY": os.getenv("JWT_SECRET_KEY", SECRET_KEY),         # use SECRET_KEY or a separate strong key
-    "VERIFYING_KEY": None,                                          # for asymmetric algos (RS256, ES256)
-
-    # Header config
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
-
-    # User identification
-    'USER_ID_FIELD': 'id',
-    'USER_ID_CLAIM': 'user_id',
-
-    # Token classes
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-    'TOKEN_TYPE_CLAIM': 'token_type',
-
-    # JTI (unique token ID)
-    'JTI_CLAIM': 'jti',
-
-    # Sliding tokens (optional alternative to access/refresh pair)
-    # 'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
-    # 'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
-    # 'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
-
-    # Serializers
-    'TOKEN_OBTAIN_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
-    'TOKEN_REFRESH_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenRefreshSerializer',
-    'TOKEN_VERIFY_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenVerifySerializer',
-    'TOKEN_BLACKLIST_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenBlacklistSerializer',
+    "ALGORITHM": os.getenv("JWT_ALGORITHM", "HS256"),
+    "SIGNING_KEY": os.getenv("JWT_SECRET_KEY", SECRET_KEY),
+    "VERIFYING_KEY": None,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    "JTI_CLAIM": "jti",
 }
 
 

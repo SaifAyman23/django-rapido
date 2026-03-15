@@ -1,18 +1,12 @@
 # Makefile for Django Rapido MINI V1.0
 # A simplified Django project template for quick project setup
-# Makefile for Django Rapido MINI V1.0
-# A simplified Django project template for quick project setup
 # Usage: make [target]
 #
 # NOTE: This Makefile uses bash syntax. On Windows:
 #       - Use Git Bash, WSL (Windows Subsystem for Linux), or PowerShell
 #       - Or run commands manually (see individual targets)
-#
-# NOTE: This Makefile uses bash syntax. On Windows:
-#       - Use Git Bash, WSL (Windows Subsystem for Linux), or PowerShell
-#       - Or run commands manually (see individual targets)
 
-.PHONY: help install migrate runserver test clean docker-up docker-down celery-worker celery-beat flower lint format
+.PHONY: help install migrate run test clean docker-up docker-down celery-worker celery-beat flower lint format
 
 # Colors for output
 CYAN := \033[0;36m
@@ -24,20 +18,15 @@ NC := \033[0m # No Color
 # Python command (works on Windows and Unix)
 PY := py
 
-# Python command (works on Windows and Unix)
-PY := py
-
 help:
-	@echo "$(CYAN)Django Rapido MINI V1.0 - Project Management Commands$(NC)"
 	@echo "$(CYAN)Django Rapido MINI V1.0 - Project Management Commands$(NC)"
 	@echo ""
 	@echo "$(GREEN)Setup & Installation:$(NC)"
 	@echo "  make install           Install dependencies"
 	@echo "  make init              Initialize project (creates .env, secret key, migrations, superuser)"
-	@echo "  make init              Initialize project (creates .env, secret key, migrations, superuser)"
 	@echo ""
 	@echo "$(GREEN)Development:$(NC)"
-	@echo "  make runserver         Run development server"
+	@echo "  make run               Run development server"
 	@echo "  make migrate           Run migrations"
 	@echo "  make makemigrations    Create migrations"
 	@echo "  make shell             Open Django shell"
@@ -133,7 +122,7 @@ init:
 	@echo ""
 	@echo "$(CYAN)Next steps:$(NC)"
 	@echo "  1. Edit .env with your configuration"
-	@echo "  2. Run: make runserver"
+	@echo "  2. Run: make run"
 	@echo "  3. Visit: http://localhost:8000/admin"
 	@echo ""
 	@echo "$(YELLOW)Default admin credentials:$(NC)"
@@ -145,15 +134,12 @@ init:
 # ===========================
 # Django Management
 # ===========================
-runserver:
+run:
 	@echo "$(CYAN)Starting Django development server...$(NC)"
-	$(PY) manage.py runserver
 	$(PY) manage.py runserver
 
 migrate:
 	@echo "$(CYAN)Running migrations...$(NC)"
-	$(PY) manage.py migrate
-	@echo "$(GREEN)Migrations completed$(NC)"
 	$(PY) manage.py migrate
 	@echo "$(GREEN)Migrations completed$(NC)"
 
@@ -161,43 +147,29 @@ makemigrations:
 	@echo "$(CYAN)Creating migrations...$(NC)"
 	$(PY) manage.py makemigrations
 	@echo "$(GREEN)Migrations created$(NC)"
-	$(PY) manage.py makemigrations
-	@echo "$(GREEN)Migrations created$(NC)"
 
 shell:
 	@echo "$(CYAN)Opening Django shell...$(NC)"
 	$(PY) manage.py shell
-	$(PY) manage.py shell
 
 createsuperuser:
 	@echo "$(CYAN)Creating superuser...$(NC)"
-	$(PY) manage.py createsuperuser
 	$(PY) manage.py createsuperuser
 
 collectstatic:
 	@echo "$(CYAN)Collecting static files...$(NC)"
 	$(PY) manage.py collectstatic --noinput
 	@echo "$(GREEN)Static files collected$(NC)"
-	$(PY) manage.py collectstatic --noinput
-	@echo "$(GREEN)Static files collected$(NC)"
 
 check:
 	@echo "$(CYAN)Running Django system checks...$(NC)"
-	$(PY) manage.py check --deploy
 	$(PY) manage.py check --deploy
 
 seed:
 	@echo "$(CYAN)Seeding database...$(NC)"
 	$(PY) manage.py seed
 	@echo "$(GREEN)Database seeded$(NC)"
-	$(PY) manage.py seed
-	@echo "$(GREEN)Database seeded$(NC)"
 
-secret-key:
-	@echo Generating production-ready Django secret key...
-	@$(PY) -c "from django.core.management.utils import get_random_secret_key; print(f'SECRET_KEY=django-insecure-{get_random_secret_key()}')" >> .env
-	@echo Secret key appended to .env file
-	@echo Note: If SECRET_KEY already exists, you will have duplicates - edit manually
 secret-key:
 	@echo Generating production-ready Django secret key...
 	@$(PY) -c "from django.core.management.utils import get_random_secret_key; print(f'SECRET_KEY=django-insecure-{get_random_secret_key()}')" >> .env
@@ -211,7 +183,6 @@ docker-up:
 	@echo "$(CYAN)Starting Docker services...$(NC)"
 	docker-compose up -d
 	@echo "$(GREEN)Docker services started$(NC)"
-	@echo "$(GREEN)Docker services started$(NC)"
 	@echo "$(YELLOW)Services:$(NC)"
 	@echo "  Django:  http://localhost:8000"
 	@echo "  Admin:   http://localhost:8000/admin"
@@ -221,12 +192,10 @@ docker-down:
 	@echo "$(CYAN)Stopping Docker services...$(NC)"
 	docker-compose down
 	@echo "$(GREEN)Docker services stopped$(NC)"
-	@echo "$(GREEN)Docker services stopped$(NC)"
 
 docker-build:
 	@echo "$(CYAN)Building Docker images...$(NC)"
 	docker-compose build --no-cache
-	@echo "$(GREEN)Docker images built$(NC)"
 	@echo "$(GREEN)Docker images built$(NC)"
 
 docker-logs:
@@ -244,17 +213,14 @@ docker-shell:
 docker-migrate:
 	@echo "$(CYAN)Running migrations in Docker...$(NC)"
 	docker-compose exec web $(PY) manage.py migrate
-	docker-compose exec web $(PY) manage.py migrate
 
 docker-createsuperuser:
 	@echo "$(CYAN)Creating superuser in Docker...$(NC)"
-	docker-compose exec web $(PY) manage.py createsuperuser
 	docker-compose exec web $(PY) manage.py createsuperuser
 
 docker-clean:
 	@echo "$(RED)Removing Docker containers and volumes...$(NC)"
 	docker-compose down -v
-	@echo "$(GREEN)Docker cleaned$(NC)"
 	@echo "$(GREEN)Docker cleaned$(NC)"
 
 # ===========================
@@ -269,12 +235,10 @@ clean:
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
 	@echo "$(GREEN)Cache cleaned$(NC)"
-	@echo "$(GREEN)Cache cleaned$(NC)"
 
 requirements:
 	@echo "$(CYAN)Freezing requirements...$(NC)"
 	pip freeze > requirements.txt
-	@echo "$(GREEN)Requirements updated$(NC)"
 	@echo "$(GREEN)Requirements updated$(NC)"
 
 db-reset:
@@ -286,16 +250,11 @@ db-reset:
 		$(PY) manage.py migrate; \
 		$(PY) manage.py createsuperuser; \
 		echo "$(GREEN)Database reset$(NC)"; \
-		$(PY) manage.py flush; \
-		$(PY) manage.py migrate; \
-		$(PY) manage.py createsuperuser; \
-		echo "$(GREEN)Database reset$(NC)"; \
 	fi
 
 db-backup:
 	@echo "$(CYAN)Backing up database...$(NC)"
 	pg_dump project_db > backup_$(shell date +%Y%m%d_%H%M%S).sql
-	@echo "$(GREEN)Database backed up$(NC)"
 	@echo "$(GREEN)Database backed up$(NC)"
 
 # ===========================
@@ -304,7 +263,6 @@ db-backup:
 install-hooks:
 	@echo "$(CYAN)Installing pre-commit hooks...$(NC)"
 	pre-commit install
-	@echo "$(GREEN)Pre-commit hooks installed$(NC)"
 	@echo "$(GREEN)Pre-commit hooks installed$(NC)"
 
 run-hooks:
@@ -318,13 +276,11 @@ docs:
 	@echo "$(CYAN)Building documentation...$(NC)"
 	cd docs && make html
 	@echo "$(GREEN)Documentation built in docs/_build/html/$(NC)"
-	@echo "$(GREEN)Documentation built in docs/_build/html/$(NC)"
 
 # ===========================
 # Development Workflow
 # ===========================
 dev: install migrate
-	@echo "$(GREEN)Development environment ready!$(NC)"
 	@echo "$(GREEN)Development environment ready!$(NC)"
 	@echo "$(CYAN)Starting development servers...$(NC)"
 	@echo "  - Django server (terminal 1): make run"
