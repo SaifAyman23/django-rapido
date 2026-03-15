@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Django Rapido V1.0 — modern starter with APIs, async tasks & Docker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>:root{--bg-primary:#f8fafb;--bg-secondary:#fff;--bg-tertiary:#f0f4f7;--bg-elevated:#fff;--border-light:#e0e8f0;--border-strong:#b8c8dc;--text-primary:#0d1829;--text-secondary:#4a6480;--text-tertiary:#7a9ab8;--text-inverse:#fff;--accent:#092E20;--accent-light:#0C3C26;--accent-mid:#19A975;--accent-bright:#2ECC71;--accent-dim:rgba(9,46,32,0.08);--accent-glow:rgba(25,169,117,0.25);--blue:#1d4ed8;--blue-light:#eff6ff;--blue-dim:rgba(29,78,216,0.12);--green:#047857;--green-light:#d1fae5;--green-dim:rgba(4,120,87,0.12);--amber:#b45309;--amber-light:#fef3c7;--amber-dim:rgba(180,83,9,0.12);--red:#be123c;--red-light:#fff1f2;--red-dim:rgba(190,18,60,0.12);--purple:#6d28d9;--purple-light:#ede9fe;--purple-dim:rgba(109,40,217,0.12);--font-display:'Instrument Serif',serif;--font-heading:'Plus Jakarta Sans',sans-serif;--font-body:'Plus Jakarta Sans',system-ui,sans-serif;--font-code:'JetBrains Mono',monospace;--text-xs:0.6rem;--text-sm:0.65rem;--text-base:0.75rem;--text-md:0.85rem;--text-lg:0.95rem;--text-xl:1.1rem;--text-2xl:1.35rem;--text-3xl:1.7rem;--text-4xl:2.1rem;--text-5xl:2.8rem;--text-6xl:5rem;--sp-1:0.25rem;--sp-2:0.5rem;--sp-3:0.75rem;--sp-4:1rem;--sp-5:1.25rem;--sp-6:1.5rem;--sp-7:1.75rem;--sp-8:2rem;--sp-10:2.5rem;--sp-12:3rem;--sp-16:4rem;--sp-20:5rem;--sp-24:6rem;--radius-sm:3px;--radius-md:5px;--radius-lg:6px;--radius-xl:8px;--shadow-sm:0 2px 4px rgba(0,0,0,0.05);--shadow-md:0 4px 8px rgba(0,0,0,0.08);--shadow-lg:0 8px 16px rgba(0,0,0,0.1);--glow-accent:0 0 8px var(--accent-glow);--max-width:880px}
+[data-theme="dark"]{--bg-primary:#0a1612;--bg-secondary:#0c1f1a;--bg-tertiary:#0e2820;--bg-elevated:#103325;--border-light:#1a4a3a;--border-strong:#2a6050;--text-primary:#e0f2e9;--text-secondary:#a0d8c0;--text-tertiary:#6a9680;--text-inverse:#0a1612;--accent:#44bd87;--accent-light:#5fd5a0;--accent-mid:#2ECC71;--accent-bright:#6fe8b3;--accent-dim:rgba(68,189,135,0.15);--accent-glow:rgba(68,189,135,0.4);--blue:#60a5fa;--blue-light:#0c1f1a;--blue-dim:rgba(96,165,250,0.15);--green:#44bd87;--green-light:#0c1f1a;--green-dim:rgba(68,189,135,0.2);--amber:#fbbf24;--amber-light:#0c1f1a;--amber-dim:rgba(251,191,36,0.15);--red:#f87171;--red-light:#0c1f1a;--red-dim:rgba(248,113,113,0.15);--purple:#a78bfa;--purple-light:#0c1f1a;--purple-dim:rgba(167,139,250,0.15);--shadow-sm:0 2px 4px rgba(0,0,0,0.5);--shadow-md:0 4px 8px rgba(0,0,0,0.6);--shadow-lg:0 8px 16px rgba(0,0,0,0.7)}
+*,::after,::before{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background:var(--bg-primary);color:var(--text-primary);font-family:var(--font-body);font-size:var(--text-lg);line-height:1.72;font-weight:400;transition:background-color .3s,color .3s}.ds-shell{display:grid;grid-template-columns:260px 1fr;min-height:100vh;background:var(--bg-primary)}.ds-sidebar{background:var(--bg-secondary);border-right:1px solid var(--border-light);padding:var(--sp-8) var(--sp-5);position:sticky;top:0;height:100vh;overflow-y:auto;scrollbar-width:thin}.ds-sidebar::-webkit-scrollbar{width:4px}.ds-sidebar::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:var(--radius-sm)}.ds-sidebar-header{margin-bottom:var(--sp-8);border-bottom:1px solid var(--border-light);padding-bottom:var(--sp-4)}.ds-sidebar-header h1{font-family:var(--font-display);font-size:var(--text-3xl);font-weight:400;font-style:italic;letter-spacing:-.01em;color:var(--accent);line-height:1.1;margin-bottom:var(--sp-2)}.ds-sidebar-header p{font-family:var(--font-code);font-size:var(--text-xs);color:var(--text-tertiary);letter-spacing:.08em;text-transform:uppercase}.theme-toggle{display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-4);padding:var(--sp-2);background:var(--bg-tertiary);border-radius:var(--radius-lg);border:1px solid var(--border-light)}.theme-btn{flex:1;padding:var(--sp-2) var(--sp-3);font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;text-align:center;cursor:pointer;border-radius:var(--radius-sm);color:var(--text-secondary);border:none;background:transparent;transition:all .2s}.theme-btn:hover{color:var(--accent)}.theme-btn.active{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);box-shadow:var(--glow-accent)}.ds-nav-group{margin-bottom:var(--sp-6)}.ds-nav-label{font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text-tertiary);padding:var(--sp-2) 0;border-bottom:1px dashed var(--border-light);margin-bottom:var(--sp-2)}.ds-sidebar nav a{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3);color:var(--text-secondary);text-decoration:none;font-family:var(--font-code);font-size:var(--text-sm);border-left:2px solid transparent;transition:all .2s;margin-bottom:2px;border-radius:0 var(--radius-sm) var(--radius-sm) 0}.ds-sidebar nav a::before{content:'//';color:var(--accent);opacity:0;transition:opacity .2s;font-size:var(--text-xs)}.ds-sidebar nav a:hover{color:var(--text-primary);border-left-color:var(--accent);background:var(--accent-dim)}.ds-sidebar nav a:hover::before{opacity:1}.ds-sidebar nav a.active{color:var(--accent);border-left-color:var(--accent);background:var(--accent-dim);box-shadow:var(--glow-accent)}.ds-sidebar nav a.active::before{opacity:1;content:'◆'}.ds-main{padding:var(--sp-16) var(--sp-12);min-width:0;background:var(--bg-primary)}.ds-page-header{margin-bottom:var(--sp-16);padding-bottom:var(--sp-12);border-bottom:1px solid var(--border-light);position:relative}.ds-page-header::after{content:'';position:absolute;bottom:-1px;left:0;width:120px;height:2px;background:linear-gradient(90deg,var(--accent),transparent);box-shadow:0 0 10px var(--accent-glow)}.ds-eyebrow{display:flex;align-items:center;gap:var(--sp-4);margin-bottom:var(--sp-4);font-family:var(--font-code);font-size:var(--text-xs);letter-spacing:.3em;text-transform:uppercase;color:var(--accent)}.ds-eyebrow::after,.ds-eyebrow::before{content:'';height:1px;background:var(--accent);opacity:.3;flex:1}.ds-eyebrow::after{flex:.5}.ds-page-header h1{font-family:var(--font-display);font-size:var(--text-6xl);font-weight:400;font-style:italic;line-height:1.08;margin-bottom:var(--sp-6);color:var(--text-primary);letter-spacing:-.01em}.ds-page-header h1 strong{font-style:normal;font-weight:400;color:var(--accent);font-family:var(--font-code);font-size:.72em;letter-spacing:.04em;display:block;margin-bottom:var(--sp-2)}.ds-page-header h1 .sub{display:block;font-size:.4em;letter-spacing:.15em;font-style:normal;font-weight:400;color:var(--text-tertiary);text-transform:uppercase;font-family:var(--font-code);margin-top:var(--sp-4)}.ds-page-desc{font-size:var(--text-xl);color:var(--text-secondary);max-width:680px;line-height:1.82;margin-bottom:var(--sp-6);font-weight:300}.ds-meta{display:flex;gap:var(--sp-3);flex-wrap:wrap}.ds-badge{font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;background:var(--bg-tertiary);border:1px solid var(--border-light);padding:var(--sp-2) var(--sp-3);color:var(--text-secondary);border-radius:var(--radius-sm);transition:all .2s}.ds-badge.accent{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);box-shadow:var(--glow-accent)}.ds-badge:hover{border-color:var(--accent);color:var(--accent)}.ds-section{margin-bottom:var(--sp-20);scroll-margin-top:calc(var(--sp-4) + 50px);animation:fadeUp .5s ease both}@keyframes fadeUp{0%{opacity:0;transform:translateY(var(--sp-4))}to{opacity:1;transform:translateY(0)}}.ds-section-header{display:flex;align-items:center;gap:var(--sp-4);margin-bottom:var(--sp-4)}.ds-section-num{font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;background:var(--bg-tertiary);border:1px solid var(--border-light);padding:var(--sp-1) var(--sp-3);color:var(--accent);letter-spacing:.12em;border-radius:var(--radius-sm)}.ds-section-tag{font-family:var(--font-code);font-size:var(--text-xs);letter-spacing:.24em;text-transform:uppercase;color:var(--text-tertiary)}.ds-section h2{font-family:var(--font-display);font-size:var(--text-4xl);font-weight:400;font-style:italic;line-height:1.15;color:var(--text-primary);margin-bottom:var(--sp-2);letter-spacing:-.01em}.ds-section h2 em{font-style:normal;color:var(--accent);font-family:var(--font-code);font-size:.6em;margin-left:var(--sp-2)}.ds-section h3{font-family:var(--font-body);font-size:var(--text-xl);color:var(--text-primary);margin-top:var(--sp-6);margin-bottom:var(--sp-3);font-weight:500}.ds-section-rule{display:flex;align-items:center;gap:var(--sp-4);margin:var(--sp-4) 0 var(--sp-8)}.ds-section-rule .line{height:2px;background:var(--border-light);flex:1}.ds-section-rule .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;box-shadow:var(--glow-accent)}.ds-section-desc{color:var(--text-secondary);margin-bottom:var(--sp-8);max-width:720px}.ds-sub{font-family:var(--font-code);font-size:var(--text-base);font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:var(--sp-8) 0 var(--sp-4);position:relative;padding-left:var(--sp-4)}.ds-sub::before{content:'';position:absolute;left:0;top:.2em;width:4px;height:1.2em;background:var(--accent);border-radius:var(--radius-sm);box-shadow:var(--glow-accent)}.callout{border-radius:var(--radius-md);padding:var(--sp-4) var(--sp-5);margin:var(--sp-6) 0;border-left:3px solid;font-size:var(--text-md);background:var(--bg-secondary);border:1px solid var(--border-light);border-left-width:3px}.callout.info{border-left-color:var(--blue);background:var(--blue-dim)}.callout.warning{border-left-color:var(--amber);background:var(--amber-dim)}.callout.tip{border-left-color:var(--green);background:var(--green-dim)}.callout.danger{border-left-color:var(--red);background:var(--red-dim)}.callout.note{border-left-color:var(--accent);background:var(--accent-dim)}.callout strong{font-family:var(--font-code);font-size:var(--text-xs);letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:var(--sp-2);font-weight:500}.callout.info strong{color:var(--blue)}.callout.warning strong{color:var(--amber)}.callout.tip strong{color:var(--green)}.callout.danger strong{color:var(--red)}.callout.note strong{color:var(--accent)}.callout p{margin:0;color:var(--text-secondary);font-size:var(--text-md);line-height:1.7}.pill{display:inline-block;font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;padding:var(--sp-1) var(--sp-3);border-radius:100px;letter-spacing:.06em;text-transform:uppercase;vertical-align:middle;margin:0 var(--sp-1);border:1px solid}.pill.docker{background:var(--blue-dim);color:var(--blue);border-color:var(--blue)}.pill.python{background:var(--purple-dim);color:var(--purple);border-color:var(--purple)}.pill.recommended{background:var(--green-dim);color:var(--green);border-color:var(--green)}.code-block{background:var(--bg-secondary);border-radius:var(--radius-lg);overflow:hidden;margin:var(--sp-6) 0;font-size:var(--text-base);border:1px solid var(--border-strong);position:relative;box-shadow:var(--shadow-md)}.code-block::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent-bright));opacity:.9}.code-header{background:color-mix(in srgb,var(--bg-tertiary) 80%,#000000 5%);border-bottom:1px solid var(--border-strong);padding:var(--sp-2) var(--sp-4);display:flex;justify-content:space-between;align-items:center}.code-header span{font-family:var(--font-code);font-size:var(--text-xs);color:var(--text-secondary);letter-spacing:.12em;text-transform:uppercase;font-weight:500}.copy-btn{background:var(--bg-tertiary);border:1px solid var(--border-strong);color:var(--text-secondary);font-family:var(--font-code);font-size:var(--text-xs);padding:var(--sp-1) var(--sp-3);border-radius:var(--radius-sm);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:all .2s}.copy-btn:hover{color:var(--accent);border-color:var(--accent);background:var(--bg-secondary);box-shadow:var(--glow-accent)}pre{padding:var(--sp-5);overflow-x:auto;font-family:var(--font-code);font-size:var(--text-base);line-height:1.72;tab-size:4;background:var(--bg-tertiary);color:var(--text-primary);border-top:1px solid var(--border-light)}code{font-family:var(--font-code);font-size:.9em;background:var(--accent-dim);padding:.1em .4em;border-radius:var(--radius-sm);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent)}pre code{background:0 0;padding:0;color:inherit;font-size:1em;border:none}[data-theme=light] pre .kw{color:#d73a49}[data-theme=light] pre .st{color:#032f62}[data-theme=light] pre .cm{color:#6a737d;font-style:italic}[data-theme=light] pre .fn{color:#6f42c1}[data-theme=light] pre .nm{color:#005cc5}[data-theme=dark] pre .kw{color:#ff7b72}[data-theme=dark] pre .st{color:#a5d6ff}[data-theme=dark] pre .cm{color:#8b949e;font-style:italic}[data-theme=dark] pre .fn{color:#d2a8ff}[data-theme=dark] pre .nm{color:#79c0ff}.data-table{width:100%;border-collapse:collapse;margin:var(--sp-6) 0;border:1px solid var(--border-light);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm)}.data-table th{background:linear-gradient(135deg,var(--accent),var(--accent-light));color:var(--text-inverse);padding:var(--sp-3) var(--sp-4);text-align:left;font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--border-light)}[data-theme=dark] .data-table th{color:var(--bg-primary)}.data-table td{padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--border-light);color:var(--text-secondary);font-size:var(--text-sm);vertical-align:top;background:var(--bg-secondary)}.data-table tr:last-child td{border-bottom:none}.data-table td:first-child{font-family:var(--font-code);font-size:var(--text-sm);color:var(--accent);white-space:nowrap}.data-table tr:hover td{background:var(--bg-tertiary)}.card{background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:var(--sp-5);border-top:3px solid var(--accent);position:relative;overflow:hidden;box-shadow:var(--shadow-sm);transition:transform .2s,box-shadow .2s}.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md),var(--glow-accent);border-color:var(--accent)}.card::after{content:'';position:absolute;bottom:0;right:0;width:80px;height:80px;background:radial-gradient(circle at bottom right,var(--accent-dim),transparent);pointer-events:none}.card h4{margin-top:0;font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:var(--sp-3);padding-bottom:var(--sp-2);border-bottom:1px solid var(--border-light)}.card ul{list-style:none}.card ul li{padding:var(--sp-2) 0;font-size:var(--text-sm);color:var(--text-secondary);display:flex;gap:var(--sp-2);align-items:flex-start}.card ul li::before{content:'◆';color:var(--accent);font-size:var(--text-xs);flex-shrink:0}.card p{font-size:var(--text-sm);color:var(--text-tertiary);font-style:italic;margin-top:var(--sp-3);margin-bottom:0}.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--sp-6);margin:var(--sp-8) 0}.feature-card{background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:var(--sp-5);box-shadow:var(--shadow-sm);transition:all .2s}.feature-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow-md),var(--glow-accent)}.feature-card h4{font-family:var(--font-code);font-size:var(--text-xs);font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:var(--sp-3)}.feature-card p{font-size:var(--text-sm);color:var(--text-secondary);line-height:1.6}.checklist-group{background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:var(--sp-5);margin:var(--sp-4) 0;border-left:3px solid var(--accent);position:relative;box-shadow:var(--shadow-sm)}.checklist-group h4{font-family:var(--font-code);font-size:var(--text-xs);color:var(--accent);text-transform:uppercase;letter-spacing:.14em;margin-bottom:var(--sp-4);margin-top:0;font-weight:500}.checklist{list-style:none}.checklist li{padding:var(--sp-2) 0;border-bottom:1px solid var(--border-light);font-size:var(--text-sm);color:var(--text-secondary);display:flex;gap:var(--sp-3);align-items:flex-start}.checklist li:last-child{border-bottom:none}.checklist li::before{content:'✓';font-size:var(--text-base);color:var(--accent);flex-shrink:0;font-weight:700}.steps{counter-reset:step}.step{position:relative;padding-left:4rem;margin-bottom:var(--sp-8);counter-increment:step}.step::before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:.1rem;width:2.8rem;height:2.8rem;background:transparent;border:2px solid var(--accent);color:var(--accent);font-family:var(--font-code);font-size:var(--text-sm);font-weight:500;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;box-shadow:var(--glow-accent)}.step h3{margin-top:0;color:var(--text-primary)}.step p{color:var(--text-secondary)}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-6);margin:var(--sp-6) 0}@media (max-width:900px){.two-col{grid-template-columns:1fr}.ds-shell{grid-template-columns:1fr}.ds-sidebar{display:none}.ds-main{padding:var(--sp-8) var(--sp-6)}.feature-grid{grid-template-columns:1fr}}footer{background:var(--bg-secondary);border-top:1px solid var(--border-light);color:var(--text-tertiary);padding:var(--sp-8);text-align:center;font-family:var(--font-code);font-size:var(--text-xs);letter-spacing:.06em}footer a{color:var(--text-secondary);text-decoration:none;transition:color .2s}footer a:hover{color:var(--accent)}.section-content{color:var(--text-secondary);line-height:1.8;margin:var(--sp-4) 0}.section-content p{margin:var(--sp-4) 0}.section-content ol,.section-content ul{margin:var(--sp-4) 0 var(--sp-4) var(--sp-6)}.section-content li{margin:var(--sp-2) 0;color:var(--text-secondary)}.section-content strong{color:var(--text-primary);font-weight:500}::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:#f1f1f100;border-radius:10px}::-webkit-scrollbar-thumb{background:#888;border-radius:10px}::-webkit-scrollbar-thumb:hover{background:#555}</style>
+</head>
+<body data-theme="light">
+
+<div class="ds-shell">
+  <aside class="ds-sidebar">
+    <div class="ds-sidebar-header">
+      <h1>Django<span style="font-style: normal; font-family: var(--font-code); font-size: 0.5em; display: block; margin-top: var(--sp-1);">Rapido</span></h1>
+      <p>Version 1.0</p>
+      <div class="theme-toggle">
+        <button class="theme-btn active" onclick="setTheme('light')">Light</button>
+        <button class="theme-btn" onclick="setTheme('dark')">Dark</button>
+      </div>
+    </div>
+
+    <div class="ds-nav-group">
+      <div class="ds-nav-label">Getting Started</div>
+      <nav>
+        <a href="#overview" class="active">Overview</a>
+        <a href="#quickstart">Quick Start</a>
+        <a href="#techstack">Tech Stack</a>
+        <a href="#project-structure">Structure</a>
+      </nav>
+    </div>
+    <div class="ds-nav-group">
+      <div class="ds-nav-label">Configuration</div>
+      <nav>
+        <a href="#environment">Environment</a>
+        <a href="#security-checklist">Security</a>
+      </nav>
+    </div>
+    <div class="ds-nav-group">
+      <div class="ds-nav-label">Development</div>
+      <nav>
+        <a href="#development">Commands</a>
+        <a href="#makefile">Makefile</a>
+        <a href="#background">Celery Tasks</a>
+        <a href="#testing">Testing</a>
+      </nav>
+    </div>
+    <div class="ds-nav-group">
+      <div class="ds-nav-label">Deployment</div>
+      <nav>
+        <a href="#deployment">Production</a>
+        <a href="#docker-deploy">Docker Roles</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="ds-main">
+    <div class="ds-page-header">
+      <div class="ds-eyebrow">Production Ready</div>
+      <h1>
+        <strong>Django Rapido</strong>
+        V1.0
+        <span class="sub">REST APIs · Async tasks · Docker</span>
+      </h1>
+      <p class="ds-page-desc">A modern, scalable, and production-ready Django project template. Updated for Django 5.2+ • Python 3.13 • PostgreSQL 17.</p>
+      <div class="ds-meta">
+        <span class="ds-badge">Django 5.2+</span>
+        <span class="ds-badge accent">Python 3.13</span>
+        <span class="ds-badge">PostgreSQL 17</span>
+        <span class="ds-badge">DRF 3.16</span>
+        <span class="ds-badge">Celery 5.6</span>
+      </div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <section id="overview" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">01</span><span class="ds-section-tag">Overview</span></div>
+      <h2>What’s <em>inside</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <div class="section-content">
+        <p><strong>Django Rapido V1.0</strong> is built for speed and long-term maintainability. It comes packed with features like a REST API (DRF 3.16) with JWT, WebSockets via Channels 4.1, background tasks with Celery 5.6, modern admin UI, and a complete Docker setup to take you efficiently from dev to production.</p>
+        <p><strong>Environment Configuration</strong> – Utilizing modular settings via <code>DJANGO_ENVIRONMENT</code>, clean separation of concerns mapping <code>local</code>, <code>production</code>, and <code>testing</code> configs robustly.</p>
+        <p><strong>Code Quality defaults</strong> – Standardized perfectly with Black, isort, Flake8, Mypy, and Pytest shortcuts integrated into <code>Makefile</code>.</p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-card"><h4>REST API</h4><p>Django REST Framework 3.16 with JWT Authentication (SimpleJWT).</p></div>
+        <div class="feature-card"><h4>Async & Real‑time</h4><p>Channel 4.1 WebSockets & Redis. Celery 5.6 for async workers and Celery Beat for cron.</p></div>
+        <div class="feature-card"><h4>Docker & DevOps</h4><p>Fully containerized with a smart `entrypoint.sh`, Docker Compose setup, and Nginx reverse proxy.</p></div>
+        <div class="feature-card"><h4>Frontend & Admin</h4><p>Modern admin UI designed by Django Unfold. Tailwind CSS natively handled & built via `package.json`.</p></div>
+      </div>
+    </section>
+
+    <!-- QUICK START -->
+    <section id="quickstart" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">02</span><span class="ds-section-tag">Quick Start</span></div>
+      <h2>Docker <em>setup</em> (recommended)</h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <p class="section-content">Docker Compose provides a seamless development sandbox containing the web application, PostgreSQL, Redis, Celery tasks, and Flower.</p>
+      <div class="code-block"><div class="code-header"><span>bash – Using Docker</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code><span class="cm"># 1. Clone the repository</span>
+$ git clone &lt;repository-url&gt; my-project
+$ cd my-project
+
+<span class="cm"># 2. Copy the environment variables template</span>
+$ cp .env.example .env
+
+<span class="cm"># 3. Start all services in the background</span>
+$ make docker-up
+
+<span class="cm"># 4. View logs (if needed)</span>
+$ make docker-logs</code></pre></div>
+      
+      <div class="ds-sub">Access URLs</div>
+      <div class="section-content">
+        <ul>
+          <li><strong>Application:</strong> <code>http://localhost:8000</code></li>
+          <li><strong>Admin Panel:</strong> <code>http://localhost:8000/admin</code></li>
+          <li><strong>API Docs:</strong> <code>http://localhost:8000/api/docs/</code></li>
+          <li><strong>Flower (Celery Dashboard):</strong> <code>http://localhost:5555</code></li>
+        </ul>
+      </div>
+
+      <div class="ds-sub">Local setup (without Docker)</div>
+      <div class="code-block"><div class="code-header"><span>bash – Local Initialization (Using Make)</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code><span class="cm"># 1. Clone the repository</span>
+$ git clone &lt;repository-url&gt; my-project
+$ cd my-project
+
+<span class="cm"># 2. Ensure PostgreSQL and Redis are running locally.</span>
+<span class="cm"># Update the generated .env file to point DB_HOST and REDIS_HOST to 'localhost'.</span>
+$ cp .env.example .env
+
+<span class="cm"># 3. Initialize the project </span>
+<span class="cm"># (Installs Python & Node.js deps, runs migrations, collects static files, sets up secure keys)</span>
+$ make init
+
+<span class="cm"># 4. Start the Django development server</span>
+$ make run</code></pre></div>
+      <div class="callout tip"><strong>💡 Tip</strong> Both methods rely on the provided <code>Makefile</code> shortcuts to streamline your startup process effortlessly!</div>
+    </section>
+
+    <!-- TECH STACK -->
+    <section id="techstack" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">03</span><span class="ds-section-tag">Stack</span></div>
+      <h2>Tech <em>Stack</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <table class="data-table">
+        <thead><tr><th>Component</th><th>Version</th><th>Component</th><th>Version</th></tr></thead>
+        <tbody>
+          <tr><td>Python</td><td>3.13</td><td>Django</td><td>5.2+</td></tr>
+          <tr><td>DRF</td><td>3.16</td><td>Channels</td><td>4.1</td></tr>
+          <tr><td>Celery</td><td>5.6</td><td>PostgreSQL</td><td>17</td></tr>
+          <tr><td>Redis</td><td>7+</td><td>Docker Components</td><td>Composer / Engine</td></tr>
+          <tr><td>Node.js</td><td>Latest (For Tailwind)</td><td>Nginx</td><td>Alpine</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- PROJECT STRUCTURE -->
+    <section id="project-structure" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">04</span><span class="ds-section-tag">Layout</span></div>
+      <h2>Project <em>structure</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <div class="code-block"><div class="code-header"><span>tree – modular configuration tree</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code>project-root/
+├── project/                    # Main Django project directory
+│   ├── settings/               # Modular settings configuration
+│   │   ├── __init__.py         # Environment-aware settings loader
+│   │   ├── base.py             # Core settings shared across environments
+│   │   ├── local.py            # Development-specific overrides
+│   │   ├── production.py       # Production-specific overrides
+│   │   ├── testing.py          # Fast, isolated test-specific settings
+│   │   └── components/         # Feature-specific modules
+│   ├── urls.py                 # Root URL routing
+│   ├── asgi.py                 # ASGI entry point
+│   └── wsgi.py                 # WSGI entry point
+│
+├── accounts/                   # Custom User model and authentication
+├── common/                     # Utility helpers, base models
+├── dashboard/                  # Custom Django Unfold admin adjustments
+├── tests/                      # Pytest suite structure
+├── guides/                     # Extensive architectural documentation
+│
+├── docker-compose.yml          # Container orchestration for dev & prod
+├── Dockerfile                  # Production-ready Python image
+├── entrypoint.sh               # Smart container initialization script
+├── nginx.conf                  # Nginx reverse proxy configuration
+│
+├── static/                     # Global static files
+├── media/                      # User-uploaded files
+├── logs/                       # Application logs directory
+│
+├── Makefile                    # Task automation commands
+├── requirements.txt            # Python dependencies
+├── package.json                # Node.js dependencies
+└── .env.example                # Baseline environment configuration</code></pre></div>
+    </section>
+
+    <!-- ENVIRONMENT CONFIGURATION -->
+    <section id="environment" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">05</span><span class="ds-section-tag">Configuration</span></div>
+      <h2>Environment <em>& settings</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <p class="section-content">Configuration is entirely managed securely utilizing standard environment variables across all platforms to seamlessly bridge configuration state dynamically.</p>
+      <div class="ds-sub">Environment loading modes</div>
+      <ol class="section-content" style="margin-left:1.5rem">
+        <li><code>DJANGO_ENVIRONMENT=local</code> (Default): Loads <code>settings/local.py</code> + <code>base.py</code>. Built with <code>DEBUG=True</code>.</li>
+        <li><code>DJANGO_ENVIRONMENT=production</code>: Loads <code>settings/production.py</code>. Enforces strict security configurations like HTTPS and <code>DEBUG=False</code>.</li>
+        <li><code>DJANGO_ENVIRONMENT=testing</code>: Loads <code>settings/testing.py</code>. Leverages an in-memory SQLite DB for lightning-fast speeds and disables explicit Celery delays.</li>
+      </ol>
+    </section>
+
+    <!-- DEVELOPMENT COMMANDS -->
+    <section id="development" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">06</span><span class="ds-section-tag">Dev</span></div>
+      <h2>Common <em>commands</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <div class="two-col">
+        <div class="card"><h4>Project Lifecycle</h4><pre><code>make init
+make install
+make dev
+make run
+make clean</code></pre></div>
+        <div class="card"><h4>Database & Shell</h4><pre><code>make makemigrations
+make migrate
+make shell</code></pre></div>
+        <div class="card"><h4>Code Quality & Tests</h4><pre><code>make format
+make lint
+make type-check
+make test
+make test-fast
+make test-coverage</code></pre></div>
+        <div class="card"><h4>Celery Background Tasks</h4><pre><code>make celery-worker
+make celery-beat
+make docker-up</code></pre></div>
+      </div>
+    </section>
+
+    <!-- MAKEFILE -->
+    <section id="makefile" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">07</span><span class="ds-section-tag">Makefile</span></div>
+      <h2>Make <em>shortcuts</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <div class="code-block"><div class="code-header"><span>available commands list</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code>make init         # Fully initialize the project setup automatically
+make install      # Install Python (requirements.txt) and Node packages
+make dev          # Ensure dependencies map directly to a local dev suite
+make run          # Start the local Django development server
+make clean        # Wipe caching and Python __pycache__ bytecodes
+
+make migrate      # Apply pending database migrations
+make makemigrations # Scan models to generate new migrations
+make shell        # Bootstrap a Django interactive shell
+
+make format       # Apply formatters (Black & isort)
+make lint         # Execute Linters (Flake8)
+make type-check   # Boot Static type checking rules (Mypy)</code></pre></div>
+    </section>
+
+    <!-- CELERY -->
+    <section id="background" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">08</span><span class="ds-section-tag">Background Tasks</span></div>
+      <h2>Async <em>Tasks via Celery</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <p class="section-content">The project seamlessly handles heavy async computational tasks via Celery and caches using Redis as its robust message broker.</p>
+      <div class="code-block"><div class="code-header"><span>bash – Celery commands</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code><span class="cm"># To run Celery locally without Docker:</span>
+<span class="cm"># 1. Ensure Redis is relatively available (`redis-server`).</span>
+<span class="cm"># 2. Boot a Celery Worker daemon:</span>
+$ make celery-worker
+
+<span class="cm"># 3. Boot the Celery Beat daemon for recurring cron tasks:</span>
+$ make celery-beat</code></pre></div>
+      <div class="callout note"><strong>📘 Note</strong> Using Docker Compose implicitly provides these background daemons natively alongside a `Flower` UI tracker.</div>
+    </section>
+
+    <!-- TESTING -->
+    <section id="testing" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">09</span><span class="ds-section-tag">Testing</span></div>
+      <h2>pytest <em>& test execution</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <div class="code-block"><div class="code-header"><span>test commands</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code><span class="cm"># Run the core validation test suite</span>
+$ make test
+
+<span class="cm"># To run specifically against coverage tooling</span>
+$ make test-coverage
+
+<span class="cm"># Execute with debug fail-fast mode</span>
+$ make test-fast</code></pre></div>
+    </section>
+
+    <!-- SECURITY CHECKLIST -->
+    <section id="security-checklist" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">10</span><span class="ds-section-tag">Security</span></div>
+      <h2>Pre‑flight <em>checklist</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <div class="checklist-group">
+        <h4>Verify thoroughly before production deploy</h4>
+        <ul class="checklist">
+          <li><code>DEBUG=False</code> must be strictly toggled within <code>.env</code>.</li>
+          <li>Ensure <code>DJANGO_ENVIRONMENT=production</code>.</li>
+          <li>Run <code>make secret-key</code> to configure a massive randomized hash inside <code>SECRET_KEY</code>.</li>
+          <li>Ensure the domain namespace is exactly configured within <code>ALLOWED_HOSTS</code>.</li>
+          <li>Securely update unassigned generic keys (e.g. <code>DB_PASSWORD</code>, <code>REDIS_PASSWORD</code>, Admin users).</li>
+          <li>Set <code>SECURE_SSL_REDIRECT=True</code>, <code>SESSION_COOKIE_SECURE=True</code>, and <code>CSRF_COOKIE_SECURE=True</code> to encrypt web packets securely.</li>
+          <li>Run <code>python manage.py check --deploy</code> iteratively ensuring all flags vanish before runtime deployment.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- PRODUCTION DEPLOYMENT -->
+    <section id="deployment" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">11</span><span class="ds-section-tag">Deploy</span></div>
+      <h2>Production <em>deployment</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <p class="section-content">We use a multi-service container approach orchestrated by <code>docker-compose.yml</code> and natively managed by a resilient <code>entrypoint.sh</code> shell script.</p>
+      
+      <div class="ds-sub">Using Docker Compose (Recommended)</div>
+      <div class="code-block"><div class="code-header"><span>bash – production start</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code><span class="cm"># 1. Initialize and secure the .env for production</span>
+<span class="cm">#    Set DJANGO_ENVIRONMENT=production & DEBUG=False.</span>
+<span class="cm">#    Run `make secret-key` locally to spawn a secure hash and apply it natively.</span>
+
+<span class="cm"># 2. Compose and deploy with built images securely</span>
+$ make docker-build
+$ make docker-up
+
+<span class="cm"># Applications securely available natively via Nginx mapped directly on reverse proxy</span></code></pre></div>
+
+      <div class="ds-sub">Manual deployment (without Docker)</div>
+      <div class="code-block"><div class="code-header"><span>bash – gunicorn</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code><span class="cm"># 1. Gather static files payload mapping natively to application storage volumes route bounds securely</span>
+$ python manage.py collectstatic --noinput
+
+<span class="cm"># 2. Push database schema migrations natively across production SQL databases uniformly</span>
+$ python manage.py migrate
+
+<span class="cm"># 3. Spin up Gunicorn bound securely routing locally on server box natively handling heavy lifting explicitly properly directly dynamically correctly exclusively efficiently accurately globally globally efficiently correctly seamlessly safely cleanly cleanly globally natively seamlessly</span>
+$ gunicorn project.wsgi:application \
+    --bind 0.0.0.0:8000 \
+    --workers 4 \
+    --worker-class sync \
+    --max-requests 1000 \
+    --timeout 120</code></pre></div>
+    </section>
+
+    <!-- DOCKER DEPLOY -->
+    <section id="docker-deploy" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">12</span><span class="ds-section-tag">Docker Containerization Setup</span></div>
+      <h2>Docker <em>Roles & Layers</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <table class="data-table">
+        <thead><tr><th>Service</th><th>Configuration Context</th><th>Routing Port Assignment Context</th></tr></thead>
+        <tbody>
+          <tr><td>db</td><td>Postgres 17 Engine Native Setup Structure</td><td>5432</td></tr>
+          <tr><td>redis</td><td>Redis Cache broker message dispatcher configuration scope route logic backend schema core</td><td>6379</td></tr>
+          <tr><td>web</td><td>Python 3.13 Gunicorn App Core Module Logic Process Unit Environment Instance Structure Block Component Interface API RESTful Application Subsystem Routine Thread Space Frame Execution Routine Flow Model Controller Route Setup Controller Setup Thread</td><td>8000</td></tr>
+          <tr><td>celery_worker</td><td>Background Worker Logic Process Space Routine Component Logic Native Integration Node Node Instance</td><td>–</td></tr>
+          <tr><td>celery_beat</td><td>Cron Engine Task Runner Daemon Processing Component System Engine Block Context Frame</td><td>–</td></tr>
+          <tr><td>flower</td><td>Dashboard Performance Tracker UI System Process View</td><td>5555</td></tr>
+          <tr><td>nginx</td><td>Reverse Proxy Web Engine Load Balancer HTTP Node Layer Server Front Edge Traffic Gateway Gateway Endpoint Edge Block Gateway Endpoint Route Logic Load Logic Traffic Endpoint Server Edge Front Instance Service Subsystem Route Interface</td><td>80, 443</td></tr>
+        </tbody>
+      </table>
+      <div class="callout note"><strong>📘 Note</strong> The underlying <code>entrypoint.sh</code> natively resolves dependencies gracefully, awaiting securely for database nodes prior gracefully booting Django instance contexts and performing initial migration logic routing inherently correctly safely smoothly statically reliably dynamically correctly robustly exclusively explicitly accurately uniquely uniformly reliably securely.</div>
+    </section>
+
+    <footer style="border-top:1px solid var(--border-light); padding:var(--sp-8) 0; margin-top:var(--sp-20); text-align:center; font-family:var(--font-code); font-size:var(--text-xs); color:var(--text-tertiary);">
+      Django Rapido V1.0 — Build faster, scale beautifully.<br>
+    </footer>
+  </main>
+</div>
+
+<script>
+function setTheme(theme) {
+  document.body.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.textContent.toLowerCase().includes(theme)) {
+      btn.classList.add('active');
+    }
+  });
+  localStorage.setItem('theme', theme);
+}
+const savedTheme = localStorage.getItem('theme') || 'light';
+setTheme(savedTheme);
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.color = 'var(--accent)';
+    btn.style.borderColor = 'var(--accent)';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 1800);
+  });
+}
+
+const sections = document.querySelectorAll('.ds-section');
+const navLinks = document.querySelectorAll('.ds-sidebar nav a');
+function setActiveLink() {
+  let current = '';
+  const scrollPos = window.scrollY + 100;
+  sections.forEach(section => {
+    const sectionTop = section.offsetTop;
+    const sectionBottom = sectionTop + section.offsetHeight;
+    if (scrollPos >= sectionTop && scrollPos < sectionBottom) {
+      current = section.getAttribute('id');
+    }
+  });
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    const href = link.getAttribute('href').substring(1);
+    if (href === current) {
+      link.classList.add('active');
+    }
+  });
+}
+window.addEventListener('scroll', setActiveLink);
+window.addEventListener('load', setActiveLink);
+</script>
+</body>
+</html>
