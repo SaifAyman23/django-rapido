@@ -25,7 +25,7 @@ echo "Waiting for dependencies..."
 
 # Wait for PostgreSQL
 echo "  Checking PostgreSQL at ${DB_HOST:-db}:${DB_PORT:-5432}..."
-max_retries=30
+max_retries=60
 retry_count=0
 while [ $retry_count -lt $max_retries ]; do
     if nc -z ${DB_HOST:-db} ${DB_PORT:-5432} 2>/dev/null; then
@@ -107,7 +107,6 @@ case "$CONTAINER_ROLE" in
                 --workers 4 \
                 --worker-class sync \
                 --max-requests 1000 \
-                --timeout 120 \
                 --access-logfile - \
                 --error-logfile -
         else
@@ -127,12 +126,16 @@ case "$CONTAINER_ROLE" in
         else
             exec celery -A project worker \
                 --loglevel=info \
-                --autoreload
+                --autoscale=10,4
         fi
         ;;
     
     celery_beat)
         echo "Running Celery beat scheduler..."
+        
+        echo "  Applying migrations..."
+        python manage.py migrate --noinput
+        
         exec celery -A project beat \
             --loglevel=info \
             --scheduler django_celery_beat.schedulers:DatabaseScheduler
@@ -140,17 +143,20 @@ case "$CONTAINER_ROLE" in
     
     flower)
         echo "Running Flower monitoring dashboard..."
+        
+        # CRITICAL FIX: Use correct Flower command syntax
+        # Format: celery -A <app_name> flower [options]
+        # NOT: python -m flower (this doesn't work with Celery integration)
+        
         if [ "${DJANGO_ENVIRONMENT:-local}" = "production" ]; then
             exec celery -A project flower \
                 --port=5555 \
-                --broker=redis://:${REDIS_PASSWORD:-redis_password}@${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0 \
                 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123} \
                 --persistent \
                 --db=/data/flower.db
         else
             exec celery -A project flower \
                 --port=5555 \
-                --broker=redis://:${REDIS_PASSWORD:-redis_password}@${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0 \
                 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
         fi
         ;;
