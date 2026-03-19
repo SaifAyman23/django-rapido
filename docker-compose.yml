@@ -26,7 +26,7 @@ services:
       POSTGRES_DB: ${DB_NAME:-project_db}
       POSTGRES_USER: ${DB_USER:-project_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_here}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
     ports:
       - "5432:5432" # Remove in production to hide from host
     volumes:
@@ -37,10 +37,9 @@ services:
           "CMD-SHELL",
           "pg_isready -U ${DB_USER:-project_user} -d ${DB_NAME:-project_db}",
         ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      interval: 5s # Check more frequently at start
+      retries: 10
+      start_period: 5s
     networks:
       - project_network
 
@@ -59,7 +58,6 @@ services:
     healthcheck:
       test: ["CMD", "redis-cli", "--no-raw", "incr", "ping"]
       interval: 10s
-      timeout: 5s
       retries: 5
       start_period: 5s
     networks:
@@ -71,7 +69,7 @@ services:
   web:
     init: true
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
     container_name: project_web
     restart: unless-stopped
@@ -79,9 +77,10 @@ services:
     # LOCAL: runserver with hot reload
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ..:/app
+      - .:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
+      - ./logs:/app/logs
 
     # PRODUCTION: Replace command and volumes with:
     # command: gunicorn project.wsgi:application --bind 0.0.0.0:8000 --workers 4 --worker-class sync --max-requests 1000 --timeout 120
@@ -105,7 +104,6 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
       interval: 30s
-      timeout: 10s
       retries: 3
       start_period: 15s
 
@@ -115,15 +113,15 @@ services:
   celery_worker:
     init: true
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
     container_name: project_celery_worker
     restart: unless-stopped
 
     # LOCAL: autoreload for development
-    command: celery -A project worker --loglevel=info --autoreload
+    command: celery -A project worker --loglevel=info --autoscale=10,4
     volumes:
-      - ..:/app
+      - .:/app
 
     # PRODUCTION: Replace command with:
     # command: celery -A project worker --loglevel=info --concurrency=4 --max-tasks-per-child=100 --time-limit=1800
@@ -147,14 +145,14 @@ services:
   celery_beat:
     init: true
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
     container_name: project_celery_beat
     restart: unless-stopped
 
     command: celery -A project beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
-      - ..:/app
+      - .:/app
 
     # PRODUCTION: Remove volume mount
     # volumes: []
@@ -177,12 +175,16 @@ services:
   flower:
     init: true
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
     container_name: project_flower
     restart: unless-stopped
 
-    command: celery -A project flower --port=5555 --broker=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
+    # CRITICAL FIX: Use correct Flower command syntax
+    # Format: celery -A <app_name> flower [options]
+    # NOT: python -m flower (this is incorrect and won't work)
+    command: celery -A project flower --port=5555 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
+    
     ports:
       - "5555:5555"
 
@@ -240,5 +242,4 @@ services:
           "http://localhost/health/",
         ]
       interval: 30s
-      timeout: 10s
       retries: 3
