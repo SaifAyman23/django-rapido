@@ -26,14 +26,15 @@ PyJWT==2.11.0
 
 # ===== CELERY & TASK QUEUE DEPENDENCIES =====
 # Celery core and related packages
-celery==5.6.2
-kombu==5.6.0
-billiard==4.2.4
+# FIXED: Updated celery to 5.4.0 for compatibility with redis 4.6.0
+celery==5.4.0
+kombu==5.4.2
+billiard==4.2.1
 vine==5.1.0
 amqp==5.3.1
 click==8.3.1
 click-didyoumean==0.3.1
-click-plugins==1.1.1.2
+click-plugins==1.1.1
 click-repl==0.3.0
 prompt_toolkit==3.0.52
 wcwidth==0.6.0
@@ -47,17 +48,22 @@ python-crontab==3.3.0
 tzdata==2025.3
 tzlocal==5.3.1
 pytz==2024.2
+flower==2.0.1
 
 # ===== REDIS & CACHING DEPENDENCIES =====
 # Redis client and Django cache backend
-redis==5.2.0
+# CRITICAL FIX: Downgraded from 5.2.0 to 4.6.0 to fix AbstractConnection timeout error
+# redis 5.x introduced breaking API changes incompatible with kombu/celery/channels-redis
+redis==4.6.0
+# FIXED: Downgraded from 6.0.0 to 5.4.0 for compatibility with redis 4.6.0
 django-redis==5.4.0
 msgpack==1.1.2
 
 # ===== CHANNELS & WEBSOCKETS DEPENDENCIES =====
 # Django Channels for WebSocket support
 channels==4.3.2
-channels_redis==4.3.0
+# FIXED: Updated to 4.2.0 for better stability with redis 4.6.0
+channels_redis==4.2.0
 django-channels==0.7.0
 
 # ASGI server for Channels
