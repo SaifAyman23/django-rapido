@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     'corsheaders',
     "rest_framework",
     "rest_framework_simplejwt",
+    # Required only if using token blacklisting:
+    'rest_framework_simplejwt.token_blacklist',
     "django_filters",
     "drf_spectacular",
     "channels",
@@ -61,6 +63,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",  # For static files
     "django.contrib.sessions.middleware.SessionMiddleware",
+    'django.middleware.locale.LocaleMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -73,27 +76,27 @@ Database configuration.
 PostgreSQL setup with connection pooling.
 """
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
-#         "NAME": os.getenv("DB_NAME", "project_db"),
-#         "USER": os.getenv("DB_USER", "project_user"),
-#         "PASSWORD": os.getenv("DB_PASSWORD", "password123"),
-#         "HOST": os.getenv("DB_HOST", "localhost"),
-#         "PORT": os.getenv("DB_PORT", "5432"),
-#         "CONN_MAX_AGE": 600,
-#         "OPTIONS": {
-#             "connect_timeout": 10,
-#         }
-#     }
-# }
-
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
+        "NAME": os.getenv("DB_NAME", "project_db"),
+        "USER": os.getenv("DB_USER", "project_user"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "password123"),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
+        "CONN_MAX_AGE": 600,
+        "OPTIONS": {
+            "connect_timeout": 10,
+        }
     }
 }
+
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
 
 
 # Testing configuration
@@ -149,9 +152,21 @@ DATETIME_INPUT_FORMATS = [
 
 
 # Internationalization
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+LANGUAGE_CODE = "en"
+LANGUAGES = [
+    ('en', 'English'),
+    ('ar', 'العربية'),
+]
+# Enable internationalization
+I18N = True
 USE_I18N = True
+USE_L10N = True  # Localized formatting (numbers, dates, etc.)
+
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),
+]
+
+TIME_ZONE = "UTC"
 USE_TZ = True
 
 # Password validation
@@ -197,14 +212,15 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
-EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "your-email@gmail.com")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "your-app-password")
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@localhost.com")
+# Email Configuration
+# EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 """
 Redis caching configuration.
@@ -212,49 +228,66 @@ Session storage and general caching.
 """
 
 # Redis Caching (5.4.0)
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": os.getenv("CACHE_URL", "redis://:redis_password@localhost:6379/1"),
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#             "CONNECTION_POOL_KWARGS": {
-#                 "max_connections": 50,
-#                 "timeout": 20,
-#             },
-#             "SOCKET_CONNECT_TIMEOUT": 5,
-#             "SOCKET_TIMEOUT": 5,
-#         }
-#     }
-# }
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.getenv("CACHE_URL", "redis://:redis_password@localhost:6379/1"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": 50,
+                # "timeout": 20,
+            },
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+        }
+    }
+}
 
 # Use Redis for session storage
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 
-
 """
 Celery configuration for async task processing.
 Redis as message broker and result backend.
 """
-
-# Celery Configuration (5.6.2)
+ 
+# Celery Configuration (Compatible with celery 5.4.0, redis 4.6.0)
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://:redis_password@localhost:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://:redis_password@localhost:6379/0")
+ 
+# Serialization
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+ 
+# Timezone
 CELERY_TIMEZONE = os.getenv("CELERY_TIMEZONE", "UTC")
-CELERY_TASK_TRACK_STARTED = os.getenv("CELERY_TASK_TRACK_STARTED", "True") == "True"
+CELERY_ENABLE_UTC = True
+ 
+# Task execution and tracking
+CELERY_TASK_TRACK_STARTED = True  # FIXED: Removed duplicate definition
 CELERY_TASK_TIME_LIMIT = int(os.getenv("CELERY_TASK_TIME_LIMIT", "1800"))  # 30 minutes
 CELERY_RESULT_EXPIRES = 3600  # 1 hour
+ 
+# Broker settings
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-CELERY_BROKER_HEARTBEAT = 0
-
+CELERY_BROKER_HEARTBEAT = 120  # RECOMMENDED: Changed from 0 to 120 (default)
+ 
+# Event monitoring (CRITICAL for Flower)
+CELERY_TASK_SEND_SENT_EVENT = True
+CELERY_WORKER_SEND_TASK_EVENTS = True
+ 
+# Additional recommended settings for stability
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Fetch one task at a time
+CELERY_TASK_ACKS_LATE = True  # Acknowledge after task completion
+CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Requeue tasks if worker dies
+ 
 # Flower (Celery Monitoring)
 FLOWER_USER = os.getenv("FLOWER_USER", "admin")
 FLOWER_PASSWORD = os.getenv("FLOWER_PASSWORD", "admin123")
-
+ 
 """
 ============================================================================================
 JWT authentication configuration.
@@ -302,22 +335,45 @@ REST_FRAMEWORK = {
 # Import SECRET_KEY from base (it's already loaded)
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": False,
+    # Token lifetimes
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+
+    # Rotation & blacklisting
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
     "UPDATE_LAST_LOGIN": True,
-    "ALGORITHM": os.getenv("JWT_ALGORITHM", "HS256"),
-    "SIGNING_KEY": os.getenv("JWT_SECRET_KEY", SECRET_KEY),
-    "VERIFYING_KEY": None,
-    "AUTH_HEADER_TYPES": ("Bearer",),
-    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
-    "USER_ID_FIELD": "id",
-    "USER_ID_CLAIM": "user_id",
-    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-    "TOKEN_TYPE_CLAIM": "token_type",
-    "JTI_CLAIM": "jti",
+
+    # Signing
+    "ALGORITHM": os.getenv("JWT_ALGORITHM", "HS256"),   
+    "SIGNING_KEY": os.getenv("JWT_SECRET_KEY", SECRET_KEY),         # use SECRET_KEY or a separate strong key
+    "VERIFYING_KEY": None,                                          # for asymmetric algos (RS256, ES256)
+
+    # Header config
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+
+    # User identification
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+
+    # Token classes
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+
+    # JTI (unique token ID)
+    'JTI_CLAIM': 'jti',
+
+    # Sliding tokens (optional alternative to access/refresh pair)
+    # 'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    # 'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    # 'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+
+    # Serializers
+    'TOKEN_OBTAIN_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
+    'TOKEN_REFRESH_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenRefreshSerializer',
+    'TOKEN_VERIFY_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenVerifySerializer',
+    'TOKEN_BLACKLIST_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenBlacklistSerializer',
 }
 
 
@@ -403,8 +459,14 @@ Logging configuration.
 Console and file handlers with rotation.
 """
 
-# BASE_DIR is available from __init__.py
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+# Create logs directory
+LOG_DIR = BASE_DIR / "logs"
+try:
+    LOG_DIR.mkdir(exist_ok=True, parents=True)
+except PermissionError:
+    # Fallback to /tmp if we can't create the log directory
+    LOG_DIR = Path('/tmp/logs')
+    LOG_DIR.mkdir(exist_ok=True, parents=True)
 
 LOGGING = {
     "version": 1,
@@ -426,7 +488,7 @@ LOGGING = {
         },
         "file": {
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": BASE_DIR / "logs" / "django.log",
+            "filename": LOG_DIR / "django.log",
             "maxBytes": 1024 * 1024 * 10,  # 10MB
             "backupCount": 5,
             "formatter": "verbose",
@@ -450,9 +512,6 @@ LOGGING = {
     },
 }
 
-# Create logs directory
-LOG_DIR = BASE_DIR / "logs"
-LOG_DIR.mkdir(exist_ok=True)
 
 
 """
