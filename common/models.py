@@ -9,7 +9,6 @@ Provides production-grade base classes for rapid development with:
 - Performance optimization
 """
 
-import uuid
 from datetime import timedelta
 from typing import Any, Dict, Optional, Tuple
 
@@ -23,6 +22,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
+import uuid
 import logging
 
 logger = logging.getLogger(__name__)
@@ -372,71 +372,62 @@ class SEOModel(TimestampedModel):
 # Custom User Model
 # ===========================
 
-class CustomUser(AbstractUser):
-    """Custom user model with enhanced features"""
+class CustomUser(AbstractUser, UUIDModel):
+    """Custom user model with email as the unique identifier"""
 
-    # Identity
+    class Status(models.TextChoices):
+        UNVERIFIED = "unverified", _("Unverified")
+        ACTIVE = "active", _("Active")
+        SUSPENDED = "suspended", _("Suspended")
+
     email = models.EmailField(unique=True, db_index=True)
     phone_number = models.CharField(
         max_length=20,
         blank=True,
-        help_text="User phone number",
+        help_text=_("User phone number"),
     )
-
-    # Media & Profile
     avatar = models.ImageField(
         upload_to="avatars/%Y/%m/%d/",
         null=True,
         blank=True,
-        help_text="User avatar image",
+        help_text=_("User avatar image"),
     )
-    bio = models.TextField(
-        max_length=500,
-        blank=True,
-        help_text="User biography",
-    )
-
-    # Verification & Security
     is_verified = models.BooleanField(
         default=False,
         db_index=True,
-        help_text="Email verified status",
+        help_text=_("Email verified status"),
     )
     verified_at = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="Email verification timestamp",
+        help_text=_("Email verification timestamp"),
     )
-    verification_token = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text="Email verification token",
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.UNVERIFIED,
+        db_index=True,
+        help_text=_("User status"),
     )
-    two_factor_enabled = models.BooleanField(
-        default=False,
-        help_text="Two-factor authentication status",
-    )
-
-    # Metadata
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     last_login_at = models.DateTimeField(null=True, blank=True)
-    
+
     groups = models.ManyToManyField(
         'auth.Group',
         verbose_name=_('groups'),
         blank=True,
         help_text=_('The groups this user belongs to.'),
-        related_name='customuser_set',        # ← Add this
+        related_name='customuser_set',
         related_query_name='customuser',
     )
-    
+
     user_permissions = models.ManyToManyField(
         'auth.Permission',
         verbose_name=_('user permissions'),
         blank=True,
         help_text=_('Specific permissions for this user.'),
-        related_name='customuser_set',        # ← Add this
+        related_name='customuser_set',
         related_query_name='customuser',
     )
 
@@ -462,9 +453,12 @@ class CustomUser(AbstractUser):
         """Mark user email as verified"""
         self.is_verified = True
         self.verified_at = timezone.now()
-        self.verification_token = ""
-        self.save(update_fields=["is_verified", "verified_at", "verification_token"])
+        self.save(update_fields=["is_verified", "verified_at"])
         logger.info(f"User {self.id} email verified")
+
+    def get_full_name(self) -> str:
+        """Get user's full name"""
+        return f"{self.first_name} {self.last_name}".strip()
 
     def get_display_name(self) -> str:
         """Get user's display name"""
@@ -476,13 +470,6 @@ class CustomUser(AbstractUser):
     def is_fully_verified(self) -> bool:
         """Check if user is fully verified"""
         return self.is_verified and self.is_active
-
-    
-    def save(self, *args, **kwargs):
-        # Ensure ID is stored as string with hyphens
-        if self.id and isinstance(self.id, uuid.UUID):
-            self.id = str(self.id)  # Convert to string with hyphens
-        super().save(*args, **kwargs)
 
 
 @receiver(post_save, sender=CustomUser)
@@ -496,7 +483,7 @@ def log_user_creation(sender, instance, created, **kwargs):
 # Audit Trail Model
 # ===========================
 
-class AuditLog(TimestampedModel):
+class AuditLog(TimestampedModel, UUIDModel):
     """Track changes to models for compliance and debugging"""
 
     ACTION_CHOICES = (

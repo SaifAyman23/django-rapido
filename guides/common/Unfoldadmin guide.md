@@ -1245,6 +1245,43 @@ class MyAdmin(BaseAdmin):
 
 ---
 
+## Dashboard Integration
+
+The `dashboard/` app provides Unfold admin enhancements:
+
+### Callbacks (`dashboard/callbacks.py`)
+
+| Callback | Purpose |
+|----------|---------|
+| `dashboard_callback` | Injects stats (active users, registrations, recent actions) into admin index |
+| `environment_callback` | Returns status badge ("All OK!") for admin header |
+| `badge_callback` | Returns notification badge count |
+| `permission_callback` | Controls visibility of environment badge |
+
+### Context Processors (`dashboard/context_processors.py`)
+
+| Processor | Provides |
+|-----------|----------|
+| `unfold_colors` | Dynamic color scheme from settings |
+| `dashboard_context` | Recent activity feed with fallbacks |
+
+### Login Form (`dashboard/forms.py`)
+
+Extends Unfold's `AuthenticationForm` with pre-filled dev credentials from `LOGIN_USERNAME`/`LOGIN_PASSWORD` settings.
+
+### Configuration (`dashboard/__init__.py`)
+
+Unfold settings reference these in `unfold_config.py`:
+
+```python
+UNFOLD["SITE_URL"] = "/"
+UNFOLD["DASHBOARD_CALLBACK"] = "dashboard.callbacks.dashboard_callback"
+UNFOLD["ENVIRONMENT_CALLBACK"] = "dashboard.callbacks.environment_callback"
+UNFOLD["LOGIN"] = {"form_class": "dashboard.forms.LoginForm"}
+```
+
+---
+
 ## Summary
 
 | Feature | Usage |
@@ -1258,6 +1295,7 @@ class MyAdmin(BaseAdmin):
 | **Filters** | Range, checkbox, boolean filters |
 | **Inline** | Edit related objects inline |
 | **Fieldsets** | Organize form fields |
+| **Dashboard Callbacks** | Stats, environment badge, permissions |
 
 ---
 

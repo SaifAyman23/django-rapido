@@ -10,6 +10,7 @@ Usage:
 """
 
 import logging
+import os
 from contextlib import contextmanager
 
 from django.core.exceptions import (
@@ -356,6 +357,8 @@ class BaseViewSetMixin(ViewSetMixin):
         if isinstance(exc, (ProtectedError, RestrictedError)):
             dependents = [str(obj) for obj in exc.protected_objects] if hasattr(exc, "protected_objects") else []
             logger.warning("Delete blocked by related objects: %s", exc)
+            if os.environ.get('TESTING') == 'True':
+                raise
             return _error_response(
                 message="Cannot delete this object because it is referenced by other records.",
                 code="protected_object",
@@ -365,6 +368,8 @@ class BaseViewSetMixin(ViewSetMixin):
 
         if isinstance(exc, IntegrityError):
             logger.error("IntegrityError: %s", exc)
+            if os.environ.get('TESTING') == 'True':
+                raise
             msg = "A database integrity constraint was violated." if self.SAFE_DB_ERRORS else str(exc)
             return _error_response(
                 message=msg,
@@ -374,6 +379,8 @@ class BaseViewSetMixin(ViewSetMixin):
 
         if isinstance(exc, DataError):
             logger.error("DataError: %s", exc)
+            if os.environ.get('TESTING') == 'True':
+                raise
             msg = "The provided data is invalid for the database schema." if self.SAFE_DB_ERRORS else str(exc)
             return _error_response(
                 message=msg,
@@ -383,6 +390,8 @@ class BaseViewSetMixin(ViewSetMixin):
 
         if isinstance(exc, OperationalError):
             logger.critical("DB OperationalError: %s", exc, exc_info=True)
+            if os.environ.get('TESTING') == 'True':
+                raise
             return _error_response(
                 message="A database operational error occurred. Please try again later.",
                 code="db_operational_error",
@@ -391,6 +400,8 @@ class BaseViewSetMixin(ViewSetMixin):
 
         if isinstance(exc, (ProgrammingError, DatabaseError)):
             logger.critical("DB error (%s): %s", type(exc).__name__, exc, exc_info=True)
+            if os.environ.get('TESTING') == 'True':
+                raise
             return _error_response(
                 message="An unexpected database error occurred.",
                 code="db_error",
@@ -406,6 +417,8 @@ class BaseViewSetMixin(ViewSetMixin):
             getattr(request, "path", "?"),
             exc,
         )
+        if os.environ.get('TESTING') == 'True':
+            raise
         return _error_response(
             message="An unexpected internal error occurred.",
             code="internal_server_error",

@@ -284,6 +284,97 @@ def send_password_reset_email(user, base_url: str) -> bool:
 
 
 # ===========================
+# Token & Authentication Helpers
+# ===========================
+
+from django.http import HttpResponse, HttpRequest
+from django.conf import settings
+
+
+def set_refresh_token_cookie(
+    response: HttpResponse,
+    refresh_token: str,
+    lifetime: int = 60 * 60 * 24 * 30,
+) -> HttpResponse:
+    """
+    Set refresh token as HttpOnly cookie.
+    
+    Args:
+        response: The HTTP response to attach cookie to
+        refresh_token: The refresh token string
+        lifetime: Cookie lifetime in seconds (default: 30 days)
+    
+    Returns:
+        The response with cookie set
+    """
+    is_prod = not settings.DEBUG
+    
+    response.set_cookie(
+        'refresh_token',
+        refresh_token,
+        max_age=lifetime,
+        httponly=True,
+        secure=is_prod,
+        samesite='Lax',
+        path='/',
+    )
+    
+    return response
+
+
+def set_token_cookies(
+    response: HttpResponse,
+    refresh_token: str,
+    access_token: str,
+    refresh_token_lifetime: int = 60 * 60 * 24 * 30,
+    access_token_lifetime: int = 60 * 30,
+) -> HttpResponse:
+    """
+    Set JWT tokens - refresh in HttpOnly cookie, access returned in body.
+    Only stores refresh token in cookie; access token should be handled client-side.
+    
+    Args:
+        response: The HTTP response to attach cookies to
+        refresh_token: The refresh token string
+        access_token: The access token string (NOT stored in cookie)
+        refresh_token_lifetime: Cookie lifetime in seconds (default: 30 days)
+        access_token_lifetime: Unused, kept for backward compatibility
+    
+    Returns:
+        The response with cookies set
+    """
+    return set_refresh_token_cookie(response, refresh_token, refresh_token_lifetime)
+
+
+def clear_token_cookies(response: HttpResponse) -> HttpResponse:
+    """
+    Clear all JWT token cookies.
+    
+    Args:
+        response: The HTTP response to clear cookies from
+    
+    Returns:
+        The response with cookies cleared
+    """
+    response.delete_cookie('refresh_token', path='/')
+    response.delete_cookie('access_token', path='/')
+    return response
+
+
+def get_refresh_token_from_cookie(request: HttpRequest) -> str | None:
+    """
+    Retrieve refresh token from cookie.
+    
+    Args:
+        request: The HTTP request
+    
+    Returns:
+        Refresh token or None if not present
+    """
+    return request.COOKIES.get('refresh_token')
+
+
+# ===========================
 # UUID/ID Helpers
 # ===========================
 

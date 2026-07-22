@@ -40,14 +40,16 @@ class CustomUserAdmin(BaseUserAdmin):
     
     Features:
     - Email/username display
-    - Verification badges
-    - 2FA status
+    - Role & verification badges
+    - Notification preferences
     - Bulk actions
     - Query optimization
     """
     
     # List Display
     list_display = [
+        "id",
+        "avatar_preview",
         "email",
         "username",
         "full_name",
@@ -60,7 +62,6 @@ class CustomUserAdmin(BaseUserAdmin):
     # Filtering
     list_filter = [
         ("is_verified", BooleanRadioFilter),
-        ("two_factor_enabled", BooleanRadioFilter),
         ("is_active", BooleanRadioFilter),
         ("is_staff", BooleanRadioFilter),
         ("groups", RelatedCheckboxFilter),
@@ -81,15 +82,14 @@ class CustomUserAdmin(BaseUserAdmin):
         (None, {
             "fields": ("username", "password", "email")
         }),
+        ("Avatar", {
+            "fields": ("avatar",),
+        }),
         ("Personal Info", {
-            "fields": ("first_name", "last_name", "phone_number", "avatar", "bio"),
+            "fields": ("first_name", "last_name", "phone_number", "status"),
         }),
         ("Verification", {
-            "fields": ("is_verified", "verification_token"),
-            "classes": ("collapse",),
-        }),
-        ("Security", {
-            "fields": ("two_factor_enabled",),
+            "fields": ("is_verified", "verified_at"),
             "classes": ("collapse",),
         }),
         ("Permissions", {
@@ -97,7 +97,7 @@ class CustomUserAdmin(BaseUserAdmin):
             "classes": ("collapse",),
         }),
         ("Timestamps", {
-            "fields": ("created_at", "updated_at", "verified_at", "last_login_at"),
+            "fields": ("created_at", "updated_at", "last_login_at"),
             "classes": ("collapse",),
         }),
     )
@@ -113,6 +113,7 @@ class CustomUserAdmin(BaseUserAdmin):
     )
     
     readonly_fields = [
+        "avatar_preview",
         "created_at",
         "updated_at",
         "verified_at",
@@ -129,6 +130,16 @@ class CustomUserAdmin(BaseUserAdmin):
     
     # Display Methods
     
+    @display(description="Avatar", ordering="avatar")
+    def avatar_preview(self, obj: CustomUser) -> str:
+        """Show avatar thumbnail"""
+        if obj.avatar:
+            return format_html(
+                '<img src="{}" width="100" height="100" style="object-fit:cover;border-radius:5px;" />',
+                obj.avatar.url
+            )
+        return self.badge("-", "transparent")
+
     @display(description="Full Name")
     def full_name(self, obj: CustomUser) -> str:
         """Show full name or username"""
@@ -201,6 +212,7 @@ class AuditLogAdmin(ReadOnlyAdmin):
     
     # List Display
     list_display = [
+        "id",
         "timestamp_display",
         "action_badge",
         "user_display",
@@ -337,6 +349,7 @@ class LogEntryAdmin(ReadOnlyAdmin):
     
     # List Display
     list_display = [
+        "id",
         "action_time_display",
         "user_link",
         "content_type_display",

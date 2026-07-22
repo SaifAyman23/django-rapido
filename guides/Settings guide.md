@@ -108,6 +108,24 @@ CELERY_BROKER_URL=redis://:password@localhost:6379/0
 CELERY_RESULT_BACKEND=redis://:password@localhost:6379/0
 ```
 
+### Celery Application
+
+**File:** `project/celery.py`
+
+The Celery application is bootstrapped in `project/celery.py`:
+- Reads config from Django settings using `CELERY_` namespace
+- Auto-discovers `tasks.py` in every installed app
+- Run workers: `celery -A project worker -l info`
+
+### Task Modules
+
+Each app can define a `tasks.py` with `@shared_task` functions. Pre‑built examples in `accounts/tasks.py`:
+- `notify_welcome_email` — send welcome email after registration
+- `notify_password_reset` — send password reset link
+- `cleanup_expired_sessions` — periodic session cleanup
+
+All notification tasks check `should_notify()` before sending.
+
 ### Email Settings
 
 **File:** `components/email.py` or `.env`
@@ -153,6 +171,36 @@ SECURE_HSTS_SECONDS = 31536000
 | `components/logging.py` | Logging | Adjust log levels or add new handlers |
 | `components/channels.py` | WebSockets | Configure Channels layer or Redis connection |
 | `components/third_party.py` | External services | Add AWS, Sentry, or other integrations |
+
+---
+
+## Project URLs & Routing
+
+**File:** `project/urls.py`
+
+| Endpoint | Purpose |
+|----------|---------|
+| `api/v1/users/` | Accounts app (register, logout, profile) |
+| `api/v1/users/login/` | JWT login — returns access + sets refresh cookie |
+| `api/v1/users/token/refresh/` | Refresh access token (reads cookie or body) |
+| `api/v1/users/token/verify/` | Verify access token validity |
+| `api/v1/users/token/blacklist/` | Blacklist a refresh token (logout server-side) |
+| `api/schema/` | OpenAPI schema (Spectacular) |
+| `swagger/`, `redoc/` | API documentation UIs |
+| `health/` | Health check, returns `"healthy"` |
+| `admin/` | Django admin (i18n‑prefixed) |
+| `i18n/` | Language switcher |
+| `__debug__/` | Django Debug Toolbar (DEV only) |
+
+---
+
+## Deployment Entry Points
+
+| File | Role |
+|------|------|
+| `project/wsgi.py` | WSGI application — used by gunicorn/uwsgi |
+| `project/asgi.py` | ASGI application — used by daphne/uvicorn |
+| `project/routing.py` | ASGI routing — reserved for Channels (not currently active) |
 
 ---
 

@@ -22,6 +22,8 @@ RUN useradd -m -u 1000 appuser
 
 # Copy and install dependencies
 COPY requirements.txt .
+COPY package.json .
+RUN npm install
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install gunicorn
@@ -45,7 +47,7 @@ USER appuser
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8000/ || exit 1
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+#     CMD curl -f http://localhost:8000/ || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]

@@ -1,480 +1,337 @@
 """
-Ultimate reusable Django REST Framework permissions
-Provides production-grade permission classes with:
-- Object-level permissions
-- Role-based access control (RBAC)
-- Permission caching
-- Custom rule evaluation
+Django REST Framework Permissions.
+
+Comprehensive set of permission classes for DRF projects.
 """
 
-from typing import Optional, List, Callable, Any
-from functools import lru_cache
-
-from rest_framework import permissions
-from rest_framework.request import Request
-from rest_framework.views import APIView
-from django.contrib.auth.models import Permission, Group
-from django.db.models import Model
 import logging
+from typing import Any, Callable, List, Optional, Tuple, Type
+
+from django.core.cache import cache
+from django.contrib.auth.models import Group, Permission
+from django.db.models import Model
+from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.request import Request
+from rest_framework.views import View
 
 logger = logging.getLogger(__name__)
 
 
-# ===========================
-# Base Permission Classes
-# ===========================
-
-class BasePermission(permissions.BasePermission):
-    """Enhanced base permission with logging"""
-
-    def __str__(self) -> str:
-        return self.__class__.__name__
-
-    def check_access(
-        self,
-        request: Request,
-        view: APIView,
-        obj: Optional[Model] = None,
-    ) -> bool:
-        """Override in subclasses"""
-        return True
-
-    def has_permission(self, request: Request, view: APIView) -> bool:
-        """Check view-level permission"""
-        result = self.check_access(request, view)
-        if not result:
-            logger.warning(
-                f"Permission denied: {self} for {request.user} on {request.path}",
-                extra={"user_id": request.user.id if request.user else None},
-            )
-        return result
-
-    def has_object_permission(
-        self,
-        request: Request,
-        view: APIView,
-        obj: Model,
-    ) -> bool:
-        """Check object-level permission"""
-        result = self.check_access(request, view, obj)
-        if not result:
-            logger.warning(
-                f"Object permission denied: {self} for {request.user} on {obj}",
-                extra={"user_id": request.user.id if request.user else None},
-            )
-        return result
-
-
-# ===========================
-# Authentication Permissions
-# ===========================
+# =============================================================================
+# 1. Authentication Permissions
+# =============================================================================
 
 class IsAuthenticated(BasePermission):
-    """User must be authenticated"""
+    """User must be authenticated."""
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         return bool(request.user and request.user.is_authenticated)
 
 
 class IsAnonymous(BasePermission):
-    """User must NOT be authenticated"""
+    """User must NOT be authenticated."""
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         return not request.user or not request.user.is_authenticated
 
 
 class IsAuthenticatedOrReadOnly(BasePermission):
-    """Authenticated users can do anything, others can only read"""
+    """Authenticated users can do anything, others can only read."""
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
-        if request.method in permissions.SAFE_METHODS:
+    def has_permission(self, request: Request, view: View) -> bool:
+        if request.method in SAFE_METHODS:
             return True
         return bool(request.user and request.user.is_authenticated)
 
 
-# ===========================
-# Role-Based Permissions
-# ===========================
+# =============================================================================
+# 2. Role-Based Permissions
+# =============================================================================
 
 class IsAdmin(BasePermission):
-    """User must be admin/staff"""
+    """User must be admin/staff (is_staff)."""
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         return bool(request.user and request.user.is_staff)
 
 
 class IsSuperUser(BasePermission):
-    """User must be superuser"""
+    """User must be a superuser."""
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         return bool(request.user and request.user.is_superuser)
 
 
 class IsInGroup(BasePermission):
-    """User must be in specified group(s)"""
+    """User must be in specified group(s)."""
 
     required_groups: List[str] = []
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         if not request.user or not request.user.is_authenticated:
             return False
-
         if not self.required_groups:
             return True
-
         user_groups = request.user.groups.values_list("name", flat=True)
         return any(group in user_groups for group in self.required_groups)
 
 
 class HasPermission(BasePermission):
-    """User must have specific permission(s)"""
+    """User must have specific Django permission(s)."""
 
     required_permissions: List[str] = []
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         if not request.user or not request.user.is_authenticated:
             return False
-
         if not self.required_permissions:
             return True
-
         return all(
             request.user.has_perm(perm)
             for perm in self.required_permissions
         )
 
 
-# ===========================
-# Ownership Permissions
-# ===========================
+# =============================================================================
+# 3. Ownership Permissions
+# =============================================================================
 
 class IsOwner(BasePermission):
-    """User must be the object owner"""
+    """User must be the object owner (object-level)."""
 
     owner_field: str = "user"
 
-    def check_access(self, request: Request, view: APIView, obj: Optional[Model] = None) -> bool:
-        if obj is None:
-            return True
-
+    def has_object_permission(self, request: Request, view: View, obj: Model) -> bool:
+        if not request.user or not request.user.is_authenticated:
+            return False
         try:
             owner = getattr(obj, self.owner_field)
-            return owner == request.user
         except AttributeError:
-            logger.error(f"Owner field '{self.owner_field}' not found on {obj.__class__.__name__}")
+            logger.error("Owner field '%s' not found on %s", self.owner_field, obj)
             return False
+        if owner is None:
+            return False
+        return owner == request.user
 
 
 class IsOwnerOrReadOnly(BasePermission):
-    """Owner can edit, others can only read"""
+    """Owner can edit, others can only read (object-level)."""
 
     owner_field: str = "user"
 
-    def check_access(self, request: Request, view: APIView, obj: Optional[Model] = None) -> bool:
-        if request.method in permissions.SAFE_METHODS:
+    def has_object_permission(self, request: Request, view: View, obj: Model) -> bool:
+        if request.method in SAFE_METHODS:
             return True
-
-        if obj is None:
-            return True
-
+        if not request.user or not request.user.is_authenticated:
+            return False
         try:
             owner = getattr(obj, self.owner_field)
-            return owner == request.user
         except AttributeError:
-            logger.error(f"Owner field '{self.owner_field}' not found on {obj.__class__.__name__}")
             return False
+        return owner == request.user
 
 
 class IsOwnerOrAdmin(BasePermission):
-    """Owner or admin can edit"""
+    """Owner or admin (staff) can edit (object-level)."""
 
     owner_field: str = "user"
 
-    def check_access(self, request: Request, view: APIView, obj: Optional[Model] = None) -> bool:
+    def has_object_permission(self, request: Request, view: View, obj: Model) -> bool:
         if request.user and request.user.is_staff:
             return True
-
-        if obj is None:
-            return True
-
+        if not request.user or not request.user.is_authenticated:
+            return False
         try:
             owner = getattr(obj, self.owner_field)
-            return owner == request.user
         except AttributeError:
-            logger.error(f"Owner field '{self.owner_field}' not found on {obj.__class__.__name__}")
             return False
+        return owner == request.user
 
 
-# ===========================
-# HTTP Method Permissions
-# ===========================
+# =============================================================================
+# 4. HTTP Method Permissions
+# =============================================================================
 
 class IsReadOnly(BasePermission):
-    """Only allow safe methods"""
+    """Only allow safe methods (GET, HEAD, OPTIONS)."""
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
-        return request.method in permissions.SAFE_METHODS
+    def has_permission(self, request: Request, view: View) -> bool:
+        return request.method in SAFE_METHODS
 
 
 class AllowGet(BasePermission):
-    """Only allow GET requests"""
+    """Only allow GET requests."""
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         return request.method == "GET"
 
 
 class AllowPost(BasePermission):
-    """Only allow POST requests"""
+    """Only allow POST requests."""
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         return request.method == "POST"
 
 
-class AllowGetPost(BasePermission):
-    """Only allow GET and POST requests"""
-
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
-        return request.method in ["GET", "POST"]
-
-
-# ===========================
-# Complex Permissions
-# ===========================
+# =============================================================================
+# 5. Complex Permissions
+# =============================================================================
 
 class MultiplePermissionsRequired(BasePermission):
-    """Require multiple permissions with AND logic"""
+    """Require all specified permissions (AND logic)."""
 
-    permissions: List[BasePermission] = []
+    permissions: List[Type[BasePermission]] = []
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
+    def has_permission(self, request: Request, view: View) -> bool:
         if not self.permissions:
             return True
+        return all(
+            perm().has_permission(request, view) for perm in self.permissions
+        )
 
-        for perm in self.permissions:
-            if not perm.check_access(request, view, obj):
-                return False
-
-        return True
-
-
-class AnyPermissionRequired(BasePermission):
-    """Require any one of multiple permissions (OR logic)"""
-
-    permissions: List[BasePermission] = []
-
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
+    def has_object_permission(self, request: Request, view: View, obj: Model) -> bool:
         if not self.permissions:
             return True
-
-        return any(
-            perm.check_access(request, view, obj)
-            for perm in self.permissions
+        return all(
+            perm().has_object_permission(request, view, obj) for perm in self.permissions
         )
 
 
-class CustomPermissionRule(BasePermission):
-    """Apply custom permission rule function"""
+class AnyPermissionRequired(BasePermission):
+    """Require any one of specified permissions (OR logic)."""
 
-    rule_function: Optional[Callable[[Request, APIView, Optional[Model]], bool]] = None
+    permissions: List[Type[BasePermission]] = []
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
-        if self.rule_function is None:
+    def has_permission(self, request: Request, view: View) -> bool:
+        if not self.permissions:
             return True
+        return any(
+            perm().has_permission(request, view) for perm in self.permissions
+        )
 
-        try:
-            return self.rule_function(request, view, obj)
-        except Exception as e:
-            logger.error(f"Error evaluating custom permission rule: {str(e)}", exc_info=True)
-            return False
+    def has_object_permission(self, request: Request, view: View, obj: Model) -> bool:
+        if not self.permissions:
+            return True
+        return any(
+            perm().has_object_permission(request, view, obj) for perm in self.permissions
+        )
 
 
-# ===========================
-# Rate Limiting Permissions
-# ===========================
+# =============================================================================
+# 6. Rate Limiting Permission
+# =============================================================================
 
 class RateLimitPermission(BasePermission):
-    """Rate limit based on user tier"""
+    """Rate limiting based on user tier.
 
-    RATE_LIMITS = {
-        "anonymous": 100,      # 100 requests
-        "authenticated": 1000,  # 1000 requests
-        "staff": 10000,        # 10000 requests
+    Tiers:
+        - anonymous: 100 requests per hour
+        - authenticated: 1000 requests per hour
+        - staff: 10000 requests per hour
+    """
+
+    RATE_LIMITS: dict = {
+        "anonymous": (100, 3600),
+        "authenticated": (1000, 3600),
+        "staff": (10000, 3600),
     }
 
-    WINDOW_SIZE = 3600  # 1 hour in seconds
+    @classmethod
+    def rate_limit_key(cls, request: Request) -> str:
+        """Return the cache key for the given request."""
+        if request.user.is_authenticated:
+            return f"rate_limit:user:{request.user.id}"
+        return f"rate_limit:ip:{cls.get_client_ip(request)}"
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
-        from django.core.cache import cache
-        from django.utils import timezone
-        from datetime import timedelta
+    @staticmethod
+    def get_client_ip(request: Request) -> str:
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR", "")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR", "")
 
-        if not hasattr(request, "user"):
-            return True
-
-        user = request.user
-
-        # Determine user tier
-        if not user.is_authenticated:
+    def has_permission(self, request: Request, view: View) -> bool:
+        if not request.user.is_authenticated:
             tier = "anonymous"
-        elif user.is_staff:
+        elif request.user.is_staff:
             tier = "staff"
         else:
             tier = "authenticated"
 
-        # Get rate limit
-        limit = self.RATE_LIMITS.get(tier, 100)
+        limit, window = self.RATE_LIMITS[tier]
+        cache_key = self.rate_limit_key(request)
 
-        # Create cache key
-        if user.is_authenticated:
-            cache_key = f"rate_limit:{user.id}"
-        else:
-            ip = self.get_client_ip(request)
-            cache_key = f"rate_limit:{ip}"
-
-        # Check and update rate limit
-        current_requests = cache.get(cache_key, 0)
-
-        if current_requests >= limit:
-            logger.warning(
-                f"Rate limit exceeded for {tier} user",
-                extra={"user_id": user.id if user.is_authenticated else None},
-            )
+        current = cache.get(cache_key, 0)
+        if current >= limit:
+            logger.warning("Rate limit exceeded for tier '%s' (key=%s)", tier, cache_key)
             return False
 
-        cache.set(cache_key, current_requests + 1, self.WINDOW_SIZE)
+        cache.set(cache_key, current + 1, window)
         return True
 
-    @staticmethod
-    def get_client_ip(request: Request) -> str:
-        """Get client IP from request"""
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(",")[0]
-        else:
-            ip = request.META.get("REMOTE_ADDR")
-        return ip
 
+# =============================================================================
+# 7. Custom Permission Rule
+# =============================================================================
 
-# ===========================
-# Verification Permissions
-# ===========================
+class CustomPermissionRule(BasePermission):
+    """Apply a pluggable callable to determine access."""
 
-class IsVerified(BasePermission):
-    """User must be verified (email, etc.)"""
+    rule_function: Optional[Callable[[Request, View, Any], bool]] = None
 
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
-        if not request.user or not request.user.is_authenticated:
-            return False
-
-        return getattr(request.user, "is_verified", False)
-
-
-class IsVerifiedOrReadOnly(BasePermission):
-    """Verified users can do anything, others can only read"""
-
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
-        if request.method in permissions.SAFE_METHODS:
+    def has_permission(self, request: Request, view: View) -> bool:
+        if self.rule_function is None:
             return True
-
-        if not request.user or not request.user.is_authenticated:
-            return False
-
-        return getattr(request.user, "is_verified", False)
-
-
-class HasTwoFactorEnabled(BasePermission):
-    """User must have 2FA enabled"""
-
-    def check_access(self, request: Request, view: APIView, obj=None) -> bool:
-        if not request.user or not request.user.is_authenticated:
-            return False
-
-        return getattr(request.user, "two_factor_enabled", False)
-
-
-# ===========================
-# Status-Based Permissions
-# ===========================
-
-class IsObjectActive(BasePermission):
-    """Object must be active"""
-
-    status_field: str = "status"
-
-    def check_access(self, request: Request, view: APIView, obj: Optional[Model] = None) -> bool:
-        if obj is None:
-            return True
-
         try:
-            status = getattr(obj, self.status_field)
-            return status == "published" or status == "active"
-        except AttributeError:
-            logger.error(f"Status field '{self.status_field}' not found on {obj.__class__.__name__}")
+            return bool(self.rule_function(request, view, None))
+        except Exception as e:
+            logger.error("Error in CustomPermissionRule '%s': %s", self.__class__.__name__, e)
+            return False
+
+    def has_object_permission(self, request: Request, view: View, obj: Model) -> bool:
+        if self.rule_function is None:
+            return True
+        try:
+            return bool(self.rule_function(request, view, obj))
+        except Exception as e:
+            logger.error("Error in CustomPermissionRule '%s': %s", self.__class__.__name__, e)
             return False
 
 
-class IsObjectPublished(BasePermission):
-    """Object must be published"""
-
-    def check_access(self, request: Request, view: APIView, obj: Optional[Model] = None) -> bool:
-        if obj is None:
-            return True
-
-        return getattr(obj, "status", None) == "published"
-
-
-# ===========================
-# Permission Factories
-# ===========================
+# =============================================================================
+# 8. Permission Factories
+# =============================================================================
 
 def create_group_permission(group_name: str) -> type:
-    """Factory to create a permission class for a specific group"""
+    """Factory to create a permission class for a specific group."""
+
     class GroupPermission(IsInGroup):
         required_groups = [group_name]
 
     GroupPermission.__name__ = f"Is{group_name.title()}"
+    GroupPermission.__qualname__ = GroupPermission.__name__
     return GroupPermission
 
 
 def create_permission_check(perm_string: str) -> type:
-    """Factory to create a permission class for a specific permission"""
+    """Factory to create a permission class for a specific Django permission."""
+
     class PermissionCheck(HasPermission):
         required_permissions = [perm_string]
 
     PermissionCheck.__name__ = f"Has{perm_string.replace('.', '_').title()}"
+    PermissionCheck.__qualname__ = PermissionCheck.__name__
     return PermissionCheck
 
 
-def combine_permissions(*permission_classes: type) -> type:
-    """Combine multiple permission classes with AND logic"""
+def combine_permissions(*permission_classes: Type[BasePermission]) -> type:
+    """Combine multiple permissions into a single class with AND logic."""
+
+    class_name = "Combined" + "And".join(p.__name__ for p in permission_classes)
+
     class CombinedPermission(MultiplePermissionsRequired):
-        permissions = [perm() for perm in permission_classes]
+        permissions = list(permission_classes)
 
-    CombinedPermission.__name__ = "Combined" + "And".join(
-        perm.__name__ for perm in permission_classes
-    )
+    CombinedPermission.__name__ = class_name
+    CombinedPermission.__qualname__ = class_name
     return CombinedPermission
-
-
-# ===========================
-# Caching Permissions
-# ===========================
-
-class CachedPermission(BasePermission):
-    """Cache permission results for performance"""
-
-    cache_timeout: int = 300  # 5 minutes
-
-    @lru_cache(maxsize=1024)
-    def _check_permission(self, user_id: int, object_id: int) -> bool:
-        """Override this method in subclasses"""
-        return True
-
-    def has_object_permission(self, request: Request, view: APIView, obj: Model) -> bool:
-        if not request.user or not request.user.is_authenticated:
-            return False
-
-        user_id = request.user.id
-        object_id = obj.id
-
-        return self._check_permission(user_id, object_id)

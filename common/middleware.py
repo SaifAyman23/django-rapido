@@ -1,42 +1,43 @@
 """
-Ultimate custom middleware for Django
-Provides production-grade middleware with:
-- Request/response logging
-- Performance monitoring
-- Security headers
-- Error tracking
-- CORS handling
+Common middleware classes
+
+All middleware classes documented in the Middleware guide, implemented using
+Django's MiddlewareMixin with process_request / process_response / process_view /
+process_exception hooks.
 """
 
-from typing import Callable, Optional, Dict, Any
-from time import time
-import logging
-import json
-import uuid
+from __future__ import annotations
 
-from django.utils.deprecation import MiddlewareMixin
+import json
+import logging
+import re
+import time
+import uuid
+from typing import Any, Optional
+
+import pytz
+from django.conf import settings
+from django.db import connection
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.utils import timezone
-from django.conf import settings
-from django.core.cache import cache
+from django.utils.deprecation import MiddlewareMixin
+
+from common.models import AuditLog
 
 logger = logging.getLogger(__name__)
 
 
-# ===========================
-# Logging Middleware
-# ===========================
-
 class RequestLoggingMiddleware(MiddlewareMixin):
-    """Log all HTTP requests and responses"""
+    """Log all HTTP requests and responses with unique request ID and timing"""
 
-    def process_request(self, request: HttpRequest) -> Optional[HttpResponse]:
-        """Log incoming request"""
-        # Generate request ID
+    def __init__(self, get_response):
+        super().__init__(get_response)
+
+    def process_request(self, request: HttpRequest) -> None:
+        """Generate request ID, record start time, log incoming request"""
         request.request_id = str(uuid.uuid4())
-        request.request_start_time = time()
+        request.request_start_time = time.time()
 
-        # Log request
         logger.info(
             f"{request.method} {request.path}",
             extra={
@@ -52,8 +53,8 @@ class RequestLoggingMiddleware(MiddlewareMixin):
         return None
 
     def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
-        """Log outgoing response"""
-        duration = (time() - getattr(request, "request_start_time", time())) * 1000  # ms
+        """Calculate duration, log response, add X-Request-ID header"""
+        duration = (time.time() - getattr(request, "request_start_time", time.time())) * 1000
 
         log_level = logging.INFO
         if response.status_code >= 500:
@@ -69,69 +70,63 @@ class RequestLoggingMiddleware(MiddlewareMixin):
                 "method": request.method,
                 "path": request.path,
                 "status_code": response.status_code,
-                "duration_ms": duration,
+                "duration_ms": round(duration, 2),
                 "user_id": request.user.id if request.user.is_authenticated else None,
             },
         )
 
-        # Add request ID to response headers
         response["X-Request-ID"] = getattr(request, "request_id", "")
 
         return response
 
     @staticmethod
     def get_client_ip(request: HttpRequest) -> str:
-        """Get client IP address"""
+        """Extract client IP from X-Forwarded-For or REMOTE_ADDR"""
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
-            ip = x_forwarded_for.split(",")[0].strip()
-        else:
-            ip = request.META.get("REMOTE_ADDR", "")
+            return x_forwarded_for.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR", "")
 
-        return ip
-
-
-# ===========================
-# Performance Middleware
-# ===========================
 
 class PerformanceMonitoringMiddleware(MiddlewareMixin):
-    """Monitor request/response performance"""
+    """Monitor request/response performance with DB query counting and slow-request warnings"""
 
-    SLOW_REQUEST_THRESHOLD = 1000  # 1 second in milliseconds
+    SLOW_REQUEST_THRESHOLD = 1000
 
-    def process_request(self, request: HttpRequest) -> Optional[HttpResponse]:
-        """Start performance timer"""
-        request.start_time = time()
+    def __init__(self, get_response):
+        super().__init__(get_response)
+
+    def process_request(self, request: HttpRequest) -> None:
+        """Start performance timer and record initial DB query count"""
+        request.start_time = time.time()
+        request.db_queries_start = len(connection.queries)
         return None
 
     def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
-        """Monitor response time"""
-        duration = (time() - getattr(request, "start_time", time())) * 1000  # ms
+        """Calculate duration, count DB queries, log slow requests, add headers"""
+        duration = (time.time() - getattr(request, "start_time", time.time())) * 1000
+        db_queries = len(connection.queries) - getattr(request, "db_queries_start", 0)
 
-        # Log slow requests
         if duration > self.SLOW_REQUEST_THRESHOLD:
             logger.warning(
                 f"Slow request: {request.method} {request.path}",
                 extra={
-                    "duration_ms": duration,
+                    "duration_ms": round(duration, 2),
+                    "db_queries": db_queries,
                     "path": request.path,
                     "method": request.method,
+                    "user_id": request.user.id if request.user.is_authenticated else None,
                 },
             )
 
-        # Add performance headers
         response["X-Response-Time"] = f"{duration:.2f}ms"
+        response["X-DB-Queries"] = str(db_queries)
 
         return response
 
 
-# ===========================
-# Security Middleware
-# ===========================
-
 class SecurityHeadersMiddleware(MiddlewareMixin):
-    """Add security headers to responses"""
+    """Add security headers to all responses"""
 
     SECURITY_HEADERS = {
         "X-Content-Type-Options": "nosniff",
@@ -143,223 +138,465 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
         "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
     }
 
+    def __init__(self, get_response):
+        super().__init__(get_response)
+        self.headers = dict(self.SECURITY_HEADERS)
+
     def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
-        """Add security headers"""
-        for header, value in self.SECURITY_HEADERS.items():
+        """Add security headers that are not already present"""
+        for header, value in self.headers.items():
             if header not in response:
                 response[header] = value
-
         return response
 
 
 class RateLimitMiddleware(MiddlewareMixin):
-    """Rate limit requests by IP or user"""
+    """Tiered rate limiting by IP or user using Redis cache"""
 
-    RATE_LIMIT_WINDOW = 3600  # 1 hour
-    RATE_LIMIT_REQUESTS = 1000
+    RATE_LIMITS = {
+        "anonymous": (100, 3600),
+        "authenticated": (1000, 3600),
+        "staff": (10000, 3600),
+        "premium": (5000, 3600),
+    }
 
-    def process_request(self, request: HttpRequest) -> Optional[HttpResponse]:
-        """Check rate limit"""
-        # Get identifier
-        if request.user.is_authenticated:
-            identifier = f"rate_limit:{request.user.id}"
-        else:
-            ip = RequestLoggingMiddleware.get_client_ip(request)
-            identifier = f"rate_limit:{ip}"
+    def __init__(self, get_response):
+        super().__init__(get_response)
 
-        # Get current count
+    def process_view(self, request: HttpRequest, view_func: Any, view_args: Any, view_kwargs: Any) -> Optional[HttpResponse]:
+        """Check rate limit after authentication is available"""
+        tier = self.get_user_tier(request.user)
+        limit, window = self.RATE_LIMITS[tier]
+
+        identifier = self.get_identifier(request)
+        from django.core.cache import cache
+
         current_requests = cache.get(identifier, 0)
 
-        if current_requests >= self.RATE_LIMIT_REQUESTS:
+        if current_requests >= limit:
             logger.warning(
                 f"Rate limit exceeded: {identifier}",
-                extra={"identifier": identifier},
+                extra={"identifier": identifier, "tier": tier, "limit": limit},
             )
-
             return JsonResponse(
                 {
                     "error": "Rate limit exceeded",
-                    "retry_after": self.RATE_LIMIT_WINDOW,
+                    "limit": limit,
+                    "window": window,
+                    "tier": tier,
+                    "retry_after": window,
                 },
                 status=429,
             )
 
-        # Increment counter
-        cache.set(identifier, current_requests + 1, self.RATE_LIMIT_WINDOW)
-
+        cache.set(identifier, current_requests + 1, window)
         return None
 
+    def get_user_tier(self, user: Any) -> str:
+        """Determine user tier for rate limiting"""
+        if not user.is_authenticated:
+            return "anonymous"
+        if user.is_staff:
+            return "staff"
+        if hasattr(user, "subscription") and getattr(user.subscription, "is_premium", False):
+            return "premium"
+        return "authenticated"
 
-# ===========================
-# Audit Middleware
-# ===========================
+    def get_identifier(self, request: HttpRequest) -> str:
+        """Get rate limit cache key based on user ID or IP"""
+        if request.user.is_authenticated:
+            return f"rate_limit:user:{request.user.id}"
+        return f"rate_limit:ip:{self.get_client_ip(request)}"
+
+    @staticmethod
+    def get_client_ip(request: HttpRequest) -> str:
+        """Extract client IP address"""
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR", "")
+
 
 class AuditLoggingMiddleware(MiddlewareMixin):
-    """Log user actions for audit trail"""
+    """Log POST/PUT/PATCH/DELETE actions to database for audit trail"""
 
     AUDIT_METHODS = ["POST", "PUT", "PATCH", "DELETE"]
     SKIP_PATHS = ["/health/", "/metrics/", "/api/docs/"]
 
-    def process_request(self, request: HttpRequest) -> Optional[HttpResponse]:
-        """Log state-changing requests"""
+    def __init__(self, get_response):
+        super().__init__(get_response)
+
+    def process_request(self, request: HttpRequest) -> None:
+        """Create audit log entry for state-changing requests"""
         if request.method not in self.AUDIT_METHODS:
             return None
 
         if any(request.path.startswith(path) for path in self.SKIP_PATHS):
             return None
 
-        # Log audit event
-        logger.info(
-            f"Audit: {request.method} {request.path}",
-            extra={
-                "method": request.method,
-                "path": request.path,
-                "user_id": request.user.id if request.user.is_authenticated else None,
-                "ip_address": RequestLoggingMiddleware.get_client_ip(request),
-                "timestamp": timezone.now().isoformat(),
-            },
+        AuditLog.objects.create(
+            action=request.method.lower(),
+            object_repr=request.path,
+            user=request.user if request.user.is_authenticated else None,
+            ip_address=self.get_client_ip(request),
+            user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
+            timestamp=timezone.now(),
         )
 
         return None
 
+    @staticmethod
+    def get_client_ip(request: HttpRequest) -> str:
+        """Extract client IP address"""
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR", "")
 
-# ===========================
-# Error Handling Middleware
-# ===========================
 
 class ErrorHandlingMiddleware(MiddlewareMixin):
-    """Handle and log exceptions"""
+    """Catch unhandled exceptions and return JSON error responses"""
 
-    def process_exception(self, request: HttpRequest, exception: Exception) -> Optional[HttpResponse]:
-        """Handle exceptions"""
-        logger.error(
-            f"Unhandled exception: {str(exception)}",
-            exc_info=True,
+    def __init__(self, get_response):
+        super().__init__(get_response)
+
+    def process_exception(self, request: HttpRequest, exception: Exception) -> Optional[JsonResponse]:
+        """Handle and log exceptions, return structured JSON error"""
+        from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
+
+        if isinstance(exception, ValidationError):
+            status = 400
+            error_type = "validation_error"
+        elif isinstance(exception, PermissionDenied):
+            status = 403
+            error_type = "permission_denied"
+        elif isinstance(exception, ObjectDoesNotExist):
+            status = 404
+            error_type = "not_found"
+        else:
+            status = 500
+            error_type = "internal_error"
+
+        log_level = logging.ERROR if status >= 500 else logging.WARNING
+        logger.log(
+            log_level,
+            f"{error_type}: {exception}",
+            exc_info=status >= 500,
             extra={
+                "error_type": error_type,
+                "status_code": status,
                 "path": request.path,
                 "method": request.method,
-                "user_id": request.user.id if request.user.is_authenticated else None,
                 "request_id": getattr(request, "request_id", ""),
             },
         )
 
-        # Return error response
         return JsonResponse(
             {
-                "error": "Internal server error",
+                "error": {
+                    "type": error_type,
+                    "message": str(exception) if settings.DEBUG else "An error occurred",
+                    "status": status,
+                },
                 "request_id": getattr(request, "request_id", ""),
             },
-            status=500,
+            status=status,
         )
 
 
-# ===========================
-# API Version Middleware
-# ===========================
-
 class APIVersionHeaderMiddleware(MiddlewareMixin):
-    """Add API version header to responses"""
+    """Add API version header to all responses"""
 
     API_VERSION = "1.0.0"
 
+    def __init__(self, get_response):
+        super().__init__(get_response)
+
     def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
-        """Add API version header"""
+        """Add X-API-Version header"""
         response["X-API-Version"] = self.API_VERSION
         return response
 
 
-# ===========================
-# Timezone Middleware
-# ===========================
+class APIVersionMiddleware(MiddlewareMixin):
+    """Handle API versioning with deprecation warnings"""
 
-class TimezoneMiddleware(MiddlewareMixin):
-    """Set timezone based on user preference"""
+    CURRENT_VERSION = "2.0.0"
+    SUPPORTED_VERSIONS = ["1.0.0", "1.5.0", "2.0.0"]
+    DEPRECATED_VERSIONS = ["1.0.0"]
+    SUNSET_DATE = "2026-12-31"
+
+    def __init__(self, get_response):
+        super().__init__(get_response)
 
     def process_request(self, request: HttpRequest) -> Optional[HttpResponse]:
-        """Set timezone from header or user preference"""
-        timezone_header = request.META.get("HTTP_X_TIMEZONE")
+        """Extract and validate requested API version"""
+        version = (
+            request.META.get("HTTP_X_API_VERSION")
+            or self.extract_version_from_url(request.path)
+            or self.CURRENT_VERSION
+        )
 
-        if timezone_header:
+        if version not in self.SUPPORTED_VERSIONS:
+            return JsonResponse(
+                {
+                    "error": "Unsupported API version",
+                    "requested": version,
+                    "supported": self.SUPPORTED_VERSIONS,
+                },
+                status=400,
+            )
+
+        request.api_version = version
+
+        if version in self.DEPRECATED_VERSIONS:
+            logger.warning(
+                f"Deprecated API version used: {version}",
+                extra={
+                    "version": version,
+                    "path": request.path,
+                    "user_id": request.user.id if request.user.is_authenticated else None,
+                },
+            )
+
+        return None
+
+    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
+        """Add version header and deprecation warnings"""
+        version = getattr(request, "api_version", self.CURRENT_VERSION)
+        response["X-API-Version"] = version
+
+        if version in self.DEPRECATED_VERSIONS:
+            response["X-API-Deprecated"] = "true"
+            response["X-API-Sunset-Date"] = self.SUNSET_DATE
+
+        return response
+
+    @staticmethod
+    def extract_version_from_url(path: str) -> Optional[str]:
+        """Extract API version from URL path like /api/v1.0.0/..."""
+        match = re.match(r"/api/v(\d+\.\d+\.\d+)/", path)
+        return match.group(1) if match else None
+
+
+class TimezoneMiddleware(MiddlewareMixin):
+    """Set timezone based on request header or user preference"""
+
+    def __init__(self, get_response):
+        super().__init__(get_response)
+
+    def process_request(self, request: HttpRequest) -> None:
+        """Activate timezone for the current request"""
+        tz_header = request.META.get("HTTP_X_TIMEZONE")
+
+        if not tz_header and request.user.is_authenticated:
+            tz_header = getattr(request.user, "timezone", None)
+
+        if tz_header:
             try:
-                from django.utils.timezone import activate
-                activate(timezone_header)
-            except Exception:
-                logger.warning(f"Invalid timezone: {timezone_header}")
+                timezone.activate(pytz.timezone(tz_header))
+            except pytz.exceptions.UnknownTimeZoneError:
+                logger.warning(f"Invalid timezone: {tz_header}")
+                timezone.deactivate()
+        else:
+            timezone.deactivate()
 
         return None
 
 
-# ===========================
-# CORS Middleware
-# ===========================
+class UserTimezoneMiddleware(MiddlewareMixin):
+    """Set timezone from authenticated user profile"""
 
-class CORSMiddleware(MiddlewareMixin):
-    """Custom CORS handling"""
+    DEFAULT_TIMEZONE = "UTC"
 
-    ALLOWED_ORIGINS = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
+    def __init__(self, get_response):
+        super().__init__(get_response)
+
+    def process_request(self, request: HttpRequest) -> None:
+        """Activate user's preferred timezone"""
+        if request.user.is_authenticated:
+            user_tz = getattr(request.user, "timezone", self.DEFAULT_TIMEZONE)
+            try:
+                timezone.activate(pytz.timezone(user_tz))
+            except Exception:
+                timezone.activate(pytz.timezone(self.DEFAULT_TIMEZONE))
+        else:
+            timezone.activate(pytz.timezone(self.DEFAULT_TIMEZONE))
+
+        return None
 
     def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
-        """Add CORS headers"""
+        """Deactivate custom timezone after request completes"""
+        timezone.deactivate()
+        return response
+
+
+class CORSMiddleware(MiddlewareMixin):
+    """Custom CORS handling with origin allowlist"""
+
+    ALLOWED_ORIGINS = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
+    ALLOWED_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    ALLOWED_HEADERS = "Content-Type, Authorization, X-Requested-With"
+    MAX_AGE = 3600
+
+    def __init__(self, get_response):
+        super().__init__(get_response)
+
+    def process_request(self, request: HttpRequest) -> Optional[HttpResponse]:
+        """Handle preflight OPTIONS requests"""
+        if request.method == "OPTIONS":
+            response = HttpResponse()
+            origin = request.META.get("HTTP_ORIGIN")
+
+            if origin in self.ALLOWED_ORIGINS or "*" in self.ALLOWED_ORIGINS:
+                response["Access-Control-Allow-Origin"] = origin
+                response["Access-Control-Allow-Methods"] = self.ALLOWED_METHODS
+                response["Access-Control-Allow-Headers"] = self.ALLOWED_HEADERS
+                response["Access-Control-Max-Age"] = str(self.MAX_AGE)
+
+            return response
+
+        return None
+
+    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
+        """Add CORS headers to all responses"""
         origin = request.META.get("HTTP_ORIGIN")
 
-        if origin in self.ALLOWED_ORIGINS:
+        if origin in self.ALLOWED_ORIGINS or "*" in self.ALLOWED_ORIGINS:
             response["Access-Control-Allow-Origin"] = origin
-            response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-            response["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+            response["Access-Control-Allow-Methods"] = self.ALLOWED_METHODS
+            response["Access-Control-Allow-Headers"] = self.ALLOWED_HEADERS
             response["Access-Control-Allow-Credentials"] = "true"
-            response["Access-Control-Max-Age"] = "3600"
+            response["Access-Control-Max-Age"] = str(self.MAX_AGE)
 
         return response
 
 
-# ===========================
-# Request Enhancement Middleware
-# ===========================
+class DynamicCORSMiddleware(MiddlewareMixin):
+    """CORS with pattern matching support for wildcard subdomains"""
+
+    def __init__(self, get_response):
+        super().__init__(get_response)
+
+    @staticmethod
+    def is_origin_allowed(origin: str) -> bool:
+        """Check if origin matches allowed origins with wildcard support"""
+        allowed_origins = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
+
+        if origin in allowed_origins:
+            return True
+
+        for pattern in allowed_origins:
+            if pattern.startswith("*."):
+                domain = pattern[2:]
+                if origin.endswith(domain):
+                    return True
+
+        return False
+
+    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
+        """Add CORS headers with dynamic origin validation"""
+        origin = request.META.get("HTTP_ORIGIN")
+
+        if origin and self.is_origin_allowed(origin):
+            response["Access-Control-Allow-Origin"] = origin
+            response["Access-Control-Allow-Credentials"] = "true"
+
+        return response
+
 
 class RequestEnhancementMiddleware(MiddlewareMixin):
-    """Enhance request with additional metadata"""
+    """Add custom attributes to request object for downstream use"""
 
-    def process_request(self, request: HttpRequest) -> Optional[HttpResponse]:
-        """Add custom attributes to request"""
-        # Add IP address
-        request.client_ip = RequestLoggingMiddleware.get_client_ip(request)
+    def __init__(self, get_response):
+        super().__init__(get_response)
 
-        # Add user agent
+    def process_request(self, request: HttpRequest) -> None:
+        """Enhance request with client IP, user agent, timestamp, device info, and body data"""
+        request.client_ip = self.get_client_ip(request)
         request.user_agent = request.META.get("HTTP_USER_AGENT", "")
-
-        # Add timestamp
         request.received_at = timezone.now()
+        request.is_mobile = self.is_mobile_device(request)
+        request.is_tablet = self.is_tablet_device(request)
 
-        # Add request body (for logging)
-        try:
-            if request.method in ["POST", "PUT", "PATCH"]:
+        if request.method in ("POST", "PUT", "PATCH"):
+            try:
                 request.body_data = json.loads(request.body) if request.body else {}
-        except (json.JSONDecodeError, ValueError):
-            request.body_data = {}
+            except (json.JSONDecodeError, ValueError):
+                request.body_data = {}
 
         return None
 
+    @staticmethod
+    def get_client_ip(request: HttpRequest) -> str:
+        """Extract client IP address"""
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR", "")
 
-# ===========================
-# Cache Control Middleware
-# ===========================
+    @staticmethod
+    def is_mobile_device(request: HttpRequest) -> bool:
+        """Detect mobile device from user agent"""
+        user_agent = request.META.get("HTTP_USER_AGENT", "").lower()
+        mobile_keywords = ["mobile", "android", "iphone", "ipod"]
+        return any(keyword in user_agent for keyword in mobile_keywords)
+
+    @staticmethod
+    def is_tablet_device(request: HttpRequest) -> bool:
+        """Detect tablet device from user agent"""
+        user_agent = request.META.get("HTTP_USER_AGENT", "").lower()
+        tablet_keywords = ["tablet", "ipad"]
+        return any(keyword in user_agent for keyword in tablet_keywords)
+
 
 class CacheControlMiddleware(MiddlewareMixin):
-    """Add cache control headers"""
+    """Add cache control headers based on URL path prefix"""
 
     CACHE_CONTROL_DEFAULT = "max-age=0, no-cache, no-store, must-revalidate"
-    CACHE_TIMEOUT_API = 300  # 5 minutes
+    CACHE_TIMEOUT_API = 300
+
+    def __init__(self, get_response):
+        super().__init__(get_response)
 
     def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
-        """Add cache control headers"""
+        """Set Cache-Control header based on request path"""
         if request.path.startswith("/api/"):
-            # API responses
             if request.method == "GET":
                 response["Cache-Control"] = f"max-age={self.CACHE_TIMEOUT_API}"
             else:
                 response["Cache-Control"] = self.CACHE_CONTROL_DEFAULT
+        elif request.path.startswith("/static/"):
+            response["Cache-Control"] = "max-age=31536000, immutable"
         else:
-            # Default cache control
             response["Cache-Control"] = self.CACHE_CONTROL_DEFAULT
+
+        return response
+
+
+class SmartCacheMiddleware(MiddlewareMixin):
+    """Intelligent cache control based on regex path patterns"""
+
+    CACHE_RULES = {
+        r"^/api/public/": ("max-age=3600", True),
+        r"^/api/user/": ("max-age=300", True),
+        r"^/api/private/": ("no-cache", False),
+        r"^/static/": ("max-age=31536000", True),
+    }
+
+    def __init__(self, get_response):
+        super().__init__(get_response)
+
+    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
+        """Apply cache control header matching the first applicable rule"""
+        for pattern, (cache_control, cacheable) in self.CACHE_RULES.items():
+            if re.match(pattern, request.path):
+                if cacheable and request.method == "GET":
+                    response["Cache-Control"] = cache_control
+                else:
+                    response["Cache-Control"] = "no-cache, no-store"
+                break
+        else:
+            response["Cache-Control"] = "no-cache, no-store"
 
         return response

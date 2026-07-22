@@ -1,4 +1,4 @@
-# Django Rapido V1.0
+# Django Rapido V2.0
 
 **A modern, scalable, and production-ready Django project template.**
 
@@ -8,7 +8,7 @@
 
 ## Table of Contents
 
-- [Django Rapido V1.0](#django-rapido-v10)
+- [Django Rapido V2.0](#django-rapido-v20)
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Prerequisites](#prerequisites)
@@ -33,7 +33,7 @@
 
 - **Core Framework**: Django 5.2+ & Python 3.13
 - **API**: Django REST Framework (DRF) 3.16 with JWT Authentication (SimpleJWT)
-- **Real-time**: WebSocket support via Django Channels 4.1 & Redis
+- **Real-time**: WebSocket support via Django Channels 4.2 & Redis
 - **Background Tasks**: Celery 5.6 for async workers, Celery Beat for cron, and Flower for monitoring
 - **Database**: PostgreSQL 17 integration out of the box
 - **Admin**: Beautiful, modern UI with Django Unfold
@@ -306,4 +306,4 @@ When publishing Django code onto a live server, strictly confirm the baseline ma
 - [ ] Run `python manage.py check --deploy` iteratively ensuring all red flags vanish.
 
 ---
-**Django Rapido V1.0** — Build faster, scale beautifully.
+**Django Rapido V2.0** — Build faster, scale beautifully.

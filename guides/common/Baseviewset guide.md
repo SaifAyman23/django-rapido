@@ -183,6 +183,24 @@ class ArticleViewSet(BaseViewSetMixin, viewsets.ModelViewSet):
     SAFE_DB_ERRORS = False  # Only for local development
 ```
 
+### Raw Errors in Testing Mode
+
+**Problem:** Generic error messages hide the real cause during tests.
+
+**Solution:** Set `TESTING=True` in the environment — DB and internal errors re-raise as-is instead of being mapped:
+
+```bash
+# In .env or test runner:
+TESTING=True
+```
+
+When `TESTING=True`:
+- All DB errors (IntegrityError, OperationalError, etc.) propagate raw
+- Unhandled exceptions propagate raw (no generic 500 wrapping)
+- Expected errors (400, 401, 403, 404, 409, 429) still map normally
+
+This gives clear tracebacks in test output without changing test configuration.
+
 ---
 
 ## Hooks & Lifecycle
@@ -981,6 +999,38 @@ class UserViewSet(BaseViewSetMixin, viewsets.ModelViewSet):
             return self.success_response(
                 message="Password changed successfully"
             )
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def register(self, request):
+        """Register a new user account"""
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            # Fire welcome email asynchronously
+            notify_welcome_email.delay(str(user.id))
+            return Response(
+                {"message": "Account created successfully"},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(
+            {"error": {"code": "validation_error", "details": serializer.errors}},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    @action(detail=False, methods=['post'])
+    def logout(self, request):
+        """Logout and blacklist the refresh token"""
+        try:
+            refresh_token = request.data.get('refresh')
+            if refresh_token:
+                from rest_framework_simplejwt.tokens import RefreshToken
+                RefreshToken(refresh_token).blacklist()
+        except Exception:
+            pass  # Blacklist best-effort; clear cookies regardless
+        response = Response({"detail": "Logout successful"},
+                            status=status.HTTP_205_RESET_CONTENT)
+        response.delete_cookie('refresh_token')
+        return response
 ```
 
 ### Example 3: Product with Bulk Operations

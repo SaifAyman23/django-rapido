@@ -26,6 +26,7 @@ from django.core.paginator import Paginator
 from .mixins import BaseViewSetMixin
 import logging
 from .decorators import log_action
+from django.utils.translation import gettext_lazy as _
 
 logger = logging.getLogger(__name__)
 
@@ -111,13 +112,6 @@ class BaseViewSet(BaseViewSetMixin, viewsets.ModelViewSet):
         )
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def perform_create(self, serializer):
-        """Hook for custom create logic"""
-        if hasattr(self, "get_user"):
-            serializer.save(user=self.request.user)
-        else:
-            serializer.save()
 
     @log_action("UPDATE")
     @transaction.atomic
@@ -476,3 +470,57 @@ class CachedViewSet(BaseViewSet):
         logger.info("Cache cleared by", extra={"user_id": request.user.id})
 
         return Response({"message": "Cache cleared successfully"})
+
+
+# ===========================
+# Current User Owner Mixin
+# ===========================
+
+class CurrentUserOwnerMixin:
+    """
+    Mixin for viewsets that should only return/modify the current user's own objects.
+    
+    Provides:
+    - get_queryset: Filters to current user
+    - perform_create: Automatically sets user on save
+    - me action: Returns current user's object or 404
+    
+    Usage:
+        class MyObjectViewSet(CurrentUserOwnerMixin, BaseViewSet):
+            queryset = MyModel.objects.select_related("user")
+            serializer_class = MyModelSerializer
+    """
+
+    def get_queryset(self) -> QuerySet:
+        """Filter queryset to current user only"""
+        queryset = super().get_queryset()
+        if self.request.user.is_authenticated:
+            model = queryset.model
+            if hasattr(model, "user"):
+                return queryset.filter(user=self.request.user)
+            return queryset
+        return queryset.none()
+
+    def perform_create(self, serializer):
+        """Save with current user"""
+        if hasattr(serializer, "Meta"):
+            model = serializer.Meta.model
+            if hasattr(model, "user"):
+                serializer.save(user=self.request.user)
+            else:
+                serializer.save()
+        else:
+            serializer.save()
+
+    @action(detail=False, methods=["get"])
+    def me(self, request):
+        """Get current user's object"""
+        try:
+            obj = self.get_queryset().get(user=request.user)
+            serializer = self.get_serializer(obj)
+            return Response(serializer.data)
+        except self.queryset.model.DoesNotExist:
+            return Response(
+                {"detail": _("Not found.")},
+                status=status.HTTP_404_NOT_FOUND
+            )

@@ -175,3 +175,9 @@ target/
 !docker/**
 !Dockerfile
 !docker-compose.yml
+
+# Firebase
+google-services.json
+careerly-b163c-firebase-adminsdk-fbsvc-767e1de7cc.json
+
+recommendation/

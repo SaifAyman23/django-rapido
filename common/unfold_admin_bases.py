@@ -55,6 +55,7 @@ class BaseAdmin(UnfoldModelAdmin):
             "yellow": ("#fef3c7", "#d97706"),
             "purple": ("#f3e8ff", "#9333ea"),
             "gray": ("#f3f4f6", "#6b7280"),
+            "transparent": ("transparent", "var(--color-text-secondary)"),
         }
         bg, fg = colors.get(color, colors["gray"])
         return format_html(

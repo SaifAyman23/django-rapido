@@ -1,152 +1,146 @@
-# pip freeze | Out-File -FilePath requirements.txt -Encoding UTF8
 # ===== DJANGO CORE & DEPENDENCIES =====
 # Django framework and essential dependencies
-Django==5.2
-asgiref==3.11.1
-sqlparse==0.5.2
-python-decouple==3.8
-python-dotenv==1.0.1
-gunicorn==23.0.0
-whitenoise==6.8.2
+Django==5.2                      # [NEEDED] Core Django framework
+asgiref==3.11.1                  # [NEEDED] Django async support
+sqlparse==0.5.2                  # [NEEDED] SQL parsing dependency
+# python-decouple==3.8           # [UNNEEDED] Unused. Python-dotenv is used instead.
+python-dotenv==1.0.1             # [NEEDED] Load environment variables
+gunicorn==23.0.0                 # [NEEDED] Production WSGI server
+whitenoise==6.8.2                # [NEEDED] Production static files serving
+firebase-admin==7.4.0            # [NEEDED] Firebase push notifications (for notification tasks)
+# pandas==2.2.3                  # [UNNEEDED] Unused. No pandas imports found in codebase.
+openpyxl==3.1.5                  # [NEEDED] Generate Excel seed data in seed_employer_subscription command
 
 # ===== DJANGO REST FRAMEWORK & DEPENDENCIES =====
 # DRF core and related packages
-djangorestframework==3.16.1
-django-filter==24.3
-django-cors-headers==4.4.0
-drf-spectacular==0.29.0
-uritemplate==4.2.0
-inflection==0.5.1
-PyYAML==6.0.3
+djangorestframework==3.16.1      # [NEEDED] Core REST framework API
+django-filter==24.3              # [NEEDED] API filtering support
+django-cors-headers==4.4.0       # [NEEDED] CORS header integration
+drf-spectacular==0.29.0          # [NEEDED] OpenAPI documentation generation
+uritemplate==4.2.0               # [NEEDED] drf-spectacular dependency
+inflection==0.5.1                # [NEEDED] drf-spectacular dependency
+PyYAML==6.0.3                    # [NEEDED] drf-spectacular dependency
+django-allauth==65.18.0          # [NEEDED] Authentication, registration, account management
 
 # ===== DJANGO REST SIMPLE JWT & DEPENDENCIES =====
 # JWT authentication for DRF
-djangorestframework_simplejwt==5.4.0
-PyJWT==2.11.0
+djangorestframework_simplejwt==5.4.0 # [NEEDED] JWT Auth implementation
+PyJWT==2.11.0                    # [NEEDED] Transitive dependency of simplejwt
 
 # ===== CELERY & TASK QUEUE DEPENDENCIES =====
 # Celery core and related packages
-celery==5.6.2
-kombu==5.6.0
-billiard==4.2.4
-vine==5.1.0
-amqp==5.3.1
-click==8.3.1
-click-didyoumean==0.3.1
-click-plugins==1.1.1.2
-click-repl==0.3.0
-prompt_toolkit==3.0.52
-wcwidth==0.6.0
+# FIXED: Updated celery to 5.4.0 for compatibility with redis 4.6.0
+celery==5.4.0                    # [NEEDED] Async execution task engine
+kombu==5.4.2                     # [NEEDED] Celery messaging library dependency
+billiard==4.2.1                  # [NEEDED] Celery multiprocessing dependency
+vine==5.1.0                      # [NEEDED] Celery vine dependency
+amqp==5.3.1                      # [NEEDED] Celery AMQP protocol dependency
+click==8.3.1                     # [NEEDED] Celery CLI utility dependency
+click-didyoumean==0.3.1          # [NEEDED] Celery CLI utility helper
+click-plugins==1.1.1             # [NEEDED] Celery CLI plugin helper
+click-repl==0.3.0                # [NEEDED] Celery CLI repl helper
+prompt_toolkit==3.0.52           # [NEEDED] prompt_toolkit interactive shell helper
+wcwidth==0.6.0                   # [NEEDED] wcwidth terminal helper
 
 # Django Celery integrations
-django-celery-beat==2.8.0
-django-celery-results==2.5.1
-django-timezone-field==7.2.1
-cron_descriptor==2.0.6
-python-crontab==3.3.0
-tzdata==2025.3
-tzlocal==5.3.1
-pytz==2024.2
+django-celery-beat==2.8.0        # [NEEDED] Database-backed periodic task scheduling
+django-celery-results==2.5.1     # [NEEDED] Django database backend for celery task results
+django-timezone-field==7.2.1     # [NEEDED] Timezone DB field support (used in beat)
+cron_descriptor==2.0.6           # [NEEDED] Human readable cron description helper
+python-crontab==3.3.0            # [NEEDED] Python crontab parser helper
+tzdata==2025.3                   # [NEEDED] Database time zone tables support on Windows
+tzlocal==5.3.1                   # [NEEDED] Local timezone detection helper
+pytz==2024.2                     # [NEEDED] Standard timezone support
+flower==2.0.1                    # [NEEDED] Real-time task dashboard and monitor for Celery
 
 # ===== REDIS & CACHING DEPENDENCIES =====
 # Redis client and Django cache backend
-redis==5.2.0
-django-redis==5.4.0
-msgpack==1.1.2
-
-# ===== CHANNELS & WEBSOCKETS DEPENDENCIES =====
-# Django Channels for WebSocket support
-channels==4.3.2
-channels_redis==4.3.0
-django-channels==0.7.0
-
-# ASGI server for Channels
-uvicorn==0.31.0
-anyio==4.12.1
-h11==0.16.0
-httptools==0.7.1
-watchfiles==1.1.1
-websockets==16.0
+# CRITICAL FIX: Downgraded from 5.2.0 to 4.6.0 to fix AbstractConnection timeout error
+# redis 5.x introduced breaking API changes incompatible with kombu/celery/channels-redis
+redis==4.6.0                     # [NEEDED] Redis client library
+# FIXED: Downgraded from 6.0.0 to 5.4.0 for compatibility with redis 4.6.0
+django-redis==5.4.0              # [NEEDED] Django Redis caching engine backend
+msgpack==1.1.2                   # [NEEDED] Redis message serializer
 
 # ===== DATABASE & ORM =====
 # PostgreSQL adapter
-psycopg==3.2.1
+psycopg==3.2.1                   # [NEEDED] Database driver for PostgreSQL production DB
 
 # ===== AUTHENTICATION & SECURITY =====
 # HTTP requests and OAuth
-requests==2.32.3
-requests-oauthlib==2.0.0
-oauthlib==3.3.1
-certifi==2026.2.25
-charset-normalizer==3.4.4
-idna==3.11
-urllib3==2.6.3
+requests==2.32.3                 # [NEEDED] HTTP client library (required by firebase-admin transitive dependency)
+# requests-oauthlib==2.0.0       # [UNNEEDED] Unused. No third-party OAuth provider active.
+# oauthlib==3.3.1                # [UNNEEDED] Unused. No third-party OAuth provider active.
+certifi==2026.2.25               # [NEEDED] HTTP SSL credentials support (requests dependency)
+charset-normalizer==3.4.4        # [NEEDED] Charset normalization library (requests dependency)
+idna==3.11                       # [NEEDED] InternationalDomainNames parsing (requests dependency)
+urllib3==2.6.3                   # [NEEDED] Low-level HTTP client library (requests dependency)
 
 # ===== ADMIN INTERFACE =====
 # Enhanced Django admin
-django-unfold==0.81.0
-djangoql==0.19.1
-ply==3.11
-pillow==11.0.0
+django-unfold==0.81.0            # [NEEDED] Clean modern admin theme
+# djangoql==0.19.1               # [UNNEEDED] Unused. Unfold search is used instead.
+# ply==3.11                      # [UNNEEDED] Unused. Compiler library for djangoql.
+pillow==11.0.0                   # [NEEDED] Required by Django models using CustomUser/UserProfile ImageFields
 
 # ===== TESTING DEPENDENCIES =====
 # Pytest and related packages
-pytest==8.3.4
-pytest-django==4.7.0
-pytest-cov==5.0.0
-pytest-asyncio==0.24.0
-coverage==7.13.4
-factory-boy==3.3.0
-Faker==25.9.2
-iniconfig==2.3.0
-pluggy==1.6.0
-packaging==26.0
+pytest==8.3.4                    # [DEV/TEST] Test runner
+pytest-django==4.7.0             # [DEV/TEST] Django test assertions
+pytest-cov==5.0.0                # [DEV/TEST] Coverage reports for pytest
+pytest-asyncio==0.24.0           # [DEV/TEST] Async test helpers for pytest
+coverage==7.13.4                 # [DEV/TEST] Coverage measurements library
+factory-boy==3.3.0               # [DEV/TEST] Test database seeding/factories
+Faker==25.9.2                    # [DEV/TEST] Generating fake data/emails/names for testing
+iniconfig==2.3.0                 # [DEV/TEST] Pytest initial configuration parser
+pluggy==1.6.0                    # [DEV/TEST] Pytest plugin loader dependency
+packaging==26.0                  # [DEV/TEST] Pytest requirements packaging library
 
 # ===== CODE QUALITY & LINTING =====
 # Code formatting and linting tools
-black==24.10.0
-isort==5.13.2
-flake8==7.1.1
-mypy==1.11.2
-pylint==3.0.4
-astroid==3.0.3
-dill==0.4.1
-tomlkit==0.14.0
-mccabe==0.7.0
-pycodestyle==2.12.1
-pyflakes==3.2.0
-mypy_extensions==1.1.0
-pathspec==1.0.4
-platformdirs==4.9.2
-types-PyYAML==6.0.12.20250915
-typing_extensions==4.15.0
+black==24.10.0                   # [DEV/LINT] Code formatter
+isort==5.13.2                    # [DEV/LINT] Import ordering utility
+flake8==7.1.1                    # [DEV/LINT] Style guide enforcement checks
+mypy==1.11.2                     # [DEV/LINT] Static type checking validator
+pylint==3.0.4                    # [DEV/LINT] Comprehensive linting engine
+astroid==3.0.3                   # [DEV/LINT] Pylint AST code analysis helper
+dill==0.4.1                      # [DEV/LINT] Python object serialization helper (pylint dependency)
+tomlkit==0.14.0                  # [DEV/LINT] TOML configuration updater formatting helper (black dependency)
+mccabe==0.7.0                    # [DEV/LINT] Cyclomatic complexity checker (flake8 dependency)
+pycodestyle==2.12.1              # [DEV/LINT] Pep8 alignment checker (flake8 dependency)
+pyflakes==3.2.0                  # [DEV/LINT] Python files syntax check (flake8 dependency)
+mypy_extensions==1.1.0           # [DEV/LINT] Static typing helpers (mypy dependency)
+pathspec==1.0.4                  # [DEV/LINT] Gitignore path specification parsing (black dependency)
+platformdirs==4.9.2              # [DEV/LINT] Location directories finder helper
+types-PyYAML==6.0.12.20250915    # [DEV/LINT] Static typing signatures for PyYAML
+typing_extensions==4.15.0        # [DEV/LINT] Backported types support library
 
 # ===== PRE-COMMIT HOOKS =====
 # Git hook management
-pre-commit==3.7.1
-cfgv==3.5.0
-distlib==0.4.0
-filelock==3.24.3
-identify==2.6.16
-nodeenv==1.10.0
-virtualenv==21.0.0
+pre-commit==3.7.1                # [DEV/HOOKS] Automatically format/check hooks during git commits
+cfgv==3.5.0                      # [DEV/HOOKS] Pre-commit configuration helper
+distlib==0.4.0                   # [DEV/HOOKS] Python distribution helper
+filelock==3.24.3                 # [DEV/HOOKS] File locking support used by virtualenv
+identify==2.6.16                 # [DEV/HOOKS] File type checker library
+nodeenv==1.10.0                  # [DEV/HOOKS] Virtual environments for NodeJS engines
+virtualenv==21.0.0               # [DEV/HOOKS] Virtual python environment creator helper
 
 # ===== JSON SCHEMA VALIDATION =====
 # JSON validation utilities
-jsonschema==4.26.0
-jsonschema-specifications==2025.9.1
-referencing==0.37.0
-rpds-py==0.30.0
-attrs==25.4.0
+# jsonschema==4.26.0             # [UNNEEDED] Unused. No JSON schema validation configured.
+# jsonschema-specifications==2025.9.1 # [UNNEEDED] Unused jsonschema dependency.
+# referencing==0.37.0            # [UNNEEDED] Unused jsonschema dependency.
+# rpds-py==0.30.0                # [UNNEEDED] Unused jsonschema dependency.
+# attrs==25.4.0                  # [UNNEEDED] Unused jsonschema dependency.
 
 # ===== DEVELOPMENT & DEBUGGING =====
 # Development tools and utilities
-django-debug-toolbar==6.2.0
-python-json-logger==2.0.7
-python-discovery==1.0.0
+django-debug-toolbar==6.2.0      # [DEV/DEBUG] Real-time resource usage panel in browse views
+# python-json-logger==2.0.7      # [UNNEEDED] Unused formatting log utility.
+# python-discovery==1.0.0        # [UNNEEDED] Unused discovery utility.
 
 # ===== UTILITY LIBRARIES =====
 # General purpose utilities
-six==1.17.0
-python-dateutil==2.8.2
-colorama==0.4.6
+# six==1.17.0                    # [UNNEEDED] Unused deprecated python 2/3 compatibility tool.
+# python-dateutil==2.8.2         # [UNNEEDED] Unused datetime utility library.
+# colorama==0.4.6                # [UNNEEDED] Unused console terminal text coloration library (development tool)

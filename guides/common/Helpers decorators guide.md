@@ -579,6 +579,25 @@ success = send_password_reset_email(
 4. User clicks link and verifies token
 5. Allow password change
 
+### Notification Preference Check
+
+```python
+from accounts.notifications import should_notify
+
+if should_notify(user):
+    # User has email notifications enabled
+    send_template_email(...)
+else:
+    logger.info("Skipping email — user opted out")
+```
+
+**Behavior:**
+- Returns `False` if user is inactive
+- Returns `False` if `notification_preferences.email_enabled` is `False`
+- Returns `True` otherwise
+
+**Use case:** Check before every notification task to respect user preferences.
+
 ---
 
 ## ID/Token Helpers
@@ -1399,6 +1418,42 @@ def export_user_data(user):
     
     return data
 ```
+
+### Pattern 6: Celery Notification Task
+
+```python
+from celery import shared_task
+from accounts.notifications import should_notify
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def notify_user_event(self, user_id: str, event_data: dict):
+    """Send notification with retry and preference check."""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    try:
+        user = User.objects.get(id=user_id, is_active=True)
+    except User.DoesNotExist:
+        logger.warning("User %s not found", user_id)
+        return
+
+    if not should_notify(user):
+        logger.info("Skipping — notifications disabled for %s", user_id)
+        return
+
+    try:
+        # Send the notification (email, push, etc.)
+        result = send_event_notification(user, event_data)
+        logger.info("Notification sent to user %s", user_id)
+        return result
+    except Exception as exc:
+        raise self.retry(exc=exc)
+```
+
+**Key rules:**
+- Every notification task calls `should_notify()` before sending
+- Use `bind=True` and `self.retry()` for transient failures
+- Tasks are idempotent — running twice produces the same result
 
 ---
 
