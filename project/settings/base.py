@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     # Required only if using token blacklisting:
     'rest_framework_simplejwt.token_blacklist',
+    # Required only if using token blacklisting:
+    'rest_framework_simplejwt.token_blacklist',
     "django_filters",
     "drf_spectacular",
     "django_celery_beat",
@@ -66,6 +68,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -87,6 +90,21 @@ TESTING = os.getenv("TESTING", "False") == "True"
 Database configuration.
 PostgreSQL setup with connection pooling.
 """
+
+DATABASES = {
+    "default": {
+        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
+        "NAME": os.getenv("DB_NAME", "project_db"),
+        "USER": os.getenv("DB_USER", "project_user"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "password123"),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
+        "CONN_MAX_AGE": 600,
+        "OPTIONS": {
+            "connect_timeout": 10,
+        }
+    }
+}
 
 if not TESTING:
     DATABASES = {
@@ -156,6 +174,20 @@ DATETIME_INPUT_FORMATS = [
 
 
 # Internationalization
+LANGUAGE_CODE = "en"
+LANGUAGES = [
+    ('en', 'English'),
+    ('ar', 'العربية'),
+]
+# Enable internationalization
+I18N = True
+USE_I18N = True
+USE_L10N = True  # Localized formatting (numbers, dates, etc.)
+
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),
+]
+
 LANGUAGE_CODE = "en"
 LANGUAGES = [
     ('en', 'English'),
@@ -273,13 +305,21 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
  
 # Timezone
+ 
+# Timezone
 CELERY_TIMEZONE = os.getenv("CELERY_TIMEZONE", "UTC")
+CELERY_ENABLE_UTC = True
+ 
+# Task execution and tracking
+CELERY_TASK_TRACK_STARTED = True  # FIXED: Removed duplicate definition
 CELERY_ENABLE_UTC = True
  
 # Task execution and tracking
 CELERY_TASK_TRACK_STARTED = True  # FIXED: Removed duplicate definition
 CELERY_TASK_TIME_LIMIT = int(os.getenv("CELERY_TASK_TIME_LIMIT", "1800"))  # 30 minutes
 CELERY_RESULT_EXPIRES = 3600  # 1 hour
+ 
+# Broker settings
  
 # Broker settings
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
@@ -294,9 +334,21 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Fetch one task at a time
 CELERY_TASK_ACKS_LATE = True  # Acknowledge after task completion
 CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Requeue tasks if worker dies
  
+CELERY_BROKER_HEARTBEAT = 120  # RECOMMENDED: Changed from 0 to 120 (default)
+ 
+# Event monitoring (CRITICAL for Flower)
+CELERY_TASK_SEND_SENT_EVENT = True
+CELERY_WORKER_SEND_TASK_EVENTS = True
+ 
+# Additional recommended settings for stability
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Fetch one task at a time
+CELERY_TASK_ACKS_LATE = True  # Acknowledge after task completion
+CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Requeue tasks if worker dies
+ 
 # Flower (Celery Monitoring)
 FLOWER_USER = os.getenv("FLOWER_USER", "admin")
 FLOWER_PASSWORD = os.getenv("FLOWER_PASSWORD", "admin123")
+ 
  
 """
 ============================================================================================
@@ -355,6 +407,37 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
     "UPDATE_LAST_LOGIN": True,
+
+    # Signing
+    "ALGORITHM": os.getenv("JWT_ALGORITHM", "HS256"),   
+    "SIGNING_KEY": os.getenv("JWT_SECRET_KEY", SECRET_KEY),         # use SECRET_KEY or a separate strong key
+    "VERIFYING_KEY": None,                                          # for asymmetric algos (RS256, ES256)
+
+    # Header config
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+
+    # User identification
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+
+    # Token classes
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+
+    # JTI (unique token ID)
+    'JTI_CLAIM': 'jti',
+
+    # Sliding tokens (optional alternative to access/refresh pair)
+    # 'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    # 'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    # 'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+
+    # Serializers
+    'TOKEN_OBTAIN_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
+    'TOKEN_REFRESH_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenRefreshSerializer',
+    'TOKEN_VERIFY_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenVerifySerializer',
+    'TOKEN_BLACKLIST_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenBlacklistSerializer',
 
     # Signing
     "ALGORITHM": os.getenv("JWT_ALGORITHM", "HS256"),   
