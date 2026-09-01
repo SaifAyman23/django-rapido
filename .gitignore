@@ -93,7 +93,7 @@ dist/
 # ===========================
 # Docker
 # ===========================
-.dockerignore
+# .dockerignore is tracked (template needs it for Docker build)
 docker-compose.override.yml
 
 # ===========================
