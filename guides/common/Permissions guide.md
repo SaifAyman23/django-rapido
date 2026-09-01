@@ -666,6 +666,48 @@ class IsOwner(BasePermission):
 
 ---
 
+## Generic Role Permissions (new — project-agnostic)
+
+### create_role_permission (REUSE — from ras-elbar-go, made generic)
+
+```python
+from common.permissions import create_role_permission
+
+# REUSE: Factory for any CustomUser.role value — replace "seller" with your domain
+IsSeller = create_role_permission("seller")
+IsAdminRole = create_role_permission("admin")
+IsCustomer = create_role_permission("customer")  # example — was hardcoded before
+
+class ProductViewSet(BaseViewSet):
+    permission_classes = [IsSeller]
+```
+
+Old hardcoded `IsCustomer/IsDeliveryman/IsOpsStaff` removed — use factory instead. Requires `CustomUser.role` `TextChoices`.
+
+### IsOnboardingCompleted
+
+```python
+class IsOnboardingCompleted(BasePermission):
+    """Gate multi-step onboarding."""
+    def has_permission(self, request, view):
+        return bool(getattr(request.user, "onboarding_completed", True))
+```
+
+Checks `CustomUser.onboarding_completed` BooleanField; returns `True` if field missing (backward compatible).
+
+### AuthRateThrottle (new — IP-based)
+
+```python
+# common/throttles.py — REUSE: public auth endpoints register/OTP/verify
+from common.throttles import AuthRateThrottle
+
+class UserViewSet(BaseViewSet):
+    @action(detail=False, methods=["post"], throttle_classes=[AuthRateThrottle])
+    def register(self, request): ...
+```
+
+`scope=auth` → `REST_FRAMEWORK.DEFAULT_THROTTLE_RATES auth 30/minute`, keyed by `get_ident(request)` IP (unauthenticated).
+
 ## Summary
 
 | Permission | Level | Use Case |
@@ -678,8 +720,11 @@ class IsOwner(BasePermission):
 | **IsReadOnly** | View | Read-only access |
 | **MultiplePermissionsRequired** | Both | AND logic |
 | **AnyPermissionRequired** | Both | OR logic |
-| **RateLimitPermission** | View | Rate limiting |
+| **RateLimitPermission** | View | Tier-based (anonymous/auth/staff) |
 | **CustomPermissionRule** | Both | Custom logic |
+| **create_role_permission()** | View | Generic role factory (REUSE) |
+| **IsOnboardingCompleted** | View | Onboarding gate (REUSE) |
+| **AuthRateThrottle** | Throttle | IP-based auth endpoints (REUSE) |
 
 ---
 

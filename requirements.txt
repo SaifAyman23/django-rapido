@@ -6,6 +6,7 @@ sqlparse==0.5.2                  # [NEEDED] SQL parsing dependency
 # python-decouple==3.8           # [UNNEEDED] Unused. Python-dotenv is used instead.
 python-dotenv==1.0.1             # [NEEDED] Load environment variables
 gunicorn==23.0.0                 # [NEEDED] Production WSGI server
+gevent==24.11.1                  # [NEEDED] Async worker for SSE web-sse (live logs) — from ras-elbar-go
 whitenoise==6.8.2                # [NEEDED] Production static files serving
 firebase-admin==7.4.0            # [NEEDED] Firebase push notifications (for notification tasks)
 # pandas==2.2.3                  # [UNNEEDED] Unused. No pandas imports found in codebase.
@@ -79,9 +80,10 @@ urllib3==2.6.3                   # [NEEDED] Low-level HTTP client library (reque
 # ===== ADMIN INTERFACE =====
 # Enhanced Django admin
 django-unfold==0.81.0            # [NEEDED] Clean modern admin theme
-# djangoql==0.19.1               # [UNNEEDED] Unused. Unfold search is used instead.
-# ply==3.11                      # [UNNEEDED] Unused. Compiler library for djangoql.
+django-modeltranslation==0.20.2  # REUSE: en/ar translatable fields (from ras-elbar-go)
 pillow==11.0.0                   # [NEEDED] Required by Django models using CustomUser/UserProfile ImageFields
+markdown==3.7                    # REUSE: Markdown parsing (compliance/legal docs)
+django-markdownx==4.0.1          # REUSE: Markdown editor for admin (from ras-elbar-go)
 
 # ===== TESTING DEPENDENCIES =====
 # Pytest and related packages

@@ -1,4 +1,8 @@
-"""Application-wide enumerations and configuration constants."""
+"""Application-wide enumerations and configuration constants.
+
+Provides reusable choice enums and config containers for status, roles,
+pagination, file limits, and feature flags.
+"""
 
 from enum import Enum, IntEnum
 from typing import List, Tuple

@@ -1,0 +1,206 @@
+# ============================================================
+# Production override
+# ============================================================
+
+volumes:
+  flower_data:
+  static_volume:
+  media_volume:
+
+services:
+
+  # ===========================
+  # PostgreSQL
+  # ===========================
+  db:
+    ports: !reset []
+
+  # ===========================
+  # Redis
+  # ===========================
+  redis:
+    ports: !reset []
+
+  # ===========================
+  # Django
+  # ===========================
+  web:
+    restart: unless-stopped
+
+    environment:
+      - DJANGO_ENVIRONMENT=production
+      - TESTING=False
+
+    command: >
+      gunicorn project.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers 4
+      --worker-class sync
+      --max-requests 1000
+      --max-requests-jitter 100
+      --timeout 120
+      --worker-tmp-dir /dev/shm
+
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+
+    # Do NOT expose Django directly to the Internet.
+    expose:
+      - "8000"
+
+  # ===========================
+  # Django SSE — isolated, no timeout (for /admin/live-logs/stream/)
+  # Same image/code as web, different port + gthread + timeout 0
+  # Drill Sergeant: same domain, no cert change — Nginx routes internally
+  # ===========================
+  web-sse:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: project_web_sse
+    restart: unless-stopped
+
+    environment:
+      - CONTAINER_ROLE=web
+      - DJANGO_ENVIRONMENT=production
+      - TESTING=False
+    env_file:
+      - .env
+
+    command: >
+      gunicorn project.wsgi:application
+      --bind 0.0.0.0:8001
+      --workers 2
+      --worker-class gevent
+      --worker-connections 1000
+      --max-requests 1000
+      --max-requests-jitter 100
+      --timeout 0
+      --graceful-timeout 0
+      --keep-alive 75
+      --worker-tmp-dir /dev/shm
+
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+
+    expose:
+      - "8001"
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - project_network
+
+  # ===========================
+  # Celery Worker
+  # ===========================
+  celery_worker:
+    restart: unless-stopped
+
+    environment:
+      - DJANGO_ENVIRONMENT=production
+      - TESTING=False
+
+    command: >
+      celery -A project worker
+      --loglevel=info
+      --concurrency=4
+      --max-tasks-per-child=100
+      --time-limit=1800
+
+    volumes: !reset []
+
+  # ===========================
+  # Celery Beat
+  # ===========================
+  celery_beat:
+    restart: unless-stopped
+
+    environment:
+      - DJANGO_ENVIRONMENT=production
+      - TESTING=False
+
+    volumes: !reset []
+
+  # ===========================
+  # Flower
+  # ===========================
+  flower:
+    restart: unless-stopped
+
+    user: "0:0"
+
+    environment:
+      - DJANGO_ENVIRONMENT=production
+      - TESTING=False
+
+    command: >
+      celery -A project flower
+      --port=5555
+      --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
+      --persistent
+      --db=/data/flower.db
+
+    ports: !reset []
+
+    volumes:
+      - flower_data:/data
+
+  # ===========================
+  # Nginx
+  # ===========================
+  nginx:
+    image: nginx:alpine
+    container_name: project_nginx
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      # Static nginx configuration.
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+
+      # Certbot ACME challenge files.
+      - ./certbot/www:/var/www/certbot
+
+      # Let's Encrypt certificates.
+      - ./certbot/conf:/etc/letsencrypt
+
+      # Django static/media.
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media:ro
+      # REUSE: Uncomment if you serve a frontend SPA from nginx:
+      # - ../frontend/dist:/usr/share/nginx/html:ro
+
+    depends_on:
+      - web
+      - web-sse
+    
+    networks:
+      - project_network
+
+
+  # ===========================
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+
+    entrypoint: >
+      /bin/sh -c
+      'trap exit TERM;
+      while :;
+      do certbot renew;
+      sleep 12h & wait $${!};
+      done'

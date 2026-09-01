@@ -8,21 +8,23 @@ Provides production-grade utilities with:
 - Common operations
 """
 
-from typing import Any, Dict, List, Optional, Tuple, TypeVar, Callable
-from datetime import datetime, timedelta
+import hashlib
 import json
 import logging
-import hashlib
-import uuid
 import re
-from django.db import models, transaction
-from django.db.models import QuerySet
-from django.utils import timezone
+import uuid
+from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
+
+from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
 from django.core.mail import send_mail
-from django.utils.text import slugify
+from django.db import models, transaction
+from django.db.models import QuerySet
 from django.template.loader import render_to_string
-from django.contrib.auth.tokens import default_token_generator
+from django.utils import timezone
+from django.utils.text import slugify
+
 from .models import AuditLog, CustomUser
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,7 @@ T = TypeVar("T")
 # ===========================
 # Validation Helpers
 # ===========================
+
 
 def is_valid_email(email: str) -> bool:
     """Validate email format"""
@@ -88,6 +91,7 @@ def is_strong_password(password: str) -> Tuple[bool, List[str]]:
 # ===========================
 # String Helpers
 # ===========================
+
 
 def truncate_string(text: str, length: int = 100, suffix: str = "...") -> str:
     """Truncate string to length"""
@@ -145,6 +149,7 @@ def mask_phone(phone: str) -> str:
 # JSON Helpers
 # ===========================
 
+
 def safe_json_loads(json_string: str, default: Any = None) -> Any:
     """Safely parse JSON with default fallback"""
     try:
@@ -179,6 +184,7 @@ def deep_merge(dict1: Dict, dict2: Dict) -> Dict:
 # ===========================
 # Date/Time Helpers
 # ===========================
+
 
 def get_date_range(days: int = 7) -> Tuple[datetime, datetime]:
     """Get date range for last N days"""
@@ -222,6 +228,7 @@ def humanize_timedelta(td: timedelta) -> str:
 # ===========================
 # Email Helpers
 # ===========================
+
 
 def send_template_email(
     subject: str,
@@ -287,8 +294,8 @@ def send_password_reset_email(user, base_url: str) -> bool:
 # Token & Authentication Helpers
 # ===========================
 
-from django.http import HttpResponse, HttpRequest
 from django.conf import settings
+from django.http import HttpRequest, HttpResponse
 
 
 def set_refresh_token_cookie(
@@ -298,27 +305,27 @@ def set_refresh_token_cookie(
 ) -> HttpResponse:
     """
     Set refresh token as HttpOnly cookie.
-    
+
     Args:
         response: The HTTP response to attach cookie to
         refresh_token: The refresh token string
         lifetime: Cookie lifetime in seconds (default: 30 days)
-    
+
     Returns:
         The response with cookie set
     """
     is_prod = not settings.DEBUG
-    
+
     response.set_cookie(
-        'refresh_token',
+        "refresh_token",
         refresh_token,
         max_age=lifetime,
         httponly=True,
         secure=is_prod,
-        samesite='Lax',
-        path='/',
+        samesite="Lax",
+        path="/",
     )
-    
+
     return response
 
 
@@ -332,14 +339,14 @@ def set_token_cookies(
     """
     Set JWT tokens - refresh in HttpOnly cookie, access returned in body.
     Only stores refresh token in cookie; access token should be handled client-side.
-    
+
     Args:
         response: The HTTP response to attach cookies to
         refresh_token: The refresh token string
         access_token: The access token string (NOT stored in cookie)
         refresh_token_lifetime: Cookie lifetime in seconds (default: 30 days)
         access_token_lifetime: Unused, kept for backward compatibility
-    
+
     Returns:
         The response with cookies set
     """
@@ -349,34 +356,35 @@ def set_token_cookies(
 def clear_token_cookies(response: HttpResponse) -> HttpResponse:
     """
     Clear all JWT token cookies.
-    
+
     Args:
         response: The HTTP response to clear cookies from
-    
+
     Returns:
         The response with cookies cleared
     """
-    response.delete_cookie('refresh_token', path='/')
-    response.delete_cookie('access_token', path='/')
+    response.delete_cookie("refresh_token", path="/")
+    response.delete_cookie("access_token", path="/")
     return response
 
 
 def get_refresh_token_from_cookie(request: HttpRequest) -> str | None:
     """
     Retrieve refresh token from cookie.
-    
+
     Args:
         request: The HTTP request
-    
+
     Returns:
         Refresh token or None if not present
     """
-    return request.COOKIES.get('refresh_token')
+    return request.COOKIES.get("refresh_token")
 
 
 # ===========================
 # UUID/ID Helpers
 # ===========================
+
 
 def generate_token(length: int = 32) -> str:
     """Generate random token"""
@@ -394,6 +402,7 @@ def generate_code(prefix: str = "", length: int = 6) -> str:
 # ===========================
 # List/Dict Helpers
 # ===========================
+
 
 def chunk_list(items: List[T], chunk_size: int) -> List[List[T]]:
     """Split list into chunks"""
@@ -426,6 +435,7 @@ def extract_dict_keys(data: Dict, keys: List[str]) -> Dict:
 # File Helpers
 # ===========================
 
+
 def get_file_extension(filename: str) -> str:
     """Get file extension"""
     return filename.split(".")[-1].lower()
@@ -447,10 +457,10 @@ def format_file_size(size_bytes: int) -> str:
     return f"{size_bytes:.2f} PB"
 
 
-
 # ===========================
 # Utility Functions
 # ===========================
+
 
 @transaction.atomic
 def bulk_soft_delete(queryset: QuerySet) -> Tuple[int, Dict[str, int]]:
@@ -478,7 +488,7 @@ def log_audit(
 ) -> AuditLog:
     """
     Create audit log entry for any model instance.
-    
+
     Args:
         action: Action performed (create, update, delete, restore, publish)
         instance: The model instance being audited
@@ -486,7 +496,7 @@ def log_audit(
         changes: Dictionary of changes made (optional)
         ip_address: IP address of the request (optional)
         user_agent: User agent string (optional)
-    
+
     Returns:
         The created AuditLog instance
     """
@@ -503,34 +513,35 @@ def log_audit(
     logger.debug(f"Audit log created: {audit.id} for {action} on {instance}")
     return audit
 
+
 def serialize_arg(arg):
     """
     Serialize an argument to a JSON-compatible format.
     Handles Django model instances, querysets, and other complex types.
     """
     from django.db import models as django_models
-    
+
     if isinstance(arg, django_models.Model):
         # Store model instances as a dict with type info
         return {
-            '__type__': 'model_instance',
-            '__app_label__': arg._meta.app_label,
-            '__model_name__': arg._meta.model_name,
-            '__pk__': arg.pk
+            "__type__": "model_instance",
+            "__app_label__": arg._meta.app_label,
+            "__model_name__": arg._meta.model_name,
+            "__pk__": arg.pk,
         }
     elif isinstance(arg, django_models.QuerySet):
         # Store querysets as list of PKs
         return {
-            '__type__': 'queryset',
-            '__app_label__': arg.model._meta.app_label,
-            '__model_name__': arg.model._meta.model_name,
-            '__pks__': list(arg.values_list('pk', flat=True))
+            "__type__": "queryset",
+            "__app_label__": arg.model._meta.app_label,
+            "__model_name__": arg.model._meta.model_name,
+            "__pks__": list(arg.values_list("pk", flat=True)),
         }
     elif isinstance(arg, (list, tuple)):
         serialized = [serialize_arg(item) for item in arg]
         # Preserve tuple type
         if isinstance(arg, tuple):
-            return {'__type__': 'tuple', '__value__': serialized}
+            return {"__type__": "tuple", "__value__": serialized}
         return serialized
     elif isinstance(arg, dict):
         return {key: serialize_arg(value) for key, value in arg.items()}
@@ -544,36 +555,36 @@ def deserialize_arg(arg):
     Deserialize an argument from JSON-compatible format back to original type.
     """
     from django.apps import apps
-    
+
     if isinstance(arg, dict):
-        arg_type = arg.get('__type__')
-        
-        if arg_type == 'model_instance':
+        arg_type = arg.get("__type__")
+
+        if arg_type == "model_instance":
             # Reconstruct model instance
             try:
-                model = apps.get_model(arg['__app_label__'], arg['__model_name__'])
-                return model.objects.get(pk=arg['__pk__'])
+                model = apps.get_model(arg["__app_label__"], arg["__model_name__"])
+                return model.objects.get(pk=arg["__pk__"])
             except (LookupError, model.DoesNotExist):
                 # Model doesn't exist or instance was deleted
                 return None
-                
-        elif arg_type == 'queryset':
+
+        elif arg_type == "queryset":
             # Reconstruct queryset
             try:
-                model = apps.get_model(arg['__app_label__'], arg['__model_name__'])
-                return model.objects.filter(pk__in=arg['__pks__'])
+                model = apps.get_model(arg["__app_label__"], arg["__model_name__"])
+                return model.objects.filter(pk__in=arg["__pks__"])
             except LookupError:
                 # Model doesn't exist
                 return None
-                
-        elif arg_type == 'tuple':
+
+        elif arg_type == "tuple":
             # Restore tuple type
-            return tuple(deserialize_arg(item) for item in arg['__value__'])
-            
+            return tuple(deserialize_arg(item) for item in arg["__value__"])
+
         else:
             # Regular dict - deserialize values recursively
             return {key: deserialize_arg(value) for key, value in arg.items()}
-            
+
     elif isinstance(arg, list):
         return [deserialize_arg(item) for item in arg]
     else:

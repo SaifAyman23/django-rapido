@@ -1,0 +1,63 @@
+{% extends 'admin/base.html' %}
+{% load i18n static %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block title %}{% trans 'Live Logs' %} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'dashboard/live_logs.css' %}">
+{% endblock %}
+
+{% block content %}
+    {% include "unfold/helpers/messages.html" %}
+
+    <!-- ═══ Header — identical to dashboard/index.html ═══ -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-font-important-light dark:text-font-important-dark">
+                {% trans 'Live Logs' %}
+            </h1>
+        </div>
+    </div>
+
+    <!-- ═══ Tabs ═══ -->
+    <div class="mb-6">
+        {% include "admin/live_logs/_tabs.html" %}
+    </div>
+
+    <!-- ═══ Stat Cards — dashboard KPI style ═══ -->
+    <div class="mb-6">
+        {% include "admin/live_logs/_stats.html" %}
+    </div>
+
+    <!-- ═══ Insights — dashboard KPI style ═══ -->
+    <div class="mb-6">
+        {% include "admin/live_logs/_insights.html" %}
+    </div>
+
+    <!-- ═══ Controls ═══ -->
+    <div class="bg-white dark:bg-base-900 rounded-xl shadow-sm border border-base-200 dark:border-base-700 p-4 mb-6">
+        {% include "admin/live_logs/_controls.html" %}
+    </div>
+
+    <!-- ═══ Terminal — ONLY scrollable area ═══ -->
+    <div class="bg-white dark:bg-base-900 rounded-xl shadow-sm border border-base-200 dark:border-base-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-base-200 dark:border-base-700 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-font-important-light dark:text-font-important-dark">{% trans 'Terminal' %}</h3>
+        </div>
+        <div class="p-4" style="background: var(--color-base-950, oklch(9.5% 0.06 181));">
+            {% include "admin/live_logs/_terminal.html" %}
+        </div>
+    </div>
+
+<script>
+  window.__LIVE_LOGS_STREAM_URL__ = "{% url 'admin-live-logs-stream' %}";
+</script>
+<script src="{% static 'dashboard/live_logs.js' %}"></script>
+{% endblock %}

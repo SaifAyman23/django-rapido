@@ -1,0 +1,10 @@
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/static/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+#live-logs-terminal { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.live-tab.active { box-shadow: 0 0 0 2px; }
+.live-line.cause-open { background: rgba(255,255,255,0.06); }

@@ -7,14 +7,14 @@ Provides production-grade pagination with:
 - Custom metadata
 """
 
-from typing import Dict, Any, Optional
-
-from rest_framework.pagination import PageNumberPagination, CursorPagination, LimitOffsetPagination
-from rest_framework.response import Response
-from rest_framework.request import Request
-from django.core.paginator import Paginator, EmptyPage
-from django.core.cache import cache
 import logging
+from typing import Any, Dict, Optional
+
+from django.core.cache import cache
+from django.core.paginator import EmptyPage, Paginator
+from rest_framework.pagination import CursorPagination, LimitOffsetPagination, PageNumberPagination
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 # ===========================
 # Page Number Pagination
 # ===========================
+
 
 class StandardPagination(PageNumberPagination):
     """Standard page-based pagination"""
@@ -35,21 +36,23 @@ class StandardPagination(PageNumberPagination):
 
     def get_paginated_response(self, data: list) -> Response:
         """Enhanced response with metadata"""
-        return Response({
-            "pagination": {
-                "count": self.page.paginator.count,
-                "page_size": self.page_size,
-                "total_pages": self.page.paginator.num_pages,
-                "current_page": self.page.number,
-                "has_next": self.page.has_next(),
-                "has_previous": self.page.has_previous(),
-            },
-            "links": {
-                "next": self.get_next_link(),
-                "previous": self.get_previous_link(),
-            },
-            "results": data,
-        })
+        return Response(
+            {
+                "pagination": {
+                    "count": self.page.paginator.count,
+                    "page_size": self.page_size,
+                    "total_pages": self.page.paginator.num_pages,
+                    "current_page": self.page.number,
+                    "has_next": self.page.has_next(),
+                    "has_previous": self.page.has_previous(),
+                },
+                "links": {
+                    "next": self.get_next_link(),
+                    "previous": self.get_previous_link(),
+                },
+                "results": data,
+            }
+        )
 
 
 class LargePagination(PageNumberPagination):
@@ -61,14 +64,16 @@ class LargePagination(PageNumberPagination):
     page_query_param = "page"
 
     def get_paginated_response(self, data: list) -> Response:
-        return Response({
-            "count": self.page.paginator.count,
-            "next": self.get_next_link(),
-            "previous": self.get_previous_link(),
-            "page_size": self.page_size,
-            "total_pages": self.page.paginator.num_pages,
-            "results": data,
-        })
+        return Response(
+            {
+                "count": self.page.paginator.count,
+                "next": self.get_next_link(),
+                "previous": self.get_previous_link(),
+                "page_size": self.page_size,
+                "total_pages": self.page.paginator.num_pages,
+                "results": data,
+            }
+        )
 
 
 class SmallPagination(PageNumberPagination):
@@ -79,17 +84,20 @@ class SmallPagination(PageNumberPagination):
     max_page_size = 20
 
     def get_paginated_response(self, data: list) -> Response:
-        return Response({
-            "count": self.page.paginator.count,
-            "next": self.get_next_link(),
-            "previous": self.get_previous_link(),
-            "results": data,
-        })
+        return Response(
+            {
+                "count": self.page.paginator.count,
+                "next": self.get_next_link(),
+                "previous": self.get_previous_link(),
+                "results": data,
+            }
+        )
 
 
 # ===========================
 # Cursor-Based Pagination
 # ===========================
+
 
 class StandardCursorPagination(CursorPagination):
     """Cursor-based pagination for better performance"""
@@ -103,15 +111,17 @@ class StandardCursorPagination(CursorPagination):
     cursor_query_description = "Cursor for pagination"
 
     def get_paginated_response(self, data: list) -> Response:
-        return Response({
-            "pagination": {
-                "page_size": self.page_size,
-                "next": self.get_next_link(),
-                "previous": self.get_previous_link(),
-                "count": self.count,
-            },
-            "results": data,
-        })
+        return Response(
+            {
+                "pagination": {
+                    "page_size": self.page_size,
+                    "next": self.get_next_link(),
+                    "previous": self.get_previous_link(),
+                    "count": self.count,
+                },
+                "results": data,
+            }
+        )
 
 
 class TimestampCursorPagination(CursorPagination):
@@ -124,11 +134,13 @@ class TimestampCursorPagination(CursorPagination):
     cursor_query_param = "cursor"
 
     def get_paginated_response(self, data: list) -> Response:
-        return Response({
-            "next": self.get_next_link(),
-            "previous": self.get_previous_link(),
-            "results": data,
-        })
+        return Response(
+            {
+                "next": self.get_next_link(),
+                "previous": self.get_previous_link(),
+                "results": data,
+            }
+        )
 
 
 class IdCursorPagination(CursorPagination):
@@ -143,6 +155,7 @@ class IdCursorPagination(CursorPagination):
 # Limit-Offset Pagination
 # ===========================
 
+
 class StandardLimitOffsetPagination(LimitOffsetPagination):
     """Limit-offset pagination"""
 
@@ -154,14 +167,16 @@ class StandardLimitOffsetPagination(LimitOffsetPagination):
     max_limit = 100
 
     def get_paginated_response(self, data: list) -> Response:
-        return Response({
-            "count": self.count,
-            "next": self.get_next_link(),
-            "previous": self.get_previous_link(),
-            "limit": self.limit,
-            "offset": self.offset,
-            "results": data,
-        })
+        return Response(
+            {
+                "count": self.count,
+                "next": self.get_next_link(),
+                "previous": self.get_previous_link(),
+                "limit": self.limit,
+                "offset": self.offset,
+                "results": data,
+            }
+        )
 
 
 class OffsetPagination(LimitOffsetPagination):
@@ -174,6 +189,7 @@ class OffsetPagination(LimitOffsetPagination):
 # ===========================
 # Custom Pagination
 # ===========================
+
 
 class OptimizedPagination(StandardPagination):
     """Pagination with query optimization"""
@@ -228,11 +244,13 @@ class NoCountPagination(PageNumberPagination):
         return list(self.queryset_items)
 
     def get_paginated_response(self, data: list) -> Response:
-        return Response({
-            "next": self.get_next_link() if self.has_next else None,
-            "previous": self.get_previous_link(),
-            "results": data,
-        })
+        return Response(
+            {
+                "next": self.get_next_link() if self.has_next else None,
+                "previous": self.get_previous_link(),
+                "results": data,
+            }
+        )
 
     def get_next_link(self) -> Optional[str]:
         """Get next link if there's a next page"""
@@ -294,19 +312,21 @@ class SearchPagination(StandardPagination):
     max_page_size = 100
 
     def get_paginated_response(self, data: list) -> Response:
-        return Response({
-            "search_metadata": {
-                "total_results": self.page.paginator.count,
-                "current_page": self.page.number,
-                "total_pages": self.page.paginator.num_pages,
-                "results_per_page": self.page_size,
-            },
-            "links": {
-                "next": self.get_next_link(),
-                "previous": self.get_previous_link(),
-            },
-            "results": data,
-        })
+        return Response(
+            {
+                "search_metadata": {
+                    "total_results": self.page.paginator.count,
+                    "current_page": self.page.number,
+                    "total_pages": self.page.paginator.num_pages,
+                    "results_per_page": self.page_size,
+                },
+                "links": {
+                    "next": self.get_next_link(),
+                    "previous": self.get_previous_link(),
+                },
+                "results": data,
+            }
+        )
 
 
 class ProgressivePagination(StandardPagination):
@@ -317,18 +337,20 @@ class ProgressivePagination(StandardPagination):
     max_page_size = 100
 
     def get_paginated_response(self, data: list) -> Response:
-        return Response({
-            "pagination": {
-                "current": self.page.number,
-                "total": self.page.paginator.num_pages,
-                "size": self.page_size,
-                "total_count": self.page.paginator.count,
-                "has_next": self.page.has_next(),
-                "has_previous": self.page.has_previous(),
-            },
-            "next_cursor": self._get_next_cursor(),
-            "results": data,
-        })
+        return Response(
+            {
+                "pagination": {
+                    "current": self.page.number,
+                    "total": self.page.paginator.num_pages,
+                    "size": self.page_size,
+                    "total_count": self.page.paginator.count,
+                    "has_next": self.page.has_next(),
+                    "has_previous": self.page.has_previous(),
+                },
+                "next_cursor": self._get_next_cursor(),
+                "results": data,
+            }
+        )
 
     def _get_next_cursor(self) -> Optional[int]:
         """Get cursor for next page"""
@@ -340,6 +362,7 @@ class ProgressivePagination(StandardPagination):
 # ===========================
 # Utility Functions
 # ===========================
+
 
 def get_page_stats(queryset, page_size: int = 10) -> Dict[str, Any]:
     """Get pagination statistics"""

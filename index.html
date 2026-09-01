@@ -45,6 +45,7 @@
         <a href="#development">Commands</a>
         <a href="#makefile">Makefile</a>
         <a href="#background">Celery Tasks</a>
+        <a href="#live-logs">Live Logs</a>
         <a href="#testing">Testing</a>
       </nav>
     </div>
@@ -78,19 +79,19 @@
     <!-- OVERVIEW -->
     <section id="overview" class="ds-section">
       <div class="ds-section-header"><span class="ds-section-num">01</span><span class="ds-section-tag">Overview</span></div>
-      <h2>What’s <em>inside</em></h2>
+      <h2>What’s <em>inside</em> — your stack, your choice</h2>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
       <div class="section-content">
-        <p><strong>Django Rapido V2.0</strong> is built for speed and long-term maintainability. It comes packed with features like a REST API (DRF 3.16) with JWT, background tasks with Celery 5.6, modern admin UI (Unfold), and a complete Docker setup to take you efficiently from dev to production.</p>
-        <p><strong>Environment Configuration</strong> – Utilizing modular settings via <code>DJANGO_ENVIRONMENT</code>, clean separation of concerns mapping <code>local</code>, <code>production</code>, and <code>testing</code> configs robustly.</p>
-        <p><strong>Code Quality defaults</strong> – Standardized perfectly with Black, isort, Flake8, Mypy, and Pytest shortcuts integrated into <code>Makefile</code>.</p>
+        <p><strong>Django Rapido V2.0</strong> is a template for <em>my</em> projects — these are the tools I use. Nothing is forced. Every feature is decoupled (no cross-app imports, <code>common/</code> is single source) and you add, delete, or modify by hand as documented in each guide’s <code>## Removal</code>.</p>
+        <p>There is <strong>no CLI</strong> — you edit <code>project/settings/base.py</code> (<code>INSTALLED_APPS</code> + <code>CACHES</code>/<code>DATABASES</code>), <code>project/urls.py</code> + <code>unfold_config.py</code>, <code>requirements.txt</code>, <code>docker-compose.yml</code>, <code>.env.example</code>, and delete the app folder — exactly the steps in <code>guides/Settings guide.md</code>, <code>guides/Notifications guide.md</code>, <code>guides/Live Logs guide.md</code>, etc. No generation, no lock-in.</p>
       </div>
       <div class="feature-grid">
-        <div class="feature-card"><h4>REST API</h4><p>Django REST Framework 3.16 with JWT Authentication (SimpleJWT).</p></div>
-        <div class="feature-card"><h4>Async Tasks</h4><p>Celery 5.6 for async workers, Celery Beat for cron, and Flower for real-time monitoring.</p></div>
-        <div class="feature-card"><h4>Docker & DevOps</h4><p>Fully containerized with a smart `entrypoint.sh`, Docker Compose setup, and Nginx reverse proxy.</p></div>
-        <div class="feature-card"><h4>Frontend & Admin</h4><p>Modern admin UI designed by Django Unfold. Tailwind CSS natively handled & built via `package.json`.</p></div>
+        <div class="feature-card"><h4>REST API</h4><p>DRF 3.16 + JWT HttpOnly + <code>AuthRateThrottle</code> + OTP 6 digits, SocialAdapter dedupe.</p></div>
+        <div class="feature-card"><h4>Async Tasks</h4><p>Celery 5.4 + Beat + Flower, plus 7 decoupled apps (notifications, live logs, compliance, contacts) you can keep or drop.</p></div>
+        <div class="feature-card"><h4>Docker & Live Logs</h4><p>Layered compose + <code>web-sse gevent 1000</code> + Nginx SSE <code>3600s no-buffer</code> — or remove via CLI.</p></div>
+        <div class="feature-card"><h4>Frontend & Admin</h4><p>Unfold + <code>TranslationBaseAdmin</code> + <code>MarkdownAdminMixin</code>, Tailwind, oklch palette, JetBrains Mono terminal.</p></div>
       </div>
+      <div class="callout tip"><strong>Not opinionated</strong> — every guide ends with <code>Removal</code> (code locations + <code>.env</code> + <code>common/</code>). See <code>guides/Authentication guide.md</code>, <code>guides/Live Logs guide.md</code>, <code>guides/Settings guide.md</code> for DB/Redis.</div>
     </section>
 
     <!-- QUICK START -->
@@ -151,9 +152,9 @@ $ make run</code></pre></div>
         <thead><tr><th>Component</th><th>Version</th><th>Component</th><th>Version</th></tr></thead>
         <tbody>
           <tr><td>Python</td><td>3.13</td><td>Django</td><td>5.2+</td></tr>
-          <tr><td>DRF</td><td>3.16</td><td>Channels</td><td>4.2</td></tr>
-          <tr><td>Celery</td><td>5.6</td><td>PostgreSQL</td><td>17</td></tr>
-          <tr><td>Redis</td><td>7+</td><td>Docker Components</td><td>Composer / Engine</td></tr>
+          <tr><td>DRF</td><td>3.16</td><td>JWT</td><td>SimpleJWT 5.4</td></tr>
+          <tr><td>Celery</td><td>5.4</td><td>PostgreSQL</td><td>17 + pgvector</td></tr>
+          <tr><td>Redis</td><td>7</td><td>Live Logs</td><td>Redis + SSE</td></tr>
           <tr><td>Node.js</td><td>Latest (For Tailwind)</td><td>Nginx</td><td>Alpine</td></tr>
         </tbody>
       </table>
@@ -166,28 +167,26 @@ $ make run</code></pre></div>
       <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
       <div class="code-block"><div class="code-header"><span>tree – modular configuration tree</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
 <pre><code>project-root/
-├── project/                    # Main Django project directory
-│   ├── settings/               # Modular settings configuration
-│   │   ├── __init__.py         # Environment-aware settings loader
-│   │   ├── base.py             # Core settings shared across environments
-│   │   ├── local.py            # Development-specific overrides
-│   │   ├── production.py       # Production-specific overrides
-│   │   ├── testing.py          # Fast, isolated test-specific settings
-│   │   └── components/         # Feature-specific modules
-│   ├── urls.py                 # Root URL routing
-│   ├── asgi.py                 # ASGI entry point
-│   └── wsgi.py                 # WSGI entry point
+├── project/                    # Main Django project
+│   ├── settings/               # base.py + local.py + production.py + unfold_config.py
+│   ├── urls.py                 # users/notifications/contacts/compliance + live-logs SSE
+│   ├── asgi.py / wsgi.py / routing.py
 │
-├── accounts/                   # Custom User model and authentication
-├── common/                     # Utility helpers, base models
-├── dashboard/                  # Custom Django Unfold admin adjustments
-├── tests/                      # Pytest suite structure
-├── guides/                     # Extensive architectural documentation
+├── accounts/                   # OTP (OTPRecord) + JWT + SocialAdapter
+├── notifications/              # Device + Notification (FCM)
+├── compliance/                 # FAQ + ComplianceDocument
+├── contacts/                   # ContactMessage + ContactInfo (hours gate)
+├── common/                     # UUIDModel, BaseViewSetMixin (scrubbing), TranslationBaseAdmin
+├── dashboard/                  # Unfold + Live Logs (live_logs.py: Redis + SSE, JetBrains Mono)
+│   ├── live_logs.py            # Middleware + SSE views
+│   └── templates/admin/live_logs.html  # tabs/stats/insights/terminal
+├── guides/                     # 19 guides (Settings, Auth, Live Logs, Docker, i18n, common/*)
 │
-├── docker-compose.yml          # Container orchestration for dev & prod
-├── Dockerfile                  # Production-ready Python image
-├── entrypoint.sh               # Smart container initialization script
-├── nginx.conf                  # Nginx reverse proxy configuration
+├── docker-compose.yml          # Dev (runserver, SSE no-buffer 3600s)
+├── docker-compose.prod.yml     # Prod (web-sse gevent 2×1000, 443 + certbot)
+├── Dockerfile                  # python:3.13-slim + nodejs + gevent
+├── entrypoint.sh               # role-aware CONTAINER_ROLE=web
+├── nginx.conf / nginx.prod.conf  # SSE ~ ^/(en|ar)?/?admin/live-logs/stream/ → django_sse:8001
 │
 ├── static/                     # Global static files
 ├── media/                      # User-uploaded files
@@ -209,7 +208,7 @@ $ make run</code></pre></div>
       <ol class="section-content" style="margin-left:1.5rem">
         <li><code>DJANGO_ENVIRONMENT=local</code> (Default): Loads <code>settings/local.py</code> + <code>base.py</code>. Built with <code>DEBUG=True</code>.</li>
         <li><code>DJANGO_ENVIRONMENT=production</code>: Loads <code>settings/production.py</code>. Enforces strict security configurations like HTTPS and <code>DEBUG=False</code>.</li>
-        <li><code>DJANGO_ENVIRONMENT=testing</code>: Loads <code>settings/testing.py</code>. Leverages an in-memory SQLite DB for lightning-fast speeds and disables explicit Celery delays.</li>
+        <li><code>DJANGO_ENVIRONMENT=testing</code> or <code>python manage.py test</code>: Auto SQLite via <code>TESTING</code> flag (<code>base.py:24</code> <code>"test" in sys.argv</code>) + <code>CELERY_ALWAYS_EAGER</code>.</li>
       </ol>
     </section>
 
@@ -275,6 +274,21 @@ $ make celery-worker
 <span class="cm"># 3. Boot the Celery Beat daemon for recurring cron tasks:</span>
 $ make celery-beat</code></pre></div>
       <div class="callout note"><strong>📘 Note</strong> Using Docker Compose implicitly provides these background daemons natively alongside a `Flower` UI tracker.</div>
+    </section>
+
+    <!-- LIVE LOGS -->
+    <section id="live-logs" class="ds-section">
+      <div class="ds-section-header"><span class="ds-section-num">09</span><span class="ds-section-tag">Live Logs</span></div>
+      <h2>Live <em>Logs — SSE Terminal</em></h2>
+      <div class="ds-section-rule"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+      <p class="section-content">Staff-only <code>/admin/live-logs/</code> — Redis list <code>live_logs:buffer</code> (fallback <code>deque 500</code>), <code>web-sse</code> gevent <code>2×1000</code> timeout 0, SSE <code>retry:3000</code> + heartbeat. Middleware logs every request with JWT diagnostics.</p>
+      <div class="feature-grid">
+        <div class="feature-card"><h4>Terminal</h4><p>Tabs All/2XX...5XX, stats Total/2XX...5XX, insights Error Rate/Top Path. Causes expanded amber.</p></div>
+        <div class="feature-card"><h4>SSE Hardened</h4><p><code>HTTP/1.1</code> keep-alive, <code>proxy_buffering off</code>, <code>3600s</code>, <code>gzip off</code>.</p></div>
+        <div class="feature-card"><h4>Shared Buffer</h4><p>Redis <code>lpush/ltrim</code> + <code>incr</code> shared across <code>web</code> + <code>web-sse</code> (fallback in-memory).</p></div>
+        <div class="feature-card"><h4>Isolated</h4><p><code>web-sse:8001</code> gevent never blocks API workers. Same domain, no cert change.</p></div>
+      </div>
+      <div class="callout tip"><strong>Show problems?</strong> Yes — <code>4XX amber</code> / <code>5XX red</code> with <code>cause</code> (e.g. <code>Missing Authorization</code>, <code>Malformed JWT: 2 parts</code>, <code>Wrong scheme bearer</code>).</div>
     </section>
 
     <!-- TESTING -->

@@ -1,1 +1,1 @@
-﻿
+"""Custom management commands."""

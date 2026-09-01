@@ -1,4 +1,10 @@
+"""Celery application bootstrap.
+
+Configures the Celery app from Django settings and auto-discovers tasks.
+"""
+
 import os
+
 from celery import Celery
 
 # Tell Python which Django settings module to use before the Celery app is created.

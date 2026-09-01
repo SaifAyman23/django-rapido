@@ -1,3 +1,8 @@
+"""Application-wide exception hierarchy and DRF handler.
+
+Defines typed API errors and a global handler that normalizes error responses.
+"""
+
 import logging
 from typing import Any, Dict, List, Optional, Type
 

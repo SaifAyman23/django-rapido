@@ -1,5 +1,19 @@
-version: "3.10"
-
+# ============================================================
+# Django Rapido — Docker Compose (development base)
+#
+# This file is the BASE stack. It is used two ways:
+#
+#   DEV  (local settings, runserver hot-reload, host ports open):
+#     docker compose up -d --build
+#
+#   PROD  (gunicorn, TLS, production settings) — layered with the
+#   production override, which resets dev behavior and pins
+#   DJANGO_ENVIRONMENT=production:
+#     docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Credentials are read from .env (never committed).
+# REUSE: This compose is generic — replace ${DOMAIN} in prod override.
+# ============================================================
 volumes:
   postgres_data:
     driver: local
@@ -28,7 +42,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password123}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8 --auth-host=scram-sha-256 --auth-local=scram-sha-256"
     ports:
-      - "5432:5432" # Remove in production to hide from host
+      - "5432:5432" # REUSE: remove in production (prod override resets)
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -37,7 +51,7 @@ services:
           "CMD-SHELL",
           "pg_isready -U ${DB_USER:-project_user} -d ${DB_NAME:-project_db}",
         ]
-      interval: 5s # Check more frequently at start
+      interval: 5s
       retries: 10
       start_period: 5s
     networks:
@@ -52,11 +66,12 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD:-redis_password}"
     ports:
-      - "6379:6379" # Remove in production to hide from host
+      - "6379:6379" # REUSE: remove in production
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--no-raw", "incr", "ping"]
+      # REUSE: -a auth is required when requirepass is set
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_password}", "--no-auth-warning", "incr", "ping"]
       interval: 10s
       retries: 5
       start_period: 5s
@@ -73,27 +88,16 @@ services:
       dockerfile: Dockerfile
     container_name: project_web
     restart: unless-stopped
-
-    # LOCAL: runserver with hot reload
+    # Dev: runserver with hot reload. Production override swaps for gunicorn.
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/app
       - .:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
       - ./logs:/app/logs
-      - ./logs:/app/logs
-
-    # PRODUCTION: Replace command and volumes with:
-    # command: gunicorn project.wsgi:application --bind 0.0.0.0:8000 --workers 4 --worker-class sync --max-requests 1000 --timeout 120
-    # volumes:
-    #   - static_volume:/app/staticfiles
-    #   - media_volume:/app/media
-
-    ports:
-      - "8000:8000"
     environment:
       - CONTAINER_ROLE=web
+      - DJANGO_ENVIRONMENT=${DJANGO_ENVIRONMENT:-local}
     env_file:
       - .env
     depends_on:
@@ -119,18 +123,13 @@ services:
       dockerfile: Dockerfile
     container_name: project_celery_worker
     restart: unless-stopped
-
-    # LOCAL: autoreload for development
+    # Dev: autoreload. Production override swaps command.
     command: celery -A project worker --loglevel=info --autoscale=10,4
     volumes:
       - .:/app
-
-    # PRODUCTION: Replace command with:
-    # command: celery -A project worker --loglevel=info --concurrency=4 --max-tasks-per-child=100 --time-limit=1800
-    # volumes: []
-
     environment:
       - CONTAINER_ROLE=celery_worker
+      - DJANGO_ENVIRONMENT=${DJANGO_ENVIRONMENT:-local}
     env_file:
       - .env
     depends_on:
@@ -151,16 +150,12 @@ services:
       dockerfile: Dockerfile
     container_name: project_celery_beat
     restart: unless-stopped
-
     command: celery -A project beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - .:/app
-
-    # PRODUCTION: Remove volume mount
-    # volumes: []
-
     environment:
       - CONTAINER_ROLE=celery_beat
+      - DJANGO_ENVIRONMENT=${DJANGO_ENVIRONMENT:-local}
     env_file:
       - .env
     depends_on:
@@ -181,21 +176,12 @@ services:
       dockerfile: Dockerfile
     container_name: project_flower
     restart: unless-stopped
-
-    # CRITICAL FIX: Use correct Flower command syntax
-    # Format: celery -A <app_name> flower [options]
-    # NOT: python -m flower (this is incorrect and won't work)
     command: celery -A project flower --port=5555 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
-    
     ports:
-      - "5555:5555"
-
-    # PRODUCTION: Use persistent storage and proxy through nginx
-    # command: celery -A project flower --port=5555 --broker=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123} --persistent --db=/data/flower.db
-    # ports: []  # Proxy through nginx instead of exposing directly
-
+      - "5555:5555" # REUSE: prod override resets — proxy via nginx instead
     environment:
       - CONTAINER_ROLE=flower
+      - DJANGO_ENVIRONMENT=${DJANGO_ENVIRONMENT:-local}
     env_file:
       - .env
     depends_on:
@@ -211,24 +197,12 @@ services:
     image: nginx:alpine
     container_name: project_nginx
     restart: unless-stopped
-
     ports:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
-
-    # PRODUCTION: Add HTTPS with SSL certificate
-    # ports:
-    #   - "80:80"
-    #   - "443:443"
-    # volumes:
-    #   - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    #   - ./ssl:/etc/nginx/ssl:ro
-    #   - static_volume:/app/staticfiles:ro
-    #   - media_volume:/app/media:ro
-
     depends_on:
       - web
     networks:

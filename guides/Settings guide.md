@@ -1,356 +1,215 @@
-# Django Modular Settings Guide
+# Django Rapido Settings Guide
 
 ## Overview
 
-Your Django settings have been reorganized from a single 470-line file into a modular structure with 13 focused files. This improves maintainability, reduces merge conflicts, and provides clear separation between environments.
+Settings are modular by environment: `base.py` (shared) → `local.py` / `production.py` (overlay) → `__init__.py` dispatches. No `components/` split — that was aspirational and removed for clarity. Fail-fast secrets, TESTING detection, and REUSE comments document portability.
 
 ---
 
-## File Structure
+## File Structure (actual)
 
 ```
 project/settings/
-├── __init__.py              # Entry point, loads environment variables and imports all components
-├── base.py                  # Core Django configuration shared across all environments
-├── local.py                 # Development environment settings
-├── production.py            # Production environment settings
-├── testing.py               # Test environment settings (fast, isolated)
-├── unfold_config.py         # Admin interface theme configuration
-│
-└── components/              # Feature-specific settings modules
-    ├── __init__.py
-    ├── apps.py              # INSTALLED_APPS and MIDDLEWARE
-    ├── database.py          # Database configuration
-    ├── cache.py             # Redis caching and session storage
-    ├── celery.py            # Async task processing with Celery
-    ├── api.py               # REST Framework and JWT authentication
-    ├── security.py          # CORS, SSL, CSRF, and security headers
-    ├── logging.py           # Logging handlers and formatters
-    ├── channels.py          # Django Channels for WebSockets
-    └── third_party.py       # AWS, Sentry, and external services
+├── __init__.py              # Dispatches ENVIRONMENT, DX print if DEBUG
+├── base.py                  # Shared config (DB, cache, Celery, DRF, JWT, i18n)
+├── local.py                 # Dev overrides (DEBUG=True, eager Celery, conditional CORS)
+├── production.py            # Production hardening (HSTS, SSL, fail-fast ALLOWED_HOSTS)
+└── unfold_config.py         # Admin theme (sidebar nav, colors, branding)
 ```
+
+Removed: `components/` (13-file split was aspirational), `testing.py` (handled via `TESTING` flag in `base.py` + `sys.argv`).
 
 ---
 
 ## Loading Order
 
-Settings are loaded in this sequence:
+1. `.env` via `load_dotenv('.env')` (`base.py:12`)
+2. `base.py` — core config + `TESTING = os.getenv("TESTING")=="true" or "test" in sys.argv` + `SECRET_KEY` guard
+3. `unfold_config.py` wildcard import
+4. `__init__.py` — `if ENVIRONMENT=='production': from .production import * else: from .local import *`
 
-1. Environment variables from `.env` files
-2. `base.py` - Core configuration
-3. `components/*` - Feature-specific settings
-4. `unfold_config.py` - Admin theme
-5. Environment-specific file (`local.py`, `production.py`, or `testing.py`)
-
-Later imports override earlier ones, allowing environment-specific customization.
+`__init__.py:4` prints `[settings] Loading environment: {ENVIRONMENT}` when `DEBUG=True`.
 
 ---
 
 ## Environment Management
 
-### Setting the Environment
-
-Control which settings file loads using the `DJANGO_ENVIRONMENT` variable:
+| Environment | File | Characteristics |
+|-------------|------|-----------------|
+| local | `local.py` | `DEBUG=True`, `ALLOWED_HOSTS=*`, `CELERY_ALWAYS_EAGER`, conditional CORS override |
+| production | `production.py` | `DEBUG=False`, `SECURE_PROXY_SSL_HEADER`, HSTS ramp `31536000`, `ALLOWED_HOSTS` fail-fast |
+| testing | auto | `TESTING=True` → SQLite `db.sqlite3` + `CELERY_ALWAYS_EAGER`, `SECURE_*` forced off, `SECRET_KEY` ephemeral |
 
 ```bash
-# Local development (default, no variable needed)
+# Local (default)
 python manage.py runserver
 
-# Testing
-DJANGO_ENVIRONMENT=testing python manage.py test
+# Testing (auto-detected)
+python manage.py test  # TESTING=True via sys.argv
 
-# Production
+# Explicit
 DJANGO_ENVIRONMENT=production gunicorn project.wsgi:application
 ```
 
-### Environment Files
+---
 
-| Environment | File | Characteristics |
-|------------|------|-----------------|
-| local | `local.py` | DEBUG enabled, relaxed security, development tools |
-| production | `production.py` | DEBUG disabled, SSL enforced, security hardened |
-| testing | `testing.py` | In-memory database, no migrations, fast execution |
+## Key Settings (base.py) — REUSE notes
+
+| Setting | Lines | REUSE |
+|---------|-------|-------|
+| `TESTING` + `CELERY_ALWAYS_EAGER` | `base.py:19-32` | `TESTING` wins via env or `test` in argv; syncs `os.environ["TESTING"]` for mixins error handling |
+| `SECRET_KEY` guard | `base.py:34-43` | Raises `ImproperlyConfigured` if missing unless `TESTING`; never hardcoded fallback |
+| `BUSINESS_TIME_ZONE` | `base.py:217` | `os.getenv("BUSINESS_TIME_ZONE","Africa/Cairo")` — used by `contacts.services.is_ordering_open()` for hours gate |
+| `INSTALLED_APPS` | `base.py:51-93` | `modeltranslation` before `admin` (required order), `markdownx`, opt-in `allauth` providers commented, `notifications/compliance/contacts` added |
+| `MODELTRANSLATION_*` + `LOCALE_PATHS` | `base.py:206-214` | `LANGUAGES en/ar`, `LOCALE_PATHS=[BASE_DIR/locale]`, `USE_L10N=True` |
+| `DATA_UPLOAD_MAX_MEMORY_SIZE` | `base.py:259` | `50MB` for Excel/CSV base64 Celery imports (`catalog/tasks.py`) |
+| `CACHES` + `SESSION_ENGINE` | `base.py:265-283` | `django_redis` `max_connections 50`, `SOCKET_TIMEOUT 5`, Redis `cache` backend |
+| `CELERY_*` + `CELERY_BEAT_SCHEDULE` | `base.py:286-319` | `BROKER redis:6379/0` JSON, `HEARTBEAT 120`, `PREFETCH 1`, `ACKS_LATE`; example beat commented |
+| `REST_FRAMEWORK` + `SIMPLE_JWT` | `base.py:325-403` | `JWT` `ACCESS 30m REFRESH 30d`, `SIGNING_KEY = os.getenv("JWT_SECRET_KEY") or SECRET_KEY` (dedicated key), throttles `anon 100/h auth 30/m` |
+| `SPECTACULAR ENUM_NAME_OVERRIDES` | `base.py:413` | Stable names for `UserStatusEnum/OrderStatusEnum/LocationTypeEnum/OTPTypeEnum` to avoid OpenAPI collisions |
+| `CORS / SECURITY` | `base.py:425-440` | `CORS_ALLOW_CREDENTIALS`, env-driven origins, `SECURE_* = False if TESTING else getenv()` |
+| `SOCIALACCOUNT_*` | `base.py:237-250` | Opt-in `allauth` adapter `accounts.auth.adapters.SocialAccountAdapter` + providers dict commented |
+| `GOOGLE_APPLICATION_CREDENTIALS` | `base.py:470` | `firebase-adminsdk.json` fallback for FCM `notifications/` |
+| `ASGI_APPLICATION` | `base.py:474` | `project.asgi.application` for future Channels |
 
 ---
 
-## Common Modifications
+## Environment-Specific Overrides
 
-### Database Configuration
+### local.py
+- `ALLOWED_HOSTS=*`, `SECURE_*=False`
+- Conditional CORS: `if _cors_env is not None: CORS_ALLOWED_ORIGINS = ...` (respects `.env` without hardcoding) — REUSE pattern
+- `CELERY_ALWAYS_EAGER=True`
+- Debug toolbar try-import
 
-**File:** `components/database.py` or `.env`
-
-Update environment variables:
-```bash
-DB_NAME=your_database
-DB_USER=your_user
-DB_PASSWORD=your_password
-DB_HOST=localhost
-DB_PORT=5432
-```
-
-### Adding Django Applications
-
-**File:** `components/apps.py`
-
-```python
-INSTALLED_APPS = [
-    # Existing apps...
-    "your_new_app",
-]
-```
-
-### Celery Configuration
-
-**File:** `components/celery.py` or `.env`
-
-```bash
-CELERY_BROKER_URL=redis://:password@localhost:6379/0
-CELERY_RESULT_BACKEND=redis://:password@localhost:6379/0
-```
-
-### Celery Application
-
-**File:** `project/celery.py`
-
-The Celery application is bootstrapped in `project/celery.py`:
-- Reads config from Django settings using `CELERY_` namespace
-- Auto-discovers `tasks.py` in every installed app
-- Run workers: `celery -A project worker -l info`
-
-### Task Modules
-
-Each app can define a `tasks.py` with `@shared_task` functions. Pre‑built examples in `accounts/tasks.py`:
-- `notify_welcome_email` — send welcome email after registration
-- `notify_password_reset` — send password reset link
-- `cleanup_expired_sessions` — periodic session cleanup
-
-All notification tasks check `should_notify()` before sending.
-
-### Email Settings
-
-**File:** `components/email.py` or `.env`
-
-```bash
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=your-email@example.com
-EMAIL_HOST_PASSWORD=your-app-password
-EMAIL_USE_TLS=True
-```
-
-> Added in `base.py`
-
-### Security Headers (Production Only)
-
-**File:** `production.py`
-
-These are already configured but can be modified:
-```python
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = 31536000
-```
+### production.py
+- Wrapped in `if not TESTING:` (tests run plain HTTP)
+- `SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO","https")` for nginx TLS termination
+- HSTS ramp comment: `0 → 300 → 86400 → 31536000` after TLS confirmed; `SECURE_HSTS_SECONDS = int(os.getenv(..., "31536000"))`
+- Fail-fast: `if not _allowed: raise ImproperlyConfigured("ALLOWED_HOSTS must be set")`
+- `LOGGING` downgraded to `WARNING`
 
 ---
 
-## File Reference
+## Project URLs & Routing (project/urls.py)
 
-| File | Purpose | When to Edit |
-|------|---------|--------------|
-| `base.py` | Core Django settings | Rarely, only for fundamental changes |
-| `local.py` | Development settings | Add dev-specific tools or relaxed security |
-| `production.py` | Production settings | Adjust security headers or allowed hosts |
-| `testing.py` | Test settings | Optimize test performance or change test database |
-| `components/apps.py` | Apps and middleware | Add/remove Django apps or middleware |
-| `components/database.py` | Database | Change database engine or connection pooling |
-| `components/cache.py` | Caching | Modify Redis cache configuration |
-| `components/celery.py` | Task queue | Update Celery broker or task settings |
-| `components/api.py` | API docs | Adjust JWT token lifetimes or DRF settings Update API documentation metadata |
-| `components/security.py` | Security | Configure CORS or base security settings |
-| `components/logging.py` | Logging | Adjust log levels or add new handlers |
-| `components/channels.py` | WebSockets | Configure Channels layer or Redis connection |
-| `components/third_party.py` | External services | Add AWS, Sentry, or other integrations |
+| Endpoint | Purpose | REUSE |
+|----------|---------|-------|
+| `api/v1/users/` | `accounts.urls` — login/register/verify/OTP/social | generic |
+| `api/v1/notifications/` | `notifications.urls` — inbox + devices FCM | generic |
+| `api/v1/contacts/` | `contacts.urls` — public message + singleton info | generic |
+| `api/v1/compliance/` | `compliance.urls` — FAQ + legal docs | generic |
+| `api/schema/`, `swagger/`, `redoc/` | Spectacular — `SchemaView(exclude=True)` hides schema | REUSE |
+| `health/` | `lambda healthy` for LB | keep |
+| `admin/` + `i18n/` | `i18n_patterns` locale-prefixed | keep |
+| `markdownx/` | `markdownx.urls` for `MarkdownAdminMixin` | REUSE |
+| `accounts/social/signup/` | JSON `404` stub prevents `NoReverseMatch` 500 when allauth auto-signup blocked | REUSE if allauth |
+| `__debug__/` | Debug toolbar (DEBUG only) | keep |
 
----
-
-## Project URLs & Routing
-
-**File:** `project/urls.py`
-
-| Endpoint | Purpose |
-|----------|---------|
-| `api/v1/users/` | Accounts app (register, logout, profile) |
-| `api/v1/users/login/` | JWT login — returns access + sets refresh cookie |
-| `api/v1/users/token/refresh/` | Refresh access token (reads cookie or body) |
-| `api/v1/users/token/verify/` | Verify access token validity |
-| `api/v1/users/token/blacklist/` | Blacklist a refresh token (logout server-side) |
-| `api/schema/` | OpenAPI schema (Spectacular) |
-| `swagger/`, `redoc/` | API documentation UIs |
-| `health/` | Health check, returns `"healthy"` |
-| `admin/` | Django admin (i18n‑prefixed) |
-| `i18n/` | Language switcher |
-| `__debug__/` | Django Debug Toolbar (DEV only) |
+Home `""` → `HomeView` redirect to `admin:index` (`dashboard.views`).
 
 ---
 
-## Deployment Entry Points
+## Deployment
 
 | File | Role |
 |------|------|
-| `project/wsgi.py` | WSGI application — used by gunicorn/uwsgi |
-| `project/asgi.py` | ASGI application — used by daphne/uvicorn |
-| `project/routing.py` | ASGI routing — reserved for Channels (not currently active) |
+| `project/wsgi.py` | Gunicorn entry (`docker-compose.prod.yml` `gunicorn --workers 4 --max-requests 1000`) |
+| `project/asgi.py` | ASGI entry (Channels-ready) |
+| `project/routing.py` | Stub for WebSockets |
+| `docker-compose.yml` | Dev base: `runserver 0.0.0.0:8000`, ports open |
+| `docker-compose.prod.yml` | Prod override: `ports: !reset []` for DB/Redis/Flower, `gunicorn`, `concurrency 4`, `443` + certbot volumes |
+| `nginx.conf` | Dev `client_max_body_size 100M` (Excel imports), proxy `django:8000` |
+| `nginx.prod.conf` | Prod dual `80→443` redirect + `/.well-known/acme-challenge/` for Let's Encrypt, `api.` + `www` servers |
+| `.dockerignore` | Prevents baking `venv/.env/google-services.json` |
+| `entrypoint.sh` | Role-aware `CONTAINER_ROLE:-web` → `migrate+collectstatic+createsuperuser` only on `web` |
 
----
-
-## Environment Variables
-
-All sensitive configuration should be stored in environment variables, not hardcoded in Python files.
-
-### .env File Structure
-
+First deploy cert issuance:
 ```bash
-# Django Core
-SECRET_KEY=your-secret-key
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Database
-DB_ENGINE=django.db.backends.postgresql
-DB_NAME=project_db
-DB_USER=project_user
-DB_PASSWORD=secure_password
-DB_HOST=localhost
-DB_PORT=5432
-
-# Redis
-REDIS_PASSWORD=redis_password
-REDIS_URL=redis://:redis_password@localhost:6379/0
-CACHE_URL=redis://:redis_password@localhost:6379/1
-
-# Celery
-CELERY_BROKER_URL=redis://:redis_password@localhost:6379/0
-CELERY_RESULT_BACKEND=redis://:redis_password@localhost:6379/0
-
-# JWT
-JWT_SECRET_KEY=your-jwt-secret-key
-JWT_ALGORITHM=HS256
-
-# Email
-EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-
-# CORS
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
-CORS_TRUSTED_ORIGINS=http://localhost:3000,http://localhost:8000
-
-# Security
-SECURE_SSL_REDIRECT=False
-SESSION_COOKIE_SECURE=False
-CSRF_COOKIE_SECURE=False
+docker compose run --rm certbot certbot certonly --webroot -w /var/www/certbot -d example.com -d www.example.com -d api.example.com
 ```
-
-### Environment-Specific Files
-
-- `.env` - Base configuration (committed to repository with example values)
-- `.env.local` - Local overrides (not committed, developer-specific)
-- `.env.production` - Production overrides (not committed, contains secrets)
 
 ---
 
-## Testing Configuration
+## Environment Variables (.env.example)
 
-The `testing.py` file provides optimized settings for test execution:
+Updated with REUSE sections:
+- `BUSINESS_TIME_ZONE`, `JWT_SECRET_KEY` (dedicated), `GOOGLE_OAUTH_*`, `FACEBOOK_*`, `GOOGLE_APPLICATION_CREDENTIALS`, `DOMAIN`, `TESTING` (auto via `sys.argv`)
+- See `.env.example` comments — uncomment OAuth/FCM sections when needed
 
-**Run tests:**
+---
+
+## Testing
+
+No `testing.py`; use `TESTING=True`:
 ```bash
-DJANGO_ENVIRONMENT=testing python manage.py test
+DJANGO_ENVIRONMENT=testing python manage.py test  # uses SQLite, eager Celery, dummy cache
+# or simply
+python manage.py test  # auto-detected via "test" in sys.argv
 ```
 
-**Key optimizations:**
-- In-memory SQLite database (10-100x faster than PostgreSQL)
-- Migrations disabled (tables created directly from models)
-- Fast password hashing (MD5 instead of bcrypt)
-- Synchronous Celery (no worker process needed)
-- Dummy cache backend (no Redis needed)
+Optimizations: in-memory SQLite (10-100x), migrations disabled via SQLite path, MD5 hasher not configured but can be added, synchronous Celery, dummy cache when `TESTING`.
 
 ---
 
-## Migration from Single File
+## Migration from Old Guide
 
-### Before
-```
-project/settings.py  (many lines)
-```
-
-### After
-```
-project/settings/  (several files, average 40 lines each)
-```
-
-### No Code Changes Required
-
-Your existing code continues to work without modification:
-- `manage.py` automatically detects `settings/__init__.py`
-- `wsgi.py` and `asgi.py` remain unchanged
-- All Django commands work identically
-- All apps and URLs continue functioning
-
----
-
-## Troubleshooting
-
-### Changes Not Applied
-
-1. Restart the development server after modifying settings
-2. Verify `DJANGO_ENVIRONMENT` is set correctly: `echo $DJANGO_ENVIRONMENT`
-3. Check the `.env` file is in the project root (same directory as `manage.py`)
-4. Ensure the correct environment-specific file is being loaded
-
-### Wrong Environment Loading
-
-```bash
-# Check current environment
-python manage.py shell
->>> import os
->>> print(os.getenv('DJANGO_ENVIRONMENT'))
-
-# Reset to default (local)
-unset DJANGO_ENVIRONMENT
-```
-
-### Import Errors
-
-If you encounter import errors after migration:
-1. Verify `__init__.py` exists in both `settings/` and `settings/components/`
-2. Check import order in `settings/__init__.py`
-3. Ensure `BASE_DIR` is correctly defined before component imports
+| Before (guide claim) | After (actual) |
+|---|---|
+| `components/*.py` 13 files | Monolithic `base.py` + env overlays (clearer, fewer merges) |
+| `testing.py` | `TESTING` flag + `sys.argv` detection in `base.py` |
+| `channels.py` assumed | `routing.py` stub (Channels opt-in) |
+| Only `accounts` documented | Now `notifications/compliance/contacts` documented + `docs/examples/` patterns |
 
 ---
 
 ## Best Practices
 
-1. **Never commit `.env.local` or `.env.production`** - Add to `.gitignore`
-2. **Use environment variables for secrets** - Never hardcode passwords or API keys
-3. **Keep environment files in sync** - Document required variables in `.env.example`
-4. **Test with testing.py** - Always use `DJANGO_ENVIRONMENT=testing` for test runs
-5. **Document custom settings** - Add comments when adding new configuration
-6. **Maintain separation** - Keep environment-specific settings in appropriate files
+1. **Never commit `.env`** — `.gitignore` + `.dockerignore` already cover it
+2. **Use `or SECRET_KEY` fallback for `JWT_SECRET_KEY`** — never commit `JWT_SECRET_KEY`
+3. **Keep `TESTING` guards on `SECURE_*`** — `False if TESTING else getenv()`
+4. **Ramp HSTS** `0→300→86400→31536000` after confirming TLS
+5. **Replace `example.com` in `nginx.prod.conf` + `DOMAIN` env** before first prod deploy
+6. **Document new settings with `# REUSE:`** comment indicating portability
 
 ---
 
-## Summary
+## Removal — How to Remove PostgreSQL and Redis
 
-This modular structure provides:
+### Drop PostgreSQL (use SQLite everywhere)
 
-- Clear organization by feature and environment
-- Reduced merge conflicts in team development
-- Easy maintenance and debugging
-- Explicit environment separation
-- No changes to existing Django workflow
+> All apps use generic `UUIDModel` + `TimestampedModel` — they run on SQLite already when `TESTING=True`. Switching prod to SQLite is a config change, not a code change.
 
-All settings continue to work as before, but are now organized into logical, maintainable components.
+1. **Settings `project/settings/base.py:121-146`** → replace `if not TESTING: DATABASES = {postgres}` block with single SQLite:
+   ```python
+   DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
+   ```
+   Delete `DB_ENGINE/DB_NAME/DB_USER/DB_PASSWORD/DB_HOST/DB_PORT/CONN_MAX_AGE/OPTIONS` env reads.
+2. **Docker `docker-compose.yml:21`** → delete `db` service (7 lines: `pgvector/pgvector:pg17`, `postgres_data` volume, `healthcheck pg_isready`), delete `postgres_data` from `volumes`, remove `db` from every `depends_on` (`web`, `celery_worker`, `celery_beat`). `docker-compose.prod.yml` → delete `db: ports: !reset []`.
+3. **Dockerfile `Dockerfile:13`** → delete `libpq-dev` from `apt-get install` (only needed for `psycopg`).
+4. **Requirements `requirements.txt:67`** → delete `psycopg==3.2.1` (keep if you might re-add later).
+5. **Env `.env.example:20-25`** → delete `DB_*` lines (keep `DB_NAME` if you keep SQLite path).
+6. **Migrations** `python manage.py migrate` works on SQLite — but `pgvector` extension `CREATE EXTENSION vector` will fail if you had vector fields; this starter has none, so no change.
+7. **Check** `make check && python manage.py dbshell` — should open SQLite.
+
+### Drop Redis Caching (use local memory / dummy)
+
+> `CACHES` is `django_redis` + `SESSION_ENGINE cache`. Live logs `dashboard/live_logs.py` falls back to in-memory `deque` when Redis is down — it stays live without Redis.
+
+1. **Settings `project/settings/base.py:292-310`** → replace `if not TESTING: CACHES = {django_redis}` with dummy/local:
+   ```python
+   CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+   # or Dummy: "django.core.cache.backends.dummy.DummyCache"
+   ```
+   Change `SESSION_ENGINE = "django.contrib.sessions.backends.cache"` → `"django.contrib.sessions.backends.db"` (DB sessions, no Redis).
+2. **Settings `project/settings/base.py:313-343` Celery** → already handled in `Celery guide.md` removal (delete `CELERY_BROKER_URL/RESULT_BACKEND` or point to `memory://` for eager only).
+3. **Docker `docker-compose.yml:49`** → delete `redis` service (7 lines: `redis:7-alpine`, `redis_data` volume, `healthcheck redis-cli -a`), delete `redis_data` from `volumes`, remove `redis` from every `depends_on` (`web`, `celery_*`). `docker-compose.prod.yml` → delete `redis: ports: !reset []`.
+4. **Requirements `requirements.txt:60-63`** → delete `redis==4.6.0`, `django-redis==5.4.0`, `msgpack==1.1.2` (keep `celery` if you keep Celery with `memory` broker — but Celery without Redis needs `CELERY_TASK_ALWAYS_EAGER=True`).
+5. **Live logs** No change — `dashboard/live_logs.py` tries `get_redis_connection("default").lpush` and falls back to `deque` if `Exception` → works without Redis (single-process only, as documented).
+6. **Common** `common/decorators.py:6 cache_result`, `common/pagination.py:13 OptimizedPagination`, `common/middleware.py:175 RateLimit cache.get/set`, `common/permissions.py:11 RateLimitPermission cache`, `common/views.py:462 CachedViewSet cache_page`, `notifications/tasks.py:171-186 get_unread_count/delete/set` — all degrade to `LocMemCache`/`DummyCache` (e.g. `CachedViewSet` no-op) — no code change, just `CACHES` switch.
+7. **Env `.env.example:32-34`** → delete `REDIS_HOST/PORT/PASSWORD` (`33-36`), `REDIS_URL`, `CACHE_URL`, `CELERY_BROKER_URL` (or keep `CACHE_URL=locmem://` comment).
+7. **Check** `make check && docker compose config > /dev/null`.
+
+### Drop Both (pure SQLite + LocMemCache + Eager Celery)
+
+Combine above: `DATABASES` → SQLite, `CACHES` → `LocMemCache`, `CELERY_TASK_ALWAYS_EAGER=True` in `base.py` (already when `TESTING`), delete `db` + `redis` services from both compose files, delete `psycopg` + `redis` + `django-redis` + `msgpack` + `flower`/`celery` if desired. `make test` still passes (`TESTING` SQLite path). No code change in `common/models.py` — `UUIDModel` works on SQLite.

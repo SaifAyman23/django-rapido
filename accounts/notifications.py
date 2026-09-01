@@ -11,11 +11,9 @@ from typing import List
 from django.conf import settings
 from django.contrib.auth import get_user_model
 
-from common.helpers import (
-    send_template_email as _send_template_email,
-    send_password_reset_email as _send_password_reset_email,
-    send_verification_email as _send_verification_email,
-)
+from common.helpers import send_password_reset_email as _send_password_reset_email
+from common.helpers import send_template_email as _send_template_email
+from common.helpers import send_verification_email as _send_verification_email
 
 logger = logging.getLogger(__name__)
 User = get_user_model()

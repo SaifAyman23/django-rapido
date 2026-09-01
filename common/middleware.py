@@ -1,9 +1,10 @@
 """
-Common middleware classes
+REUSE: Common middleware — all 13 classes are project-agnostic.
 
-All middleware classes documented in the Middleware guide, implemented using
-Django's MiddlewareMixin with process_request / process_response / process_view /
-process_exception hooks.
+Enable selectively in settings/base.py MIDDLEWARE.
+Active by default: RequestLogging + PerformanceMonitoring + SecurityHeaders + RequestEnhancement.
+Opt-in: RateLimit, AuditLogging, ErrorHandling, APIVersion, Timezone, CORSMiddleware, CacheControl.
+See guides/common/Middleware guide.md + docs/examples/state_machine.md.
 """
 
 from __future__ import annotations
@@ -163,7 +164,9 @@ class RateLimitMiddleware(MiddlewareMixin):
     def __init__(self, get_response):
         super().__init__(get_response)
 
-    def process_view(self, request: HttpRequest, view_func: Any, view_args: Any, view_kwargs: Any) -> Optional[HttpResponse]:
+    def process_view(
+        self, request: HttpRequest, view_func: Any, view_args: Any, view_kwargs: Any
+    ) -> Optional[HttpResponse]:
         """Check rate limit after authentication is available"""
         tier = self.get_user_tier(request.user)
         limit, window = self.RATE_LIMITS[tier]
@@ -260,7 +263,9 @@ class ErrorHandlingMiddleware(MiddlewareMixin):
     def __init__(self, get_response):
         super().__init__(get_response)
 
-    def process_exception(self, request: HttpRequest, exception: Exception) -> Optional[JsonResponse]:
+    def process_exception(
+        self, request: HttpRequest, exception: Exception
+    ) -> Optional[JsonResponse]:
         """Handle and log exceptions, return structured JSON error"""
         from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 

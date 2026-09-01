@@ -1,0 +1,84 @@
+[tool.black]
+line-length = 100
+target-version = ["py313"]
+include = '\.pyi?$'
+extend-exclude = '''/(
+  migrations
+  | .venv
+  | venv
+  | .git
+  | staticfiles
+  | media
+)/'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+src_paths = ["."]
+known_first_party = ["project", "accounts", "common", "notifications", "compliance", "contacts", "dashboard"]
+skip = ["migrations", "venv", ".venv"]
+
+[tool.flake8]
+max-line-length = 100
+# REUSE: relaxed for template — many unused imports are intentional re-exports
+extend-ignore = ["E203", "W503", "E501", "F401", "E402", "W292"]
+exclude = ["migrations", "venv", ".venv", ".git", "__pycache__", "staticfiles", "media", "node_modules", "tests"]
+per-file-ignores = ["__init__.py:F401", "common/decorators.py:F821", "common/admin.py:E722"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = false
+warn_unused_configs = false
+ignore_missing_imports = true
+exclude = ["migrations", "venv", ".venv", "node_modules"]
+[[tool.mypy.overrides]]
+module = [
+  "common.*",
+  "accounts.*",
+  "contacts.*",
+  "notifications.*",
+  "compliance.*",
+  "project.settings.*",
+  "dashboard.*",
+]
+ignore_errors = true
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "project.settings"
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Tests"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers --strict-config"
+markers = ["slow: slow tests", "integration: integration tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+  "*/migrations/*",
+  "*/tests/*",
+  "*/venv/*",
+  "*/.venv/*",
+  "manage.py",
+  "*/settings/*",
+  "*/wsgi.py",
+  "*/asgi.py",
+]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+  "class .*\\bProtocol\\):",
+  "@(abc\\.)?abstractmethod",
+]
+fail_under = 40
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "htmlcov"

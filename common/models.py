@@ -1,29 +1,31 @@
 """
-Ultimate reusable abstract models, managers, and mixins
-Provides production-grade base classes for rapid development with:
-- UUID primary keys
-- Soft deletes
-- Change tracking
-- Time-based queries
-- Audit logging
-- Performance optimization
+REUSE: Ultimate abstract models — copy verbatim to any project.
+
+Every model inherits TimestampedModel + UUIDModel (MRO matters):
+    class MyModel(TimestampedModel, UUIDModel): ...
+
+Provides: UUID PK, Timestamps, SoftDelete, ChangeTracking, Publishable,
+SEOModel, CustomUser (email USERNAME_FIELD), AuditLog.
+From ras-elbar-go/backend/common/models.py — project-agnostic.
+
+REUSE: All 8 bases are opt-in mixins — compose per model.
 """
 
+import logging
+import uuid
 from datetime import timedelta
 from typing import Any, Dict, Optional, Tuple
 
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
-from django.db.models import QuerySet, Manager, Q
+from django.db.models import Manager, Q, QuerySet
+from django.db.models.signals import post_delete, post_save, pre_save
+from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db.models.signals import post_save, post_delete, pre_save
-from django.dispatch import receiver
-import uuid
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -32,47 +34,48 @@ logger = logging.getLogger(__name__)
 # Custom Managers
 # ===========================
 
+
 class SoftDeleteQuerySet(QuerySet):
-    """QuerySet for soft-deleted models"""
+    """QuerySet that implements soft-delete semantics."""
 
     def delete(self) -> Tuple[int, Dict[str, int]]:
-        """Soft delete records"""
+        """Soft-delete records by stamping deleted_at."""
         return self.update(deleted_at=timezone.now())
 
     def restore(self) -> int:
-        """Restore soft-deleted records"""
+        """Restore soft-deleted records by clearing deleted_at."""
         return self.update(deleted_at=None)
 
     def active(self) -> "SoftDeleteQuerySet":
-        """Return only active (non-deleted) records"""
+        """Return only active (non-deleted) records."""
         return self.filter(deleted_at__isnull=True)
 
     def deleted(self) -> "SoftDeleteQuerySet":
-        """Return only deleted records"""
+        """Return only soft-deleted records."""
         return self.filter(deleted_at__isnull=False)
 
     def all_including_deleted(self) -> "SoftDeleteQuerySet":
-        """Return all records including deleted"""
+        """Return all records including soft-deleted ones."""
         return self.all()
 
 
 class SoftDeleteManager(Manager):
-    """Manager for soft-deleted models"""
+    """Manager that hides soft-deleted records by default."""
 
     def get_queryset(self) -> SoftDeleteQuerySet:
-        """Override to filter out deleted records by default"""
+        """Return a queryset excluding soft-deleted records."""
         return SoftDeleteQuerySet(self.model, using=self._db).active()
 
     def all_with_deleted(self) -> SoftDeleteQuerySet:
-        """Include deleted records in query"""
+        """Return a queryset including soft-deleted records."""
         return SoftDeleteQuerySet(self.model, using=self._db).all_including_deleted()
 
     def deleted(self) -> SoftDeleteQuerySet:
-        """Return only deleted records"""
+        """Return only soft-deleted records."""
         return SoftDeleteQuerySet(self.model, using=self._db).deleted()
 
     def restore_all(self) -> int:
-        """Restore all deleted records"""
+        """Restore all soft-deleted records in the table."""
         return self.all_with_deleted().filter(deleted_at__isnull=False).restore()
 
 
@@ -157,6 +160,7 @@ class TimestampedManager(Manager):
 # ===========================
 # Abstract Base Models
 # ===========================
+
 
 class UUIDModel(models.Model):
     """Base model with UUID primary key"""
@@ -372,6 +376,7 @@ class SEOModel(TimestampedModel):
 # Custom User Model
 # ===========================
 
+
 class CustomUser(AbstractUser, UUIDModel):
     """Custom user model with email as the unique identifier"""
 
@@ -414,21 +419,21 @@ class CustomUser(AbstractUser, UUIDModel):
     last_login_at = models.DateTimeField(null=True, blank=True)
 
     groups = models.ManyToManyField(
-        'auth.Group',
-        verbose_name=_('groups'),
+        "auth.Group",
+        verbose_name=_("groups"),
         blank=True,
-        help_text=_('The groups this user belongs to.'),
-        related_name='customuser_set',
-        related_query_name='customuser',
+        help_text=_("The groups this user belongs to."),
+        related_name="customuser_set",
+        related_query_name="customuser",
     )
 
     user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        verbose_name=_('user permissions'),
+        "auth.Permission",
+        verbose_name=_("user permissions"),
         blank=True,
-        help_text=_('Specific permissions for this user.'),
-        related_name='customuser_set',
-        related_query_name='customuser',
+        help_text=_("Specific permissions for this user."),
+        related_name="customuser_set",
+        related_query_name="customuser",
     )
 
     objects = CustomUserManager()
@@ -483,6 +488,7 @@ def log_user_creation(sender, instance, created, **kwargs):
 # Audit Trail Model
 # ===========================
 
+
 class AuditLog(TimestampedModel, UUIDModel):
     """Track changes to models for compliance and debugging"""
 
@@ -503,16 +509,12 @@ class AuditLog(TimestampedModel, UUIDModel):
     content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
-        limit_choices_to=~Q(app_label='common'),  # Optional: restrict to specific apps
+        limit_choices_to=~Q(app_label="common"),  # Optional: restrict to specific apps
         null=True,
-        blank=True
+        blank=True,
     )
-    object_id = models.UUIDField(  # matches your UUID PKs
-        null=True, 
-        blank=True, 
-        db_index=True
-    )
-    content_object = GenericForeignKey('content_type', 'object_id')
+    object_id = models.UUIDField(null=True, blank=True, db_index=True)  # matches your UUID PKs
+    content_object = GenericForeignKey("content_type", "object_id")
     object_repr = models.CharField(max_length=255)
     changes = models.JSONField(default=dict)
     user = models.ForeignKey(

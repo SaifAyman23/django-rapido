@@ -14,39 +14,31 @@ import os
 from contextlib import contextmanager
 
 from django.core.exceptions import (
-    ObjectDoesNotExist,
-    MultipleObjectsReturned,
-    PermissionDenied,
-    ValidationError as DjangoValidationError,
-    FieldDoesNotExist,
-    SuspiciousOperation,
     DisallowedHost,
+    FieldDoesNotExist,
     ImproperlyConfigured,
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+    PermissionDenied,
+    SuspiciousOperation,
 )
-from django.db import (
-    IntegrityError,
-    OperationalError,
-    ProgrammingError,
-    DataError,
-    DatabaseError,
-)
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import DatabaseError, DataError, IntegrityError, OperationalError, ProgrammingError
 from django.db.models.deletion import ProtectedError, RestrictedError
 from django.http import Http404
-
 from rest_framework import status
 from rest_framework.exceptions import (
     APIException,
     AuthenticationFailed,
-    NotAuthenticated,
-    PermissionDenied as DRFPermissionDenied,
-    NotFound,
     MethodNotAllowed,
     NotAcceptable,
-    UnsupportedMediaType,
-    Throttled,
-    ValidationError as DRFValidationError,
+    NotAuthenticated,
+    NotFound,
     ParseError,
 )
+from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
+from rest_framework.exceptions import Throttled, UnsupportedMediaType
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSetMixin
 
@@ -56,6 +48,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _error_response(
     message: str,
@@ -91,6 +84,7 @@ def _error_response(
 # BaseViewSetMixin
 # ---------------------------------------------------------------------------
 
+
 class BaseViewSetMixin(ViewSetMixin):
     """
     Drop-in mixin that provides:
@@ -106,13 +100,13 @@ class BaseViewSetMixin(ViewSetMixin):
         class ArticleViewSet(BaseViewSetMixin, viewsets.ModelViewSet): ...
     """
 
-    LOG_REQUESTS: bool = True          # flip to True for debug logging
-    SAFE_DB_ERRORS: bool = True         # convert DB errors → 500 (not leaking SQL)
+    LOG_REQUESTS: bool = True  # flip to True for debug logging
+    SAFE_DB_ERRORS: bool = True  # convert DB errors → 500 (not leaking SQL)
 
     # ------------------------------------------------------------------
     # Dispatch override to ensure error handling
     # ------------------------------------------------------------------
-    
+
     def dispatch(self, request, *args, **kwargs):
         """
         Override dispatch to ensure our handle_exception is always called.
@@ -138,13 +132,14 @@ class BaseViewSetMixin(ViewSetMixin):
 
         if isinstance(exc, DRFValidationError):
             logger.debug("Validation error: %s", exc.detail)
-            
+
             # Normalize exc.detail to handle ErrorDetail objects
             def normalize_error_detail(detail):
                 """Convert ErrorDetail objects to plain strings/dicts."""
-                from rest_framework.exceptions import ErrorDetail
                 import re
-                
+
+                from rest_framework.exceptions import ErrorDetail
+
                 def unwrap_nested_errordetail(text):
                     """
                     Unwrap nested ErrorDetail string representations.
@@ -153,17 +148,17 @@ class BaseViewSetMixin(ViewSetMixin):
                     """
                     if not isinstance(text, str):
                         return text
-                    
+
                     # Pattern to match ErrorDetail string representation
                     pattern = r"ErrorDetail\(string=['\"](.+?)['\"],\s*code=['\"].*?['\"]\)"
-                    
+
                     # Keep unwrapping until no more nested ErrorDetails
                     prev_text = None
                     while prev_text != text:
                         prev_text = text
                         # Remove list brackets if present
                         text = text.strip()
-                        if text.startswith('[') and text.endswith(']'):
+                        if text.startswith("[") and text.endswith("]"):
                             text = text[1:-1].strip()
                         if text.startswith("'") and text.endswith("'"):
                             text = text[1:-1]
@@ -173,9 +168,9 @@ class BaseViewSetMixin(ViewSetMixin):
                         match = re.match(pattern, text)
                         if match:
                             text = match.group(1)
-                    
+
                     return text
-                
+
                 if isinstance(detail, list):
                     result = []
                     for item in detail:
@@ -189,22 +184,22 @@ class BaseViewSetMixin(ViewSetMixin):
                         else:
                             result.append(str(item))
                     return result
-                    
+
                 elif isinstance(detail, dict):
                     return {key: normalize_error_detail(val) for key, val in detail.items()}
-                    
+
                 elif isinstance(detail, ErrorDetail):
                     unwrapped = unwrap_nested_errordetail(str(detail))
                     return unwrapped
-                    
+
                 else:
                     # Single value (string or other)
                     if isinstance(detail, str):
                         return unwrap_nested_errordetail(detail)
                     return str(detail)
-            
+
             normalized_errors = normalize_error_detail(exc.detail)
-            
+
             return _error_response(
                 message="Invalid input.",
                 code="validation_error",
@@ -328,7 +323,7 @@ class BaseViewSetMixin(ViewSetMixin):
                 if hasattr(exc, "message_dict")
                 else {"non_field_errors": exc.messages}
             )
-            
+
             return _error_response(
                 message="Invalid input.",
                 code="validation_error",
@@ -355,22 +350,28 @@ class BaseViewSetMixin(ViewSetMixin):
         # ── Database exceptions ────────────────────────────────────────
 
         if isinstance(exc, (ProtectedError, RestrictedError)):
-            dependents = [str(obj) for obj in exc.protected_objects] if hasattr(exc, "protected_objects") else []
+            dependents = (
+                [str(obj) for obj in exc.protected_objects]
+                if hasattr(exc, "protected_objects")
+                else []
+            )
             logger.warning("Delete blocked by related objects: %s", exc)
-            if os.environ.get('TESTING') == 'True':
+            if os.environ.get("TESTING") == "True":
                 raise
             return _error_response(
                 message="Cannot delete this object because it is referenced by other records.",
                 code="protected_object",
                 status_code=status.HTTP_409_CONFLICT,
-                errors={"dependents": dependents[:10]},   # cap for safety
+                errors={"dependents": dependents[:10]},  # cap for safety
             )
 
         if isinstance(exc, IntegrityError):
             logger.error("IntegrityError: %s", exc)
-            if os.environ.get('TESTING') == 'True':
+            if os.environ.get("TESTING") == "True":
                 raise
-            msg = "A database integrity constraint was violated." if self.SAFE_DB_ERRORS else str(exc)
+            msg = (
+                "A database integrity constraint was violated." if self.SAFE_DB_ERRORS else str(exc)
+            )
             return _error_response(
                 message=msg,
                 code="integrity_error",
@@ -379,9 +380,13 @@ class BaseViewSetMixin(ViewSetMixin):
 
         if isinstance(exc, DataError):
             logger.error("DataError: %s", exc)
-            if os.environ.get('TESTING') == 'True':
+            if os.environ.get("TESTING") == "True":
                 raise
-            msg = "The provided data is invalid for the database schema." if self.SAFE_DB_ERRORS else str(exc)
+            msg = (
+                "The provided data is invalid for the database schema."
+                if self.SAFE_DB_ERRORS
+                else str(exc)
+            )
             return _error_response(
                 message=msg,
                 code="data_error",
@@ -390,7 +395,7 @@ class BaseViewSetMixin(ViewSetMixin):
 
         if isinstance(exc, OperationalError):
             logger.critical("DB OperationalError: %s", exc, exc_info=True)
-            if os.environ.get('TESTING') == 'True':
+            if os.environ.get("TESTING") == "True":
                 raise
             return _error_response(
                 message="A database operational error occurred. Please try again later.",
@@ -400,7 +405,7 @@ class BaseViewSetMixin(ViewSetMixin):
 
         if isinstance(exc, (ProgrammingError, DatabaseError)):
             logger.critical("DB error (%s): %s", type(exc).__name__, exc, exc_info=True)
-            if os.environ.get('TESTING') == 'True':
+            if os.environ.get("TESTING") == "True":
                 raise
             return _error_response(
                 message="An unexpected database error occurred.",
@@ -417,26 +422,46 @@ class BaseViewSetMixin(ViewSetMixin):
             getattr(request, "path", "?"),
             exc,
         )
-        if os.environ.get('TESTING') == 'True':
+        if os.environ.get("TESTING") == "True":
             raise
         return _error_response(
             message="An unexpected internal error occurred.",
             code="internal_server_error",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-    
+
     # ------------------------------------------------------------------
     # Logging
     # ------------------------------------------------------------------
 
+    # REUSE: scrub sensitive keys before logging (from ras-elbar-go/backend/common/mixins.py)
+    SENSITIVE_LOG_KEYS = {
+        "password",
+        "password_confirm",
+        "old_password",
+        "new_password",
+        "code",
+        "otp",
+        "secret",
+        "token",
+        "refresh",
+    }
+
+    def _scrub_request_data(self, data):
+        """Mask sensitive values before logging."""
+        if not isinstance(data, dict):
+            return data
+        return {k: "***" if k.lower() in self.SENSITIVE_LOG_KEYS else v for k, v in data.items()}
+
     def initial(self, request, *args, **kwargs):
         if self.LOG_REQUESTS:
+            safe_data = self._scrub_request_data(getattr(request, "data", {}))
             logger.debug(
                 "→ %s %s | user=%s | data=%s",
                 request.method,
                 request.path,
                 getattr(request.user, "pk", "anon"),
-                request.data,
+                safe_data,
             )
         super().initial(request, *args, **kwargs)
 
@@ -470,7 +495,7 @@ class BaseViewSetMixin(ViewSetMixin):
         try:
             yield
         except Exception as exc:
-            raise exc   # bubbles up to handle_exception via dispatch()
+            raise exc  # bubbles up to handle_exception via dispatch()
 
     # ------------------------------------------------------------------
     # get_queryset / get_object — safe wrappers
@@ -508,13 +533,13 @@ class BaseViewSetMixin(ViewSetMixin):
 
     def perform_create(self, serializer):
         self.before_perform_create(serializer)
-        
+
         all_kwargs = {**self.get_create_kwargs(serializer)}
-        model = serializer.Meta.model   
-        if hasattr(model, 'created_by'):
-            all_kwargs['created_by'] = self.request.user
-        if hasattr(model, 'updated_by'):
-            all_kwargs['updated_by'] = self.request.user
+        model = serializer.Meta.model
+        if hasattr(model, "created_by"):
+            all_kwargs["created_by"] = self.request.user
+        if hasattr(model, "updated_by"):
+            all_kwargs["updated_by"] = self.request.user
 
         instance = serializer.save(**all_kwargs)
         self.after_perform_create(instance, serializer)
@@ -541,10 +566,10 @@ class BaseViewSetMixin(ViewSetMixin):
     def perform_update(self, serializer):
         self.before_perform_update(serializer)
 
-        all_kwargs = {**self.get_update_kwargs(serializer)} 
-        model = serializer.Meta.model   
-        if hasattr(model, 'updated_by'):
-            all_kwargs['updated_by'] = self.request.user
+        all_kwargs = {**self.get_update_kwargs(serializer)}
+        model = serializer.Meta.model
+        if hasattr(model, "updated_by"):
+            all_kwargs["updated_by"] = self.request.user
 
         instance = serializer.save(**all_kwargs)
         self.after_perform_update(instance, serializer)

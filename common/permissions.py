@@ -7,10 +7,10 @@ Comprehensive set of permission classes for DRF projects.
 import logging
 from typing import Any, Callable, List, Optional, Tuple, Type
 
-from django.core.cache import cache
 from django.contrib.auth.models import Group, Permission
+from django.core.cache import cache
 from django.db.models import Model
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.request import Request
 from rest_framework.views import View
 
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # 1. Authentication Permissions
 # =============================================================================
+
 
 class IsAuthenticated(BasePermission):
     """User must be authenticated."""
@@ -47,6 +48,7 @@ class IsAuthenticatedOrReadOnly(BasePermission):
 # =============================================================================
 # 2. Role-Based Permissions
 # =============================================================================
+
 
 class IsAdmin(BasePermission):
     """User must be admin/staff (is_staff)."""
@@ -86,15 +88,13 @@ class HasPermission(BasePermission):
             return False
         if not self.required_permissions:
             return True
-        return all(
-            request.user.has_perm(perm)
-            for perm in self.required_permissions
-        )
+        return all(request.user.has_perm(perm) for perm in self.required_permissions)
 
 
 # =============================================================================
 # 3. Ownership Permissions
 # =============================================================================
+
 
 class IsOwner(BasePermission):
     """User must be the object owner (object-level)."""
@@ -152,6 +152,7 @@ class IsOwnerOrAdmin(BasePermission):
 # 4. HTTP Method Permissions
 # =============================================================================
 
+
 class IsReadOnly(BasePermission):
     """Only allow safe methods (GET, HEAD, OPTIONS)."""
 
@@ -177,6 +178,7 @@ class AllowPost(BasePermission):
 # 5. Complex Permissions
 # =============================================================================
 
+
 class MultiplePermissionsRequired(BasePermission):
     """Require all specified permissions (AND logic)."""
 
@@ -185,16 +187,12 @@ class MultiplePermissionsRequired(BasePermission):
     def has_permission(self, request: Request, view: View) -> bool:
         if not self.permissions:
             return True
-        return all(
-            perm().has_permission(request, view) for perm in self.permissions
-        )
+        return all(perm().has_permission(request, view) for perm in self.permissions)
 
     def has_object_permission(self, request: Request, view: View, obj: Model) -> bool:
         if not self.permissions:
             return True
-        return all(
-            perm().has_object_permission(request, view, obj) for perm in self.permissions
-        )
+        return all(perm().has_object_permission(request, view, obj) for perm in self.permissions)
 
 
 class AnyPermissionRequired(BasePermission):
@@ -205,21 +203,18 @@ class AnyPermissionRequired(BasePermission):
     def has_permission(self, request: Request, view: View) -> bool:
         if not self.permissions:
             return True
-        return any(
-            perm().has_permission(request, view) for perm in self.permissions
-        )
+        return any(perm().has_permission(request, view) for perm in self.permissions)
 
     def has_object_permission(self, request: Request, view: View, obj: Model) -> bool:
         if not self.permissions:
             return True
-        return any(
-            perm().has_object_permission(request, view, obj) for perm in self.permissions
-        )
+        return any(perm().has_object_permission(request, view, obj) for perm in self.permissions)
 
 
 # =============================================================================
 # 6. Rate Limiting Permission
 # =============================================================================
+
 
 class RateLimitPermission(BasePermission):
     """Rate limiting based on user tier.
@@ -274,6 +269,7 @@ class RateLimitPermission(BasePermission):
 # 7. Custom Permission Rule
 # =============================================================================
 
+
 class CustomPermissionRule(BasePermission):
     """Apply a pluggable callable to determine access."""
 
@@ -299,8 +295,63 @@ class CustomPermissionRule(BasePermission):
 
 
 # =============================================================================
-# 8. Permission Factories
+# 8. Role-Based Permissions (generic)
+# REUSE: Generic role check — works with any CustomUser.role TextChoices.
+# Ras-elbar-go used: customer/deliveryman/ops. Replace roles for your domain.
+# Example: create_role_permission("seller"), create_role_permission("admin")
 # =============================================================================
+
+
+def create_role_permission(role_name: str) -> type:
+    """Factory to create a permission for a specific role value.
+
+    Usage:
+        IsSeller = create_role_permission("seller")
+        IsAdminRole = create_role_permission("admin")
+
+    Requires CustomUser.role field.
+    """
+
+    class RolePermission(BasePermission):
+        allowed_role = role_name
+
+        def has_permission(self, request: Request, view: View) -> bool:
+            return bool(
+                request.user
+                and request.user.is_authenticated
+                and getattr(request.user, "role", None) == self.allowed_role
+            )
+
+    RolePermission.__name__ = f"Is{role_name.title().replace('_', '')}Role"
+    RolePermission.__qualname__ = RolePermission.__name__
+    return RolePermission
+
+
+class IsOnboardingCompleted(BasePermission):
+    """User has completed onboarding/profile. REUSE as ProfileCompleted guard.
+
+    Checks CustomUser.onboarding_completed — add this BooleanField if you
+    use multi-step onboarding. Returns True if field missing (backward compatible).
+    """
+
+    message = "Onboarding not completed."
+
+    def has_permission(self, request: Request, view: View) -> bool:
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return bool(getattr(request.user, "onboarding_completed", True))
+
+
+# REUSE: Example role permissions (uncomment & rename for your domain):
+# IsCustomer = create_role_permission("customer")
+# IsSeller = create_role_permission("seller")
+# IsOpsStaff = create_role_permission("ops")  # or combine with IsAdmin via combine_permissions
+
+
+# =============================================================================
+# 9. Permission Factories
+# =============================================================================
+
 
 def create_group_permission(group_name: str) -> type:
     """Factory to create a permission class for a specific group."""

@@ -1,4 +1,4 @@
-# Dockerfile (Production - Django 5.2, Python 3.13, Feb 2026)
+# Dockerfile (Production - Django 5.2, Python 3.13)
 FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -9,12 +9,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies + Node.js (for Tailwind)
+# REUSE: remove nodejs/npm if your project has no frontend build
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     netcat-openbsd \
     curl \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
@@ -25,8 +28,7 @@ COPY requirements.txt .
 COPY package.json .
 RUN npm install
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install gunicorn
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 COPY . .
@@ -47,7 +49,7 @@ USER appuser
 
 EXPOSE 8000
 
-# HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-#     CMD curl -f http://localhost:8000/ || exit 1
+# Default command (overridden by docker-compose command:)
+CMD ["gunicorn", "project.wsgi:application", "--bind", "0.0.0.0:8000"]
 
 ENTRYPOINT ["/entrypoint.sh"]

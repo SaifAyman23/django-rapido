@@ -29,8 +29,8 @@ db.sqlite3
 db.sqlite3-journal
 /media/
 /staticfiles/
-/static/
-*.pyc
+# /static/ source is tracked — only collected /staticfiles/ is ignored
+# Live logs assets: static/dashboard/live_logs.* + static/fonts/JetBrainsMono-Regular.woff2 are committed
 
 # ===========================
 # IDEs & Editors
@@ -181,3 +181,6 @@ google-services.json
 careerly-b163c-firebase-adminsdk-fbsvc-767e1de7cc.json
 
 recommendation/
+# mypy
+.mypy_cache/
+

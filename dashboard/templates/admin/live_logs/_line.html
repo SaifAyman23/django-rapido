@@ -1,0 +1,10 @@
+{# included via JS, not Django include — kept for reference #}
+<div class="live-line flex gap-3 hover:bg-white/5 px-2 py-0.5 rounded cursor-pointer" data-status="{{ status }}" data-path="{{ path }}">
+  <span class="text-gray-500 shrink-0">{{ ts }}</span>
+  <span class="shrink-0">{{ method }}</span>
+  <span class="shrink-0 truncate">{{ path }}</span>
+  <span class="shrink-0 font-bold {% if status >= 500 %}text-red-400{% elif status >= 400 %}text-amber-300{% elif status >= 300 %}text-blue-400{% else %}text-green-400{% endif %}">{{ status }}</span>
+  <span class="text-gray-400">{{ duration }}ms</span>
+  <span class="truncate">{{ msg }}</span>
+</div>
+{% if cause %}<div class="text-amber-300 pl-6 truncate">{{ cause }}</div>{% endif %}

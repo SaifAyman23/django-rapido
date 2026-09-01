@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
 
-if [ "$CONTAINER_ROLE" = "web" ]; then
+# REUSE: Only web runs migrations + collectstatic + superuser.
+# Worker/beat/flower receive their own command via docker-compose.
+if [ "${CONTAINER_ROLE:-web}" = "web" ]; then
     python manage.py migrate --noinput
     python manage.py collectstatic --noinput
-
-    exec gunicorn project.wsgi:application \
-        --bind 0.0.0.0:${PORT:-8000}
+    python manage.py createsuperuser --noinput || true
 fi
 
 exec "$@"

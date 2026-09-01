@@ -1,9 +1,14 @@
-import logging
+"""Reusable view and function decorators.
+
+Provides permission checks, logging, caching, and retry helpers for API views.
+"""
+
 import hashlib
+import logging
+from functools import wraps
+from typing import Callable, List, TypeVar
 
 from django.core.cache import cache
-from typing import TypeVar, Callable, List
-from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -14,8 +19,10 @@ T = TypeVar("T")
 # Permission & Auth Decorators
 # ===========================
 
+
 def check_permissions(required_permissions: List[str]):
-    """Decorator to check multiple permissions"""
+    """Require specific Django permissions before calling the view method."""
+
     def decorator(func):
         @wraps(func)
         def wrapper(self, request, *args, **kwargs):
@@ -28,22 +35,27 @@ def check_permissions(required_permissions: List[str]):
                     raise PermissionDenied(f"Permission {perm} required")
 
             return func(self, request, *args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
 def check_object_permissions(func):
-    """Decorator to check object-level permissions"""
+    """Enforce object-level permissions using the view's check_object_permissions."""
+
     @wraps(func)
     def wrapper(self, request, *args, **kwargs):
         obj = self.get_object()
         self.check_object_permissions(request, obj)
         return func(self, request, *args, **kwargs)
+
     return wrapper
 
 
 def log_action(action_type: str):
-    """Decorator to log view actions"""
+    """Log the view action with user and request metadata for auditing."""
+
     def decorator(func):
         @wraps(func)
         def wrapper(self, request, *args, **kwargs):
@@ -56,14 +68,18 @@ def log_action(action_type: str):
                 },
             )
             return func(self, request, *args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 # ===========================
 # Caching Decorators
 # ===========================
 def cache_result(timeout: int = 300):
-    """Cache function result"""
+    """Cache the function's return value for the given timeout in seconds."""
+
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
         def wrapper(*args, **kwargs) -> T:
@@ -94,7 +110,8 @@ def cache_result(timeout: int = 300):
 
 
 def cache_per_request():
-    """Cache result per request"""
+    """Memoize the result per-request instance to avoid duplicate work."""
+
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
         def wrapper(self, request, *args, **kwargs) -> T:
@@ -114,7 +131,8 @@ def cache_per_request():
 
 
 def retry_on_exception(max_retries: int = 3, delay: float = 1.0):
-    """Retry function on exception"""
+    """Retry the function on exception with exponential backoff."""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -131,7 +149,8 @@ def retry_on_exception(max_retries: int = 3, delay: float = 1.0):
                     )
 
                     import time
-                    time.sleep(delay * (2 ** attempt))  # Exponential backoff
+
+                    time.sleep(delay * (2**attempt))  # Exponential backoff
 
         return wrapper
 
@@ -139,7 +158,7 @@ def retry_on_exception(max_retries: int = 3, delay: float = 1.0):
 
 
 def memoize(func: Callable[..., T]) -> Callable[..., T]:
-    """Memoize function results (in-memory cache)"""
+    """In-memory memoization for pure functions within the process lifetime."""
     cache_dict = {}
 
     @wraps(func)
@@ -155,4 +174,3 @@ def memoize(func: Callable[..., T]) -> Callable[..., T]:
     wrapper.clear_cache = cache_dict.clear
 
     return wrapper
-

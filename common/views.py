@@ -9,33 +9,33 @@ Provides production-grade viewsets with:
 - Custom actions
 """
 
-from typing import Any, Dict, Optional, List
-from functools import wraps
-
-from rest_framework import viewsets, status, filters
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
-from rest_framework.exceptions import ValidationError, PermissionDenied
-from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import QuerySet, Prefetch
-from django.db import transaction
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-from django.core.paginator import Paginator
-from .mixins import BaseViewSetMixin
 import logging
-from .decorators import log_action
+from functools import wraps
+from typing import Any, Dict, List, Optional
+
+from django.core.paginator import Paginator
+from django.db import transaction
+from django.db.models import Prefetch, QuerySet
+from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
+from django.views.decorators.cache import cache_page
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+
+from .decorators import log_action
+from .mixins import BaseViewSetMixin
 
 logger = logging.getLogger(__name__)
-
-
 
 
 # ===========================
 # Base ViewSets
 # ===========================
+
 
 class BaseViewSet(BaseViewSetMixin, viewsets.ModelViewSet):
     """
@@ -200,10 +200,12 @@ class SoftDeleteViewSet(BaseViewSet):
 
         logger.info(f"Bulk restored {count} {self.basename}", extra={"user_id": request.user.id})
 
-        return Response({
-            "message": f"Successfully restored {count} records",
-            "count": count,
-        })
+        return Response(
+            {
+                "message": f"Successfully restored {count} records",
+                "count": count,
+            }
+        )
 
 
 class PublishableViewSet(BaseViewSet):
@@ -241,7 +243,9 @@ class PublishableViewSet(BaseViewSet):
         instance.unpublish()
         serializer = self.get_serializer(instance)
 
-        logger.info(f"Unpublished {self.basename}: {instance.id}", extra={"user_id": request.user.id})
+        logger.info(
+            f"Unpublished {self.basename}: {instance.id}", extra={"user_id": request.user.id}
+        )
 
         return Response(serializer.data)
 
@@ -279,10 +283,12 @@ class RatableViewSet(BaseViewSet):
                 extra={"user_id": request.user.id},
             )
 
-            return Response({
-                "message": "Rating saved",
-                "rating": new_rating,
-            })
+            return Response(
+                {
+                    "message": "Rating saved",
+                    "rating": new_rating,
+                }
+            )
         except ValueError as e:
             raise ValidationError({"rating": str(e)})
 
@@ -290,6 +296,7 @@ class RatableViewSet(BaseViewSet):
 # ===========================
 # Bulk Operation ViewSet
 # ===========================
+
 
 class BulkOperationViewSet(BaseViewSet):
     """ViewSet with bulk create/update/delete support"""
@@ -371,15 +378,18 @@ class BulkOperationViewSet(BaseViewSet):
             extra={"user_id": request.user.id},
         )
 
-        return Response({
-            "message": f"Successfully deleted {count} records",
-            "count": count,
-        })
+        return Response(
+            {
+                "message": f"Successfully deleted {count} records",
+                "count": count,
+            }
+        )
 
 
 # ===========================
 # User ViewSet
 # ===========================
+
 
 class UserViewSet(BaseViewSet):
     """Complete user management viewset"""
@@ -448,6 +458,7 @@ class UserViewSet(BaseViewSet):
 # Caching & Performance
 # ===========================
 
+
 class CachedViewSet(BaseViewSet):
     """ViewSet with caching support"""
 
@@ -462,7 +473,7 @@ class CachedViewSet(BaseViewSet):
     def clear_cache(self, request) -> Response:
         """Clear cache for this viewset"""
         from django.core.cache import cache
-        
+
         if not request.user.is_staff:
             raise PermissionDenied("Only staff can clear cache")
 
@@ -476,15 +487,16 @@ class CachedViewSet(BaseViewSet):
 # Current User Owner Mixin
 # ===========================
 
+
 class CurrentUserOwnerMixin:
     """
     Mixin for viewsets that should only return/modify the current user's own objects.
-    
+
     Provides:
     - get_queryset: Filters to current user
     - perform_create: Automatically sets user on save
     - me action: Returns current user's object or 404
-    
+
     Usage:
         class MyObjectViewSet(CurrentUserOwnerMixin, BaseViewSet):
             queryset = MyModel.objects.select_related("user")
@@ -520,7 +532,4 @@ class CurrentUserOwnerMixin:
             serializer = self.get_serializer(obj)
             return Response(serializer.data)
         except self.queryset.model.DoesNotExist:
-            return Response(
-                {"detail": _("Not found.")},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"detail": _("Not found.")}, status=status.HTTP_404_NOT_FOUND)

@@ -1,0 +1,144 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  quality:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Black — format check
+        run: black --check --line-length=100 .
+
+      - name: isort — import order check
+        run: isort --check-only --profile=black --line-length=100 .
+
+      - name: Flake8 — lint
+        run: flake8 --max-line-length=100 --extend-ignore=E203,W503 --exclude=migrations,venv,.venv,.git,__pycache__,staticfiles,media,node_modules .
+
+      - name: Mypy — type check
+        run: mypy --ignore-missing-imports .
+
+  test:
+    name: Tests + Coverage
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DJANGO_ENVIRONMENT: local
+      TESTING: "True"
+      SECRET_KEY: ci-only-insecure-secret-key
+      DB_NAME: test_db
+      DB_USER: test_user
+      DB_PASSWORD: test_password
+      DB_HOST: localhost
+      DB_PORT: 5432
+      CACHE_URL: redis://localhost:6379/1
+      CELERY_BROKER_URL: redis://localhost:6379/0
+      CELERY_RESULT_BACKEND: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Django system check
+        run: python manage.py check
+
+      - name: Check migrations — no missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Run tests with coverage
+        run: pytest --cov=. --cov-report=term-missing --cov-report=xml --cov-fail-under=40
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+
+  deploy-check:
+    name: Deploy Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate docker-compose (dev)
+        run: docker compose config > /dev/null
+
+      - name: Validate docker-compose (prod)
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml config > /dev/null
+
+      - name: Check Dockerfile exists
+        run: test -f Dockerfile && test -f .dockerignore
+
+      - name: Check nginx configs
+        run: test -f nginx.conf && test -f nginx.prod.conf
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Audit dependencies
+        run: pip-audit --desc --requirement requirements.txt || true
+
+      - name: Check no secrets in code
+        run: |
+          ! grep -r "SECRET_KEY.*=" --include="*.py" project/ | grep -v "os.getenv" | grep -v "testing-only" || (echo "Hardcoded SECRET_KEY found" && exit 1)
+          echo "No hardcoded secrets"

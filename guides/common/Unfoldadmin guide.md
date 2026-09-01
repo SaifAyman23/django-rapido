@@ -263,6 +263,46 @@ class GroupAdmin(BaseGroupAdmin):
 - Search by group name
 - Clean, minimal display
 
+### TranslationBaseAdmin (REUSE — en/ar)
+
+For models with translatable fields via `django-modeltranslation`.
+
+```python
+from common.unfold_admin_bases import TranslationBaseAdmin
+
+# translation.py already registered FAQ
+from modeltranslation.translator import translator, TranslationOptions
+class FAQTranslationOptions(TranslationOptions): fields = ("question", "answer")
+translator.register(FAQ, FAQTranslationOptions)
+
+@admin.register(FAQ)
+class FAQAdmin(TranslationBaseAdmin):
+    # Tabs per language auto-added
+    list_display = ["question_preview", ...]
+
+@admin.register(ComplianceDocument)
+class ComplianceDocumentAdmin(MarkdownAdminMixin, TranslationBaseAdmin):
+    # REUSE: MarkdownAdminMixin + TranslationBaseAdmin MRO
+    pass
+```
+
+Requires `modeltranslation` before `admin` in `INSTALLED_APPS` + `MODELTRANSLATION_*` in `base.py:206`. See `guides/i18n guide.md`.
+
+### MarkdownAdminMixin (REUSE — Markdown docs)
+
+```python
+from common.admin_mixins import MarkdownAdminMixin
+from common.unfold_admin_bases import BaseAdmin
+
+@admin.register(MyModel)
+class MyModelAdmin(MarkdownAdminMixin, BaseAdmin):
+    # Auto-applies AdminMarkdownxWidget to all TextFields
+    pass
+# Requires markdownx in INSTALLED_APPS + path('markdownx/', include('markdownx.urls'))
+```
+
+Use for `compliance` legal docs; avoid on plain-text answers (use `TranslationBaseAdmin` alone).
+
 ---
 
 ## Display Methods

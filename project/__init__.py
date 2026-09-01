@@ -1,3 +1,8 @@
+"""Project package.
+
+Ensures the Celery app is loaded on Django startup so shared tasks register correctly.
+"""
+
 # This forces the Celery app to be loaded whenever Django starts.
 # Without this, @shared_task decorators on tasks may not register correctly
 # because the Celery app hasn't been initialized before the worker

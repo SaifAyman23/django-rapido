@@ -13,9 +13,10 @@
 
 ```
 Name:        [Project Name]
-Stack:       Django 5 + DRF, Celery + Redis, PostgreSQL 16, JWT Auth
-Auth:        JWT (simplejwt), email+password
-No WebSockets — all real-time updates via push notifications (if applicable)
+Stack:       Django 5.2 + DRF 3.16, Celery 5.4 + Redis 7, PostgreSQL 17 + pgvector, JWT Auth
+Auth:        JWT (simplejwt) + OTP (6 digits) + Social (allauth Google/Facebook), email+password
+Push:        FCM (firebase-admin) via Celery batched 500, in-app Notification inbox
+No WebSockets — all realtime via FCM push
 ```
 
 ---
@@ -32,22 +33,44 @@ project/                     # Django project config (settings, urls, celery, ws
   urls.py                    # Root URL routing
   celery.py                  # Celery app instance
 
-accounts/                    # Authentication only — login, register, logout, token refresh
+accounts/                    # Authentication + OTP (email_verify/password_reset via OTPRecord)
+  auth/adapters.py          #   SocialAccountAdapter (allauth dedupe + auto-link)
+  models.py                 #   OTPRecord + PasswordResetToken (generic)
+  helpers.py                #   validate_credentials + generate_otp/validate_otp
+  tasks.py                  #   send_verification_email (Celery)
   filters.py                #   FilterSets for query param filtering
   serializers.py             #   All serializers for this app
-  views.py                  #   All viewsets for this app
+  views.py                  #   All viewsets for this app (register/verify/reset)
   urls.py                   #   URL routing
   admin.py                  #   Django admin configuration
   helpers.py                #   Pure helper functions
 
+dashboard/                  # Unfold admin + Live Logs (dashboard/live_logs.py: in-memory SSE 500, JWT diagnostics)
+  live_logs.py              #   LiveLogsMiddleware + live_logs_page/stream (staff-only)
+  templates/admin/live_logs.html  #   Tabs (All/2XX...5XX) + stats + insights + terminal
+
+notifications/               # Push notification engine (FCM) — generic Device + Notification
+compliance/                  # FAQ + Legal docs (translatable, Markdown)
+contacts/                    # Contact form + singleton business info (hours via BUSINESS_TIME_ZONE)
+
 common/                      # Reusable infrastructure (shared by ALL apps)
-  models.py                 #   Base models (UUIDModel, TimestampedModel, SoftDeleteModel, AuditLog)
-  mixins.py                 #   BaseViewSetMixin — central error handling, perform_* hooks
-  views.py                  #   BaseViewSet, CurrentUserOwnerMixin, BulkOperationViewSet
-  serializers.py            #   AuditableSerializer, file/image validation helpers
-  pagination.py             #   StandardPagination, LargePagination, cursor pagination
-  permissions.py            #   Permission classes (add your project-specific ones here)
-  unfold_admin_bases.py     #   BaseAdmin, BaseUserAdmin, ReadOnlyAdmin, SoftDeleteAdmin
+  models.py                 #   Base models (UUIDModel, TimestampedModel, SoftDeleteModel, ChangeTracking/Publishable/SEOModel, AuditLog) — REUSE: all bases
+  mixins.py                 #   BaseViewSetMixin — error envelope + SENSITIVE_LOG_KEYS scrubbing + perform_* hooks
+  throttles.py              #   AuthRateThrottle (IP-based, scope=auth 30/m) — REUSE for register/OTP
+  views.py                  #   BaseViewSet, CurrentUserOwnerMixin, BulkOperationViewSet, SoftDelete/Publishable/Cached
+  serializers.py            #   AuditableSerializer, file/image validation (5MB)
+  pagination.py             #   StandardPagination (10/100) + Large/Small/Cursor/Optimized
+  permissions.py            #   Generic: IsAuthenticated/IsOwner/RateLimit + create_role_permission() factory + IsOnboardingCompleted
+  filters.py                #   CharIn/UUIDIn/DateRange/Searchable/AdvancedSearch
+  exceptions.py             #   ApplicationException hierarchy + custom_exception_handler
+  constants.py              #   Enums (Status/Order/Payment), Cache/RateLimit configs
+  helpers.py                #   mask_email/phone, generate_slug, send_template_email, set_refresh_token_cookie
+  decorators.py             #   cache_result, retry_on_exception, log_action
+  middleware.py             #   RequestLogging, PerformanceMonitoring, SecurityHeaders, RateLimit, AuditLogging (REUSE)
+  unfold_admin_bases.py     #   BaseAdmin, BaseUserAdmin, ReadOnlyAdmin, SoftDeleteAdmin, TranslationBaseAdmin (en/ar)
+  admin_mixins.py           #   MarkdownAdminMixin (AdminMarkdownxWidget for TextFields)
+  admin.py                  #   CustomUserAdmin + AuditLogAdmin with Unfold badges
+  translation_utils.py      #   Translation helpers
 
 # Add your project-specific apps here, each following this structure:
 # app/
@@ -100,7 +123,7 @@ Before writing ANYTHING, check `common/` — it exists precisely to eliminate du
 | Audit log creation | `AuditLog.objects.log_action(...)` from `common.models` |
 | Role-based permissions | Permission classes from `common.permissions` |
 | File/image validation | Helpers from `common.serializers` |
-| Admin base classes | `BaseAdmin`, `BaseUserAdmin` from `common.unfold_admin_bases` |
+| Admin base classes | `BaseAdmin`, `BaseUserAdmin` from `common.unfold_admin_bases` — **MANDATORY:** every `admin.ModelAdmin` MUST inherit from `BaseAdmin` (or `ReadOnlyAdmin`/`SoftDeleteAdmin`/`BaseUserAdmin`) to enable Unfold theming. Never subclass raw `admin.ModelAdmin` directly. |
 
 If the tool you need doesn't exist in `common/`, **add it there first, then use it**. Never duplicate.
 
@@ -186,6 +209,111 @@ def __str__(self):
 - `@property` for computed fields that are cheap (no DB query).
 - Regular methods for anything that touches the DB or does work.
 - Avoid putting query logic in model methods — that belongs in managers/querysets or service functions.
+
+### 4.8 Admin Display Patterns
+
+Every admin MUST be complete — list_display should include visual indicators so ops staff
+can understand records at a glance without clicking through.
+
+#### 4.8.1 Image Tags
+
+Use `format_html` + `@display` to show thumbnail previews of ImageField/URLField:
+
+```python
+from django.utils.html import format_html
+from unfold.decorators import display
+
+@admin.register(MyModel)
+class MyModelAdmin(BaseAdmin):
+    list_display = ["image_tag", "name", ...]
+
+    @display(description="Image", ordering="image")
+    def image_tag(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-height:40px;border-radius:4px" />', obj.image.url
+            )
+        return format_html(
+            '<span style="color:var(--color-text-secondary-dark)">—</span>'
+        )
+```
+
+For models with fallback logic (uploaded file → URL), use the model's property:
+```python
+    @display(description="Image")
+    def image_tag(self, obj):
+        src = obj.display_image   # property returns image.url or image_url
+        if src:
+            return format_html('<img src="{}" style="max-height:40px;border-radius:4px" />', src)
+        return "—"
+```
+
+#### 4.8.2 Badges for Boolean / Status Fields
+
+Replace raw boolean values with coloured badges using `self.badge()` from Unfold:
+
+```python
+    list_display = [..., "is_active_badge"]
+
+    @display(description="Active", ordering="is_active")
+    def is_active_badge(self, obj):
+        if obj.is_active:
+            return self.badge("Active", "green")
+        return self.badge("Inactive", "red")
+```
+
+**Note:** `list_editable` only accepts raw field names, not badge methods.
+Never put a boolean in both `list_editable` and a badge method — use one or the other.
+
+Common badge colours: `"green"`, `"red"`, `"yellow"`, `"blue"`, `"purple"`, `"gray"`.
+
+#### 4.8.3 Markdown Editor in Admin
+
+For models with Markdown content (policies, terms, etc.), use `MarkdownAdminMixin`
+from `common.admin_mixins` alongside the admin base class:
+
+```python
+from common.admin_mixins import MarkdownAdminMixin
+from common.unfold_admin_bases import TranslationBaseAdmin
+
+@admin.register(MyModel)
+class MyModelAdmin(MarkdownAdminMixin, TranslationBaseAdmin):
+    pass
+```
+
+`MarkdownAdminMixin` auto-applies `AdminMarkdownxWidget` to **all** TextFields.
+If a model has TextFields that should NOT use Markdown (e.g. plain-text answers),
+do NOT use the mixin — keep it as a plain `TranslationBaseAdmin`.
+
+**Required setup:**
+- `"markdownx"` in `INSTALLED_APPS`
+- `path('markdownx/', include('markdownx.urls'))` in project `urls.py`
+
+#### 4.8.4 Content Previews in List
+
+For long text fields (answers, policy content), show a truncated preview:
+
+```python
+    list_display = [..., "content_preview"]
+
+    @display(description="Content")
+    def content_preview(self, obj):
+        if len(obj.content) > 80:
+            return f"{obj.content[:80]}..."
+        return obj.content
+```
+
+#### 4.8.5 Admin Checklist
+
+Every admin class should consider:
+- [ ] Image thumbnails in list_display (if model has image fields)
+- [ ] Badges for boolean/status fields instead of raw True/False
+- [ ] Content previews for long text fields
+- [ ] `search_fields` covering all user-facing text fields
+- [ ] `list_filter` on boolean, FK, and type-choice fields
+- [ ] `ordering` on the model Meta or `ordering` on the admin
+- [ ] `MarkdownAdminMixin` for models with Markdown content (otherwise plain TextField)
+
 
 ---
 
@@ -804,3 +932,32 @@ from django_celery_beat.models import PeriodicTask
 ---
 
 ## 12. Testing
+
+---
+
+## 13. Live Logs — SSE Admin Terminal (In-Memory, No DB)
+
+> Exact replica from ras-elbar-go — staff-only /admin/live-logs/ + /admin/live-logs/stream/ (see guides/Live Logs guide.md).
+
+**Architecture:** Request → LiveLogsMiddleware → deque(maxlen=500) → SSE StreamingHttpResponse → EventSource → terminal + stats + insights (retry:3000, heartbeat every 0.5s, ~100KB).
+
+**Middleware (dashboard/live_logs.py:38):** Logs every request (INFO<400 WARN<500 ERROR), duration_ms, user id/email[:24], msg METHOD path. For >=400 builds cause: exc traceback tail 800, JWT/OAuth diagnostics (Missing Authorization, scheme != Bearer, Bearer empty, Double-space, parts !=3, base64 eyJ, alg HS256/RS256, Origin missing, detail/code/messages, token_not_valid/expired hints, response.content[:300]).
+
+**Views:** live_logs_page @staff_member_required → admin.site.each_context + admin/live_logs.html (tabs + stats + insights + controls + terminal). live_logs_stream @staff_member_required → StreamingHttpResponse(text/event-stream) + Cache-Control no-cache / X-Accel-Buffering no / Content-Encoding identity, retry:3000, snapshot gap-fill, loop sleep 0.5, heartbeat.
+
+**Frontend (static/dashboard/live_logs.js:1-153):** family(status) 5xx/4xx/3xx/2xx, renderStats counts % top path/method avg, visible tab filter, color red/amber/blue/green, render row live-line flex + cause amber truncate + auto-scroll, scheduleRender 150ms debounce, EventSource /admin/live-logs/stream/?last_id retry 3s.
+
+**Styling:** @font-face JetBrains Mono woff2 92KB self-hosted, #live-logs-terminal oklch 9.5% 560px, unfold_config oklch palette + SIDEBAR Live Logs (terminal icon).
+
+**Terminal Shows Problems? Yes — every line plus cause for 4XX/5XX:** 400 amber ValidationError: address_id missing | 401 amber Missing Authorization (expected Bearer <access>) | Malformed JWT: 2 parts (expected 3) | Wrong scheme bearer (must be Bearer) | JWT expired — refresh via /users/token/refresh/  Stats/insight cards also derive live from buffer (Total/2XX...5XX counts + Error Rate/Top Path/Busiest Method/Success Rate). Tabs filter without extra fetch.
+
+**Wiring:** base.py:127 MIDDLEWARE dashboard.live_logs.LiveLogsMiddleware + urls.py:43 i18n_patterns admin/live-logs/ + admin/live-logs/stream/
+
+**Tradeoffs:** In-memory deque → Zero I/O 100KB O(1) but ephemeral (lost on restart) and single-process (4 workers each has own buffer); SSE HTTP auto-reconnect but one-way and needs proxy_read_timeout 3600s.
+
+---
+
+## 14. Git Workflow
+- Branch from main, conventional commits (e.g. accounts: add OTP verify)
+- No force push, run make quality before commit (black, isort, flake8, mypy, pytest, check)
+- Review diff for secrets, no print/debug left
