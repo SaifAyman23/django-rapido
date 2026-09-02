@@ -1,5 +1,9 @@
-<div class="flex gap-2 flex-wrap">
+<div class="flex gap-2 flex-wrap items-center">
   <button id="live-logs-pause" class="px-4 py-2 rounded-xl bg-white dark:bg-base-900 border border-base-200 dark:border-base-700 text-sm font-bold text-font-important-light dark:text-font-important-dark hover:border-base-600">Pause</button>
   <button id="live-logs-clear" class="px-4 py-2 rounded-xl bg-white dark:bg-base-900 border border-base-200 dark:border-base-700 text-sm font-bold text-font-important-light dark:text-font-important-dark hover:border-base-600">Clear</button>
+  <button id="live-logs-download" class="px-4 py-2 rounded-xl bg-white dark:bg-base-900 border border-base-200 dark:border-base-700 text-sm font-bold text-font-important-light dark:text-font-important-dark hover:border-base-600">Download</button>
+  <div class="relative ml-2">
+    <input id="live-logs-search" type="text" placeholder="Search path / cause..." class="w-64 px-3 py-2 rounded-xl bg-white dark:bg-base-900 border border-base-200 dark:border-base-700 text-sm font-mono text-font-important-light dark:text-font-important-dark placeholder:text-font-subtle-light focus:outline-none focus:border-primary-500">
+  </div>
   <span id="live-logs-status" class="ml-auto text-xs font-mono text-font-subtle-light dark:text-font-subtle-dark self-center">connecting…</span>
 </div>

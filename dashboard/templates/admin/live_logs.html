@@ -26,9 +26,19 @@
         </div>
     </div>
 
-    <!-- ═══ Tabs ═══ -->
-    <div class="mb-6">
+    <!-- ═══ Tabs — status family ═══ -->
+    <div class="mb-4">
         {% include "admin/live_logs/_tabs.html" %}
+    </div>
+
+    <!-- ═══ Role Filters — REUSE: Replace customer/deliveryman/ops with your Role choices (e.g. admin/user/guest) — sky/lime for ops/guest are oklch examples ═══ -->
+    <div id="live-logs-role-filters" class="flex gap-2 flex-wrap mb-6">
+        <button data-role="all" class="live-role active px-4 py-2 rounded-full text-sm font-mono font-bold border bg-base-100 text-base-700 dark:bg-base-800 dark:text-base-300 border-base-300 dark:border-base-700">All Roles</button>
+        {# REUSE: Example roles — change data-role + label to match your CustomUser.Role #}
+        <button data-role="customer" class="live-role px-4 py-2 rounded-full text-sm font-mono font-bold border bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border-blue-300 dark:border-blue-700">Customer</button>
+        <button data-role="deliveryman" class="live-role px-4 py-2 rounded-full text-sm font-mono font-bold border bg-purple-500/10 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 border-purple-300 dark:border-purple-700">Deliveryman</button>
+        <button data-role="ops" class="live-role px-4 py-2 rounded-full text-sm font-mono font-bold border bg-lime-500/10 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300 border-lime-300 dark:border-lime-700">Ops</button>
+        <button data-role="guest" class="live-role px-4 py-2 rounded-full text-sm font-mono font-bold border bg-white text-base-700 dark:bg-white dark:text-base-700 border-base-300 dark:border-base-300">Guest</button>
     </div>
 
     <!-- ═══ Stat Cards — dashboard KPI style ═══ -->
@@ -41,7 +51,7 @@
         {% include "admin/live_logs/_insights.html" %}
     </div>
 
-    <!-- ═══ Controls ═══ -->
+    <!-- ═══ Controls — actionable buttons above grid ═══ -->
     <div class="bg-white dark:bg-base-900 rounded-xl shadow-sm border border-base-200 dark:border-base-700 p-4 mb-6">
         {% include "admin/live_logs/_controls.html" %}
     </div>

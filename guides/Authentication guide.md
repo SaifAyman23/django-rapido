@@ -67,7 +67,12 @@ validate_credentials(email, password) -> User
   - `reset_password POST AllowAny` — `select_for_update` token, checks `attempts<5`, `set_password`, marks `is_used`
   - `me GET/PATCH`, `logout POST` (blacklist + clear cookies)
 
-## Social Login (accounts/auth/adapters.py) — REUSE
+## Social Login — Simple (Google & Facebook)
+
+**Google — has extra check, Facebook — simple as-is:**
+
+- **Google:** Send `id_token` (not `access_token`). Backend reads `aud` (audience) from token and picks the matching `SocialApp` (`client_id == aud`). If no match, returns `401 No matching Google OAuth client` instead of silently using `apps[0]`. This prevents using the wrong client secret.
+- **Facebook — simple, unchanged:** Send `access_token`. Backend uses `apps[0]` (first `SocialApp` for `facebook`) directly — no `aud` check, no PKCE. That's it.
 
 ```python
 # settings/base.py
@@ -78,11 +83,11 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 ```
 
-`SocialAccountAdapter`:
-- `list_apps()` dedupes DB + settings `APP` blocks → prevents `MultipleObjectsReturned` (DB wins)
-- `pre_social_login()` auto-links by email via `EmailAddress` or `CustomUser.email` → prevents UNIQUE violation
+`SocialAccountAdapter` (generic, no hardcoding):
+- `list_apps()` dedupes DB + settings `APP` → prevents `MultipleObjectsReturned`
+- `pre_social_login()` auto-links by email → prevents `UNIQUE` violation
 
-Enable providers by uncommenting in `base.py` + `INSTALLED_APPS` (`allauth.socialaccount.providers.google`).
+Enable by uncommenting in `base.py` + `INSTALLED_APPS` (`allauth.socialaccount.providers.google` / `facebook`).
 
 ## Throttling & Security
 

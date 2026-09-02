@@ -1,7 +1,10 @@
-"""Live log streaming for the admin.
+"""
+REUSE: Generic live logs — Redis-shared (fallback deque), SSE, JWT diagnostics.
 
-Captures request/response metadata via middleware, buffers it in Redis (fallback
-to in-memory deque), and exposes SSE endpoints for real-time admin monitoring.
+- MAX_LINES 1000 easy global to tune, ~300KB RAM, no env needed
+- Roles: generic — reads user.role lowercased, fallback "guest" (change role filters in templates to match your Role)
+- JWT diagnostics: generic, no token leakage, safe metadata only
+- From ras-elbar-go/backend/dashboard/live_logs.py — project-agnostic, decoupled.
 """
 
 import json
@@ -15,7 +18,7 @@ from django.http import StreamingHttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 
-MAX_LINES = 500
+MAX_LINES = 1000  # REUSE: easy global to tune, ~300KB RAM max for 1000 lines
 REDIS_KEY = "live_logs:buffer"
 REDIS_SEQ = "live_logs:seq"
 
@@ -26,7 +29,6 @@ _seq = 0
 
 
 def _next_id() -> int:
-    """Return a monotonically increasing log entry ID via Redis or memory."""
     try:
         from django.core.cache import cache
         from django_redis import get_redis_connection
@@ -41,7 +43,6 @@ def _next_id() -> int:
 
 
 def _redis_available() -> bool:
-    """Check whether Redis is reachable for shared log buffering."""
     try:
         from django_redis import get_redis_connection
 
@@ -53,7 +54,6 @@ def _redis_available() -> bool:
 
 
 def append_log(entry: dict) -> None:
-    """Append a log entry to Redis or the in-memory fallback buffer."""
     entry = {**entry, "id": _next_id()}
     try:
         from django_redis import get_redis_connection
@@ -69,8 +69,6 @@ def append_log(entry: dict) -> None:
 
 
 def get_snapshot(last_id: int = 0) -> list[dict]:
-    """Return buffered log entries after the given ID in chronological order."""
-
     # Try Redis first (shared across web + web-sse workers)
     try:
         from django_redis import get_redis_connection
@@ -92,18 +90,10 @@ def get_snapshot(last_id: int = 0) -> list[dict]:
 
 
 class LiveLogsMiddleware:
-    """Middleware that captures request timing and auth diagnostics for live logs."""
-
     def __init__(self, get_response):
-        """Initialize the middleware with the next handler."""
         self.get_response = get_response
 
     def __call__(self, request):
-        """Process the request and append a structured log entry.
-
-        Captures JWT/OAuth header diagnostics on 4xx/5xx responses to speed up
-        authentication debugging without leaking tokens.
-        """
         start = time.monotonic()
         response = None
         exc_info = None
@@ -126,7 +116,7 @@ class LiveLogsMiddleware:
                         tb = traceback.format_exception(
                             type(exc_info), exc_info, exc_info.__traceback__
                         )
-                        tail = "".join(tb[-3:])[-800:]
+                        tail = "".join(tb[-5:])
                         cause = f"{type(exc_info).__name__}: {exc_info} | {tail}"
                     else:
                         cause = getattr(response, "reason_phrase", "") or (
@@ -240,7 +230,7 @@ class LiveLogsMiddleware:
                                     or request.META.get("HTTP_ORIGIN")
                                     or ""
                                 )
-                                ct = (  # noqa: F841 - kept for parity with ras-elbar-go diagnostics
+                                ct = (  # noqa: F841 - kept for parity
                                     request.headers.get("Content-Type")
                                     or request.META.get("CONTENT_TYPE")
                                     or ""
@@ -258,6 +248,82 @@ class LiveLogsMiddleware:
                                     details.append(
                                         "XHR without Authorization — ensure Flutter/Dio attaches Bearer on retries"
                                     )
+                                # ── Received JWT metadata (for /users/me/ etc.) — safe, no token ──
+                                if (
+                                    header
+                                    and status in (401, 403)
+                                    and any(k in path_lc for k in ["/users/me", "/users/users/me"])
+                                ):
+                                    try:
+                                        import base64
+                                        import hashlib
+                                        import re
+
+                                        from rest_framework_simplejwt.settings import api_settings
+                                        from rest_framework_simplejwt.tokens import AccessToken
+
+                                        # Try to decode header/payload without verification for metadata
+                                        token = (
+                                            header_stripped[len("Bearer ") :]
+                                            .strip()
+                                            .strip('"')
+                                            .strip("'")
+                                            if header_stripped.startswith("Bearer ")
+                                            else ""
+                                        )
+                                        if token and token.count(".") == 2:
+                                            parts = token.split(".")
+                                            try:
+                                                pad = "=" * (-len(parts[1]) % 4)
+                                                payload = json.loads(
+                                                    base64.urlsafe_b64decode(
+                                                        parts[1] + pad
+                                                    ).decode()
+                                                )
+                                                # Safe metadata
+                                                token_type = payload.get("token_type", "")
+                                                user_id = payload.get("user_id") or payload.get(
+                                                    api_settings.USER_ID_CLAIM, ""
+                                                )
+                                                iss = payload.get("iss", "")
+                                                aud = payload.get("aud", "")
+                                                exp = payload.get("exp", "")
+                                                iat = payload.get("iat", "")
+                                                # Try actual validation
+                                                try:
+                                                    validated = AccessToken(token)
+                                                    signing_hash = hashlib.sha256(
+                                                        str(api_settings.SIGNING_KEY).encode()
+                                                    ).hexdigest()[:8]
+                                                    details.append(
+                                                        f"recv JWT validated OK type={validated.get('token_type')} user_id={str(validated.get('user_id'))[:8]} alg={api_settings.ALGORITHM} hash={signing_hash}"
+                                                    )
+                                                except Exception as ve:
+                                                    signing_hash = hashlib.sha256(
+                                                        str(api_settings.SIGNING_KEY).encode()
+                                                    ).hexdigest()[:8]
+                                                    details.append(
+                                                        f"recv JWT validation FAILED type={token_type} user_id={str(user_id)[:8]} alg={api_settings.ALGORITHM} hash={signing_hash} err={str(ve)[:80]}"
+                                                    )
+                                                    # Also log payload fields for comparison
+                                                    details.append(
+                                                        f"recv payload type={token_type} iss={iss} aud={aud} exp={exp} iat={iat}"
+                                                    )
+                                            except Exception:
+                                                pass
+                                        # Check for quoted token
+                                        if '"' in header or "'" in header:
+                                            details.append(
+                                                "Authorization header contains quotes — Flutter may be storing token with extra quotes"
+                                            )
+                                        # Check for Bearer duplication
+                                        if header_stripped.lower().count("bearer") > 1:
+                                            details.append(
+                                                "Multiple Bearer prefixes (e.g. 'Bearer Bearer ...')"
+                                            )
+                                    except Exception:
+                                        pass
+
                                 # Response payload details (DRF)
                                 if isinstance(data, dict):
                                     # SimpleJWT style
@@ -273,16 +339,14 @@ class LiveLogsMiddleware:
                                     if code:
                                         details.append(f"code={code}")
                                     if msgs:
-                                        details.append(f"messages={str(msgs)[:200]}")
+                                        details.append(f"messages={str(msgs)}")
                                     # allauth / DRF error envelope
                                     err = data.get("error")
                                     if isinstance(err, dict):
                                         if err.get("message"):
                                             details.append(f"error.message={err['message']}")
                                         if err.get("details"):
-                                            details.append(
-                                                f"error.details={str(err['details'])[:200]}"
-                                            )
+                                            details.append(f"error.details={str(err['details'])}")
                                     # OAuth specific
                                     if "token_not_valid" in str(code) or "token_not_valid" in str(
                                         det
@@ -299,16 +363,17 @@ class LiveLogsMiddleware:
                                 # Fallback to response body snippet if no data
                                 if not details and hasattr(response, "content"):
                                     try:
-                                        snippet = response.content[:300].decode(errors="ignore")
+                                        snippet = response.content[:2000].decode(errors="ignore")
                                         if snippet:
-                                            details.append(f"body={snippet[:200]}")
+                                            details.append(f"body={snippet}")
                                     except Exception:
                                         pass
                                 if details:
-                                    cause = " | ".join(details)[:1000]
+                                    cause = " | ".join(details)
                         except Exception:
                             pass
                 user_id = ""
+                user_role = ""
                 try:
                     if hasattr(request, "user") and getattr(
                         request.user, "is_authenticated", False
@@ -316,8 +381,12 @@ class LiveLogsMiddleware:
                         user_id = str(
                             getattr(request.user, "id", "") or getattr(request.user, "email", "")
                         )
+                        user_role = str(getattr(request.user, "role", "")).lower()
                 except Exception:
                     pass
+                if not user_role:
+                    # Keep sequential flow, just mark role for vertical line + filters
+                    user_role = "guest"
                 append_log(
                     {
                         "ts": timezone.now().isoformat(),
@@ -326,9 +395,10 @@ class LiveLogsMiddleware:
                         "status": status,
                         "level": level,
                         "user": user_id[:24],
+                        "role": user_role,
                         "duration": duration_ms,
                         "msg": f"{request.method} {request.get_full_path()}",
-                        "cause": cause[:1000],
+                        "cause": cause,
                     }
                 )
             except Exception:
@@ -337,7 +407,6 @@ class LiveLogsMiddleware:
 
 @staff_member_required
 def live_logs_page(request):
-    """Render the admin live-logs HTML page (staff only)."""
     from django.contrib import admin
 
     context = admin.site.each_context(request)
@@ -347,7 +416,6 @@ def live_logs_page(request):
 
 @staff_member_required
 def live_logs_stream(request):
-    """SSE endpoint that streams log entries as an event-stream (staff only)."""
     last_id = int(request.GET.get("last_id", "0") or 0)
 
     def event_stream():

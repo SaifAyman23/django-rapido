@@ -1,8 +1,5 @@
-"""Unfold admin theme configuration.
-
-Defines site branding, sidebar navigation, colors, and dashboard callbacks
-for django-unfold.
-"""
+# settings.py - Updated with Django 6.0 Theme for django-unfold
+# Dark Mode Only - Production Ready Configuration
 
 from django.templatetags.static import static
 from django.urls import reverse_lazy
@@ -20,9 +17,9 @@ UNFOLD = {
         # "sidebar_variant": "dark",
         # "site_banner": "Custom global message",
     },
-    "SITE_TITLE": _("Django Rapido"),
-    "SITE_HEADER": _("Django Rapido Dashboard"),
-    "SITE_SUBHEADER": _("Modern Django Starter"),
+    "SITE_TITLE": _("Ras El Bar"),
+    "SITE_HEADER": _("Ras El Bar Dashboard"),
+    "SITE_SUBHEADER": _("Multi-Store Delivery Platform"),
     "SITE_SYMBOL": "dashboard",
     "SITE_ICON": lambda request: static("images/Icon-AI.svg"),
     # "SITE_URL": None,
@@ -142,6 +139,58 @@ UNFOLD = {
             "800": "oklch(44.8% 0.119 151.328)",
             "900": "oklch(39.3% 0.095 152.535)",
             "950": "oklch(26.6% 0.065 152.934)",
+        },
+        "purple": {
+            "50": "oklch(97.7% 0.014 308.299)",
+            "100": "oklch(94.6% 0.033 307.174)",
+            "200": "oklch(89.4% 0.057 293.283)",
+            "300": "oklch(81.2% 0.101 294.588)",
+            "400": "oklch(71.4% 0.143 293.571)",
+            "500": "oklch(60.6% 0.25 292.717)",
+            "600": "oklch(54.2% 0.281 293.009)",
+            "700": "oklch(49.6% 0.265 301.924)",
+            "800": "oklch(43.8% 0.218 303.089)",
+            "900": "oklch(38.1% 0.176 304.987)",
+            "950": "oklch(29.1% 0.149 302.717)",
+        },
+        "sky": {
+            "50": "oklch(98.4% 0.019 200.873)",
+            "100": "oklch(95.4% 0.038 200.321)",
+            "200": "oklch(90.1% 0.058 230.902)",
+            "300": "oklch(82.8% 0.111 230.318)",
+            "400": "oklch(74.6% 0.16 232.661)",
+            "500": "oklch(68.5% 0.169 237.323)",
+            "600": "oklch(58.8% 0.158 241.966)",
+            "700": "oklch(50% 0.134 242.749)",
+            "800": "oklch(44.3% 0.11 240.79)",
+            "900": "oklch(39.1% 0.09 240.876)",
+            "950": "oklch(30.2% 0.056 238.565)",
+        },
+        "indigo": {
+            "50": "oklch(96.2% 0.018 272.314)",
+            "100": "oklch(92.9% 0.033 272.788)",
+            "200": "oklch(87% 0.065 274.039)",
+            "300": "oklch(78.5% 0.115 274.713)",
+            "400": "oklch(68.3% 0.18 277.366)",
+            "500": "oklch(58.5% 0.233 277.117)",
+            "600": "oklch(51.1% 0.262 276.966)",
+            "700": "oklch(45.7% 0.24 277.023)",
+            "800": "oklch(39.8% 0.195 277.366)",
+            "900": "oklch(35.9% 0.144 278.697)",
+            "950": "oklch(25.7% 0.09 281.288)",
+        },
+        "lime": {
+            "50": "oklch(98.6% 0.031 120.757)",
+            "100": "oklch(96.7% 0.067 122.328)",
+            "200": "oklch(93.8% 0.127 124.321)",
+            "300": "oklch(89.7% 0.196 126.665)",
+            "400": "oklch(84.1% 0.238 128.85)",
+            "500": "oklch(76.8% 0.233 130.85)",
+            "600": "oklch(64.8% 0.2 131.684)",
+            "700": "oklch(53.2% 0.157 131.589)",
+            "800": "oklch(45.3% 0.124 130.933)",
+            "900": "oklch(39.8% 0.095 131.2)",
+            "950": "oklch(27.4% 0.072 132.109)",
         },
         "font": {
             "subtle-light": "var(--color-base-500)",  # #46a735 - Obsidian forest */
@@ -292,6 +341,28 @@ UNFOLD = {
                 ],
             },
             {
+                "title": _("Operations"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Deliverymen"),
+                        "icon": "local_shipping",
+                        "link": reverse_lazy("admin:ops_deliveryman_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Addresses"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Locations"),
+                        "icon": "location_on",
+                        "link": reverse_lazy("admin:addresses_location_changelist"),
+                    },
+                ],
+            },
+            {
                 "title": _("Notifications"),
                 "collapsible": True,
                 "items": [
@@ -308,6 +379,65 @@ UNFOLD = {
                 ],
             },
             {
+                "title": _("Marketing"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Email Campaigns"),
+                        "icon": "campaign",
+                        "link": reverse_lazy("admin:email_marketing_emailcampaign_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Stores"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Stores"),
+                        "icon": "store",
+                        "link": reverse_lazy("admin:stores_store_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Catalog"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Categories"),
+                        "icon": "category",
+                        "link": reverse_lazy("admin:catalog_category_changelist"),
+                    },
+                    {
+                        "title": _("Pills"),
+                        "icon": "medication",
+                        "link": reverse_lazy("admin:catalog_pills_changelist"),
+                    },
+                    {
+                        "title": _("Products"),
+                        "icon": "inventory_2",
+                        "link": reverse_lazy("admin:catalog_product_changelist"),
+                    },
+                    {
+                        "title": _("Favorites"),
+                        "icon": "favorite",
+                        "link": reverse_lazy("admin:catalog_productfavorite_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Ratings"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Ratings"),
+                        "icon": "star",
+                        "link": reverse_lazy("admin:orders_rating_changelist"),
+                    },
+                ],
+            },
+            {
                 "title": _("Compliance"),
                 "collapsible": True,
                 "items": [
@@ -320,6 +450,62 @@ UNFOLD = {
                         "title": _("Policies"),
                         "icon": "description",
                         "link": reverse_lazy("admin:compliance_compliancedocument_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Orders"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Orders"),
+                        "icon": "receipt_long",
+                        "link": reverse_lazy("admin:orders_order_changelist"),
+                    },
+                    {
+                        "title": _("Order Items"),
+                        "icon": "list_alt",
+                        "link": reverse_lazy("admin:orders_orderitem_changelist"),
+                    },
+                    {
+                        "title": _("Cart"),
+                        "icon": "shopping_cart",
+                        "link": reverse_lazy("admin:orders_cart_changelist"),
+                    },
+                    {
+                        "title": _("Coupons"),
+                        "icon": "confirmation_number",
+                        "link": reverse_lazy("admin:orders_coupon_changelist"),
+                    },
+                    {
+                        "title": _("Discounts"),
+                        "icon": "percent",
+                        "link": reverse_lazy("admin:orders_discount_changelist"),
+                    },
+                    {
+                        "title": _("Delivery Snapshots"),
+                        "icon": "location_on",
+                        "link": reverse_lazy("admin:orders_orderdeliverysnapshot_changelist"),
+                    },
+                    {
+                        "title": _("Preparation Photos"),
+                        "icon": "camera_alt",
+                        "link": reverse_lazy("admin:orders_orderpreparationphoto_changelist"),
+                    },
+                    {
+                        "title": _("Status Events"),
+                        "icon": "timeline",
+                        "link": reverse_lazy("admin:orders_orderstatusevent_changelist"),
+                    },
+                    {
+                        "title": _("Assignment Logs"),
+                        "icon": "swap_horiz",
+                        "link": reverse_lazy("admin:orders_driverassignmentlog_changelist"),
+                    },
+                    {
+                        "title": _("Pricing Config"),
+                        "icon": "price_change",
+                        "link": reverse_lazy("admin:orders_pricingconfig_changelist"),
                     },
                 ],
             },
