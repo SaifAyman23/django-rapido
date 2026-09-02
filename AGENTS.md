@@ -127,6 +127,18 @@ Before writing ANYTHING, check `common/` — it exists precisely to eliminate du
 
 If the tool you need doesn't exist in `common/`, **add it there first, then use it**. Never duplicate.
 
+### 3.5 No Hardcoded Nonsense — ALWAYS Dynamic, NEVER Tightly Coupled
+
+> **MANDATORY:** No hardcoded client IDs, URLs, secrets, role names, or domain-specific constants in code. Everything must be dynamic — read from DB (`SocialApp`, `CustomUser`, `ContactInfo`), `settings` (`os.getenv`), or `request` — never a literal string like `"822776...apps.googleusercontent.com"` or `"customer"` hard-wired in logic.
+
+- **Use DB/config, not literals:** OAuth `client_id == aud` comes from `SocialApp.objects.filter(provider=provider)` seeded via admin (see `accounts/auth/views.py:320`), not `if aud == "822776..."`. Log `available = [a.client_id[:12]...]` to debug, never `if`.
+- **Roles/permissions are factories:** `create_role_permission("seller")` / `getattr(user, "role")` not `if user.role == "customer"` hard-wired. Template role filters (`live_logs.html:37` `data-role="customer"`) are **examples** with `REUSE: Replace with your Role choices`.
+- **Env, not code:** `BUSINESS_TIME_ZONE`, `JWT_SECRET_KEY`, `GOOGLE_OAUTH_CLIENT_ID`, `CACHE_URL` via `os.getenv` / `.env.example` — never `BUSINESS_TIME_ZONE = "Africa/Cairo"` literal in logic.
+- **Tightly coupled only if REALLY important and you approve:** If you must hardcode (e.g. `MAX_LINES = 1000` easy global for `live_logs.py:11`), keep it as a single top-level constant with `# REUSE: easy global to tune` comment and document why. Otherwise, keep it configurable via DB/settings/request.
+- **Seed, don't hardcode:** If data is needed (SocialApps, ContactInfo, Compliance docs), seed via `fixtures` / `admin` / `social_seed.py`, not via `if` literals in views.
+
+Violation = immediate revert. If you think hardcoding is required, ask first — do not commit.
+
 ---
 
 ## 4. Models — Design & Conventions
