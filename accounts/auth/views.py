@@ -412,17 +412,13 @@ class SocialLoginJWTView(APIView):
                         app.client_id[:12] + "..." if app.client_id else "none",
                     )
                 else:
-                    # No matching client — log safely and fail instead of silently using apps[0]
-                    # REUSE: This is generic — replace aud check with your own client IDs if needed
+                    # No matching client — use DB data only, no hardcoding
                     available = [a.client_id[:12] + "..." for a in apps if a.client_id]
                     logger.warning(
                         "Google ID token aud=%s did not match any SocialApp client_id. Available: %s",
                         aud,
                         available,
                     )
-                    # Example: if you have a known web client ID, log specific error:
-                    # if aud == "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com":
-                    #     logger.error("Web client ID not found in SocialApp DB — check seeding")
                     return Response(
                         {"detail": _("No matching Google OAuth client for this ID token.")},
                         status=status.HTTP_401_UNAUTHORIZED,
