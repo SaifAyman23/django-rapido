@@ -1,6 +1,6 @@
 # REUSE: Generic State Machine Pattern
 
-From ras-elbar-go `orders/services/lifecycle.py` + `AGENTS.md:15.2`.
+> Copy-paste pattern for any model with status transitions. Example: `Order submitted → prepared → arrived → complete`. See `AGENTS.md` for transaction/locking rules.
 
 Use when your model has status transitions that must be atomic, audited,
 and role-scoped. Example: Order `submitted→prepared→arrived→complete`.

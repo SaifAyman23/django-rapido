@@ -1,5 +1,19 @@
 # Docker Production Guide (REUSE)
 
+## Table of Contents
+
+1. [Compose Layers](#compose-layers)
+2. [Services](#services)
+3. [Dockerfile](#dockerfile-python313-slim)
+4. [Entrypoint](#entrypoint-entrypointsh6)
+5. [Nginx](#nginx)
+6. [How to Use — Daily Docker Workflow](#how-to-use--daily-docker-workflow)
+7. [First Deploy](#first-deploy)
+8. [.dockerignore](#dockerignore)
+9. [Removal](#removal--how-to-remove-this-feature)
+
+---
+
 ## Compose Layers
 
 - `docker-compose.yml` — **base** (dev): `runserver 0.0.0.0:8000`, ports `5432/6379/5555/80` open, hot-reload volumes `.:/app`
@@ -61,6 +75,47 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ## .dockerignore
 
 Prevents baking `venv/.git/media/staticfiles/logs/.env/*firebase*.json` — all REUSE commented.
+
+
+## How to Use — Daily Docker Workflow
+
+### Dev loop (hot-reload)
+```bash
+docker compose up -d --build        # start all (db, redis, web, celery, flower, nginx)
+docker compose logs -f web          # tail Django logs
+docker compose exec web python manage.py createsuperuser
+docker compose exec web python manage.py shell
+docker compose exec web pytest -v   # run tests inside container
+docker compose down                 # stop
+docker compose down -v              # stop + delete volumes (fresh DB)
+```
+
+### Add a new service (copy-paste)
+```yaml
+# docker-compose.yml
+  my_service:
+    build: { context: ., dockerfile: Dockerfile }
+    container_name: project_my_service
+    command: python manage.py my_command
+    env_file: [.env]
+    depends_on: [db, redis]
+    networks: [project_network]
+```
+
+### Prod deploy (layered override)
+```bash
+cp .env.example .env  # set DJANGO_ENVIRONMENT=production, SECRET_KEY, DOMAIN, DB_PASSWORD
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f web
+```
+
+### How to add Python deps to Docker
+```bash
+# 1. Add to requirements.txt: mylib==1.2.3
+# 2. Rebuild:
+docker compose build --no-cache web
+docker compose up -d
+```
 
 ---
 

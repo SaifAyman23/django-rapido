@@ -1,7 +1,7 @@
 """
 REUSE: Generic compliance CMS — FAQ + Legal docs.
 
-From ras-elbar-go/backend/compliance/models.py — project-agnostic.
+Django Rapido — compliance models. Reusable, project-agnostic.
 Add DocumentType values per project (e.g. COOKIE_POLICY, REFUND_POLICY).
 Requires: modeltranslation for translatable fields + markdownx for admin.
 """

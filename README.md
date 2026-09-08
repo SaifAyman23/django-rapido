@@ -25,7 +25,7 @@
 
 ---
 
-> **Built from a live production app.** Rapido isn't a hello-world — it's extracted from **Ras ElBar GO**, a multi-store delivery platform running Django + FCM + OTP auth in production. Every pattern is battle-tested.
+> **Built from a live production app.** Every pattern is battle-tested in production — now packaged as **Django Rapido V2.0**, a production-ready starter that ships like a product, not a prototype.
 
 ---
 
@@ -109,7 +109,7 @@ Rapido is **documented like a product**, not a gist. Every reusable module has a
 Plus **`AGENTS.md`** — single source of truth for conventions (service layer, `select_for_update`, `F()` expressions, `FilterSet` discipline).  
 Plus **`docs/examples/`** — `state_machine.md` & `pricing.md` copy-paste patterns from production.
 
-> Every file that matters starts with `REUSE: from ras-elbar-go/... — project-agnostic, no delivery domain hardcoding.` Clone a module, change the type, ship.
+> Every module marked `REUSE` is project-agnostic — no domain hardcoding. Copy a module, change the type, ship.
 
 ---
 

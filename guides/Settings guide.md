@@ -1,5 +1,23 @@
 # Django Rapido Settings Guide
 
+## Table of Contents
+
+1. [Overview](#overview)
+2. [File Structure](#file-structure-actual)
+3. [Loading Order](#loading-order)
+4. [Environment Management](#environment-management)
+5. [Key Settings](#key-settings-basepy--reuse-notes)
+6. [How to Use — Common Tasks](#how-to-use--common-tasks)
+7. [Environment Overrides](#environment-specific-overrides)
+8. [Project URLs & Routing](#project-urls--routing-projecturls)
+9. [Deployment](#deployment)
+10. [Environment Variables](#environment-variables-envexample)
+11. [Testing](#testing)
+12. [Best Practices](#best-practices)
+13. [Removal — Drop PostgreSQL/Redis](#removal--how-to-remove-postgresql-and-redis)
+
+---
+
 ## Overview
 
 Settings are modular by environment: `base.py` (shared) → `local.py` / `production.py` (overlay) → `__init__.py` dispatches. No `components/` split — that was aspirational and removed for clarity. Fail-fast secrets, TESTING detection, and REUSE comments document portability.
@@ -171,6 +189,45 @@ Optimizations: in-memory SQLite (10-100x), migrations disabled via SQLite path, 
 4. **Ramp HSTS** `0→300→86400→31536000` after confirming TLS
 5. **Replace `example.com` in `nginx.prod.conf` + `DOMAIN` env** before first prod deploy
 6. **Document new settings with `# REUSE:`** comment indicating portability
+
+
+## How to Use — Common Tasks
+
+### Read a setting in code
+```python
+from django.conf import settings
+
+# Business timezone (used by contacts.services.is_ordering_open)
+tz = settings.BUSINESS_TIME_ZONE  # "Africa/Cairo" from .env
+
+# JWT secret falls back to SECRET_KEY
+jwt_key = settings.SIMPLE_JWT["SIGNING_KEY"]
+```
+
+### Switch environment
+```bash
+# Local (default)
+python manage.py runserver  # uses local.py
+
+# Production
+DJANGO_ENVIRONMENT=production python manage.py check --deploy
+DJANGO_ENVIRONMENT=production gunicorn project.wsgi:application
+
+# Test (auto)
+python manage.py test  # TESTING=True via sys.argv -> SQLite + eager Celery
+```
+
+### Add a new setting (REUSE pattern)
+```python
+# project/settings/base.py
+MY_FEATURE_FLAG = os.getenv("MY_FEATURE_FLAG", "false") == "true"
+# .env.example
+# MY_FEATURE_FLAG=true
+# usage:
+from django.conf import settings
+if settings.MY_FEATURE_FLAG:
+    ...
+```
 
 ---
 

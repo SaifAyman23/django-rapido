@@ -668,7 +668,7 @@ class IsOwner(BasePermission):
 
 ## Generic Role Permissions (new — project-agnostic)
 
-### create_role_permission (REUSE — from ras-elbar-go, made generic)
+### create_role_permission (Django Rapido — generic role factory)
 
 ```python
 from common.permissions import create_role_permission

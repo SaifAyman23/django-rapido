@@ -33,3 +33,7 @@ class ComplianceDocumentAdmin(MarkdownAdminMixin, TranslationBaseAdmin):
     list_display = ["type", "title", "is_published_badge"]
     list_filter = ["type", "is_published"]
     search_fields = ["title", "content"]
+
+    @display(description="Published", ordering="is_published")
+    def is_published_badge(self, obj):
+        return self.badge("Published", "green") if obj.is_published else self.badge("Draft", "gray")

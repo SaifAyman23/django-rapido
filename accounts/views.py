@@ -130,7 +130,7 @@ class UserViewSet(BaseViewSet):
     # ─────────────────────────────────────────────────────────────────
     # OTP verification flow — REUSE: project-agnostic, no role checks
     # Uncomment these actions + wire urls if you need email verification.
-    # From ras-elbar-go/backend/accounts/views.py (generic subset).
+    # Django Rapido — generic, project-agnostic subset.
     # ─────────────────────────────────────────────────────────────────
 
     @extend_schema(

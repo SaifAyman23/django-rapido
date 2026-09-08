@@ -4,7 +4,7 @@ REUSE: Generic live logs — Redis-shared (fallback deque), SSE, JWT diagnostics
 - MAX_LINES 1000 easy global to tune, ~300KB RAM, no env needed
 - Roles: generic — reads user.role lowercased, fallback "guest" (change role filters in templates to match your Role)
 - JWT diagnostics: generic, no token leakage, safe metadata only
-- From ras-elbar-go/backend/dashboard/live_logs.py — project-agnostic, decoupled.
+- Django Rapido — decoupled, reusable live logs.
 """
 
 import json

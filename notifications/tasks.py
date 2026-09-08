@@ -1,7 +1,7 @@
 """
 REUSE: Generic FCM push tasks — batched multicast, DB inbox, cleanup.
 
-From ras-elbar-go/backend/notifications/tasks.py — made project-agnostic.
+Django Rapido — notification tasks. Reusable, project-agnostic.
 
 Usage:
     from notifications.tasks import create_notification_task

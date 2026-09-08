@@ -1,7 +1,7 @@
 """
 REUSE: Generic notification + device models — FCM + in-app inbox.
 
-From ras-elbar-go/backend/notifications/models.py — made project-agnostic.
+Django Rapido — notification models. Reusable, project-agnostic.
 NotificationType is generic; add your domain events (ORDER_*, COMMENT_*, etc.)
 RelatedObjectType is generic; use your domain (order, post, ticket).
 

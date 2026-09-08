@@ -1,7 +1,7 @@
 """
 REUSE: Business-hours check — gated by BUSINESS_TIME_ZONE + ContactInfo hours.
 
-From ras-elbar-go/backend/contacts/services.py
+Django Rapido — contacts services. Reusable.
 Use in checkout/order gating: if not is_ordering_open()[0]: block
 """
 

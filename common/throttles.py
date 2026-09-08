@@ -7,7 +7,7 @@ because the caller is unauthenticated. Wire via:
     REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["auth"] = "30/minute"
     view.throttle_classes = [AuthRateThrottle]
 
-From ras-elbar-go/backend/common/throttles.py
+Django Rapido — reusable throttles.
 """
 
 from rest_framework.throttling import SimpleRateThrottle

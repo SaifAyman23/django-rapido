@@ -1,6 +1,6 @@
 # REUSE: Tiered Pricing Example
 
-From ras-elbar-go `orders/services/pricing.py`.
+> Copy-paste tiered fee pattern — swap values per project.
 
 ```python
 from decimal import Decimal

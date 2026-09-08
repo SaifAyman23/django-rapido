@@ -949,7 +949,7 @@ from django_celery_beat.models import PeriodicTask
 
 ## 13. Live Logs — SSE Admin Terminal (In-Memory, No DB)
 
-> Exact replica from ras-elbar-go — staff-only /admin/live-logs/ + /admin/live-logs/stream/ (see guides/Live Logs guide.md).
+> Staff-only /admin/live-logs/ + /admin/live-logs/stream/ (see guides/Live Logs guide.md) — in-memory SSE, no DB.
 
 **Architecture:** Request → LiveLogsMiddleware → deque(maxlen=500) → SSE StreamingHttpResponse → EventSource → terminal + stats + insights (retry:3000, heartbeat every 0.5s, ~100KB).
 

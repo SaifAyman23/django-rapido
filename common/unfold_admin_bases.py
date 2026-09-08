@@ -233,7 +233,7 @@ class TranslationBaseAdmin(BaseTranslationAdmin, BaseAdmin):
         - modeltranslation in INSTALLED_APPS (before admin)
         - translation.py registered for the model
 
-    From ras-elbar-go/backend/common/unfold_admin_bases.py:206
+    Django Rapido — reusable admin bases.
     """
 
     pass

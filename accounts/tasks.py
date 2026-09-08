@@ -1,6 +1,4 @@
-"""Celery tasks for accounts app — REUSE: generic OTP email.
-
-From ras-elbar-go/backend/accounts/tasks.py — made project-agnostic.
+"""Django Rapido — Accounts tasks. Celery OTP email, welcome & session cleanup — reusable.
 """
 
 import logging

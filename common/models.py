@@ -6,9 +6,7 @@ Every model inherits TimestampedModel + UUIDModel (MRO matters):
 
 Provides: UUID PK, Timestamps, SoftDelete, ChangeTracking, Publishable,
 SEOModel, CustomUser (email USERNAME_FIELD), AuditLog.
-From ras-elbar-go/backend/common/models.py — project-agnostic.
-
-REUSE: All 8 bases are opt-in mixins — compose per model.
+Reusable, project-agnostic — all 8 bases are opt-in mixins, compose per model.
 """
 
 import logging

@@ -1,5 +1,18 @@
 # i18n Guide — modeltranslation en/ar (REUSE)
 
+## Table of Contents
+
+1. [Setup](#setup-basepy206)
+2. [Model Translation](#model-compliancetranslationpy)
+3. [Admin](#admin)
+4. [How to Use — Translate Your Model](#how-to-use--translate-your-model)
+5. [Serializer](#serializer)
+6. [Commands](#commands)
+7. [Markdown](#markdown-compliance)
+8. [Removal](#removal--how-to-remove-this-feature)
+
+---
+
 ## Setup (base.py:206)
 
 ```python
@@ -74,6 +87,56 @@ class ComplianceDocumentAdmin(MarkdownAdminMixin, TranslationBaseAdmin):
 # Requires markdownx in INSTALLED_APPS + path('markdownx/', include('markdownx.urls'))
 ```
 
+
+## How to Use — Translate Your Model
+
+### 1. Register translatable fields (copy-paste)
+```python
+# myapp/translation.py
+from modeltranslation.translator import translator, TranslationOptions
+from .models import MyModel
+
+class MyModelTranslationOptions(TranslationOptions):
+    fields = ("title", "description")  # only user-facing text
+
+translator.register(MyModel, MyModelTranslationOptions)
+# then: python manage.py makemigrations && migrate
+# columns added: title_en, title_ar, description_en, description_ar
+```
+
+### 2. Use admin tabs
+```python
+from common.unfold_admin_bases import TranslationBaseAdmin
+
+@admin.register(MyModel)
+class MyModelAdmin(TranslationBaseAdmin):
+    list_display = ["title", "is_published_badge"]
+    # Automatically shows en/ar tabs — no extra code
+```
+
+### 3. Use in views/serializers (transparent)
+```python
+# Serializer — no changes needed; obj.title returns active language
+class MyModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MyModel
+        fields = ["id", "title", "description"]
+
+# View — client sends Accept-Language: ar
+# GET /api/v1/mymodels/ → title is Arabic if available, else fallback en
+
+# In Python code:
+from django.utils.translation import gettext_lazy as _
+verbose_name = _("My Model")
+```
+
+### 4. Add translations for UI strings
+```bash
+python manage.py makemessages -l ar   # scans _() calls
+# edit locale/ar/LC_MESSAGES/django.po
+python manage.py compilemessages
+```
+
 ---
 
 ## Removal — How to Remove This Feature
@@ -93,4 +156,3 @@ class ComplianceDocumentAdmin(MarkdownAdminMixin, TranslationBaseAdmin):
 
 - Keep `modeltranslation`, delete `locale/ar/`, remove `('ar', ...)` from `LANGUAGES` + `MODELTRANSLATION_LANGUAGES`.
 - `python manage.py compilemessages` still works for `en` only.
-

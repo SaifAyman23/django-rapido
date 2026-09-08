@@ -1,8 +1,7 @@
 """
 Auth helpers — credentials + OTP.
 
-REUSE: Generic helpers for any project. No role hardcoding.
-From ras-elbar-go/backend/accounts/helpers.py (made project-agnostic).
+Django Rapido — Authentication helpers. Reusable, project-agnostic — no role hardcoding.
 """
 
 import random

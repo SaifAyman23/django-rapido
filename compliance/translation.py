@@ -2,7 +2,7 @@
 REUSE: Register translatable fields for compliance.
 
 Requires: modeltranslation in INSTALLED_APPS before admin.
-From ras-elbar-go/backend/compliance/translation.py
+Django Rapido — compliance translations. Reusable.
 """
 
 from modeltranslation.translator import TranslationOptions, translator

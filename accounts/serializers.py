@@ -99,7 +99,7 @@ class UserRegistrationSerializer(serializers.Serializer):
 
 # ─────────────────────────────────────────────────────────────────
 # OTP / Password-reset serializers — REUSE: Generic verification
-# From ras-elbar-go/backend/accounts/serializers.py (project-agnostic)
+# Django Rapido — project-agnostic serializers.
 # ─────────────────────────────────────────────────────────────────
 
 

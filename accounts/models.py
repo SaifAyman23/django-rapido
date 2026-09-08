@@ -1,9 +1,8 @@
 """
 Generic OTP + password-reset models for email verification.
 
-REUSE: This module is project-agnostic. Any project needing email
-verification or password-reset via OTP/token can copy it verbatim.
-No role-specific logic. From ras-elbar-go/backend/accounts/models.py
+Django Rapido — OTP & password-reset models. Reusable, project-agnostic — copy verbatim for any email verification flow.
+No role-specific logic.
 
 Usage:
     from accounts.helpers import create_and_send_otp, validate_otp

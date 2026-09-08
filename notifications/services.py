@@ -1,7 +1,7 @@
 """
 REUSE: Notification guard — checks if user wants push.
 
-From ras-elbar-go/backend/notifications/services.py
+Django Rapido — notification services. Reusable.
 
 Wire: if not should_notify(user): skip send
 """

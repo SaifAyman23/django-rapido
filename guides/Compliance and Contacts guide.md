@@ -1,8 +1,25 @@
 # Compliance & Contacts Guide (REUSE)
 
+## Table of Contents
+
+1. [Compliance — FAQ + Legal Docs](#compliance--faq--legal-docs)
+2. [Models](#models-compliancemodelspy)
+3. [Admin](#admin)
+4. [API](#api-complianceviewspy)
+5. [Contacts — Form + Business Info](#contacts--form--business-info)
+6. [Models](#models-contactsmodelspy)
+7. [Service — Hours Gate](#service--hours-gate)
+8. [Serializers](#serializers)
+9. [Views & URLs](#views--urls)
+10. [How to Use — FAQ/Contact/Hours](#how-to-use--faqcontacthours)
+11. [Setup](#setup)
+12. [Removal](#removal--how-to-remove-this-feature)
+
+---
+
 ## Compliance — FAQ + Legal Docs
 
-From ras-elbar-go `compliance/` — generic CMS, translatable, Markdown.
+Generic CMS — translatable, Markdown. Django Rapido V2.0.
 
 ### Models (compliance/models.py)
 
@@ -66,7 +83,7 @@ class FAQViewSet(BaseViewSet):
 
 ## Contacts — Form + Business Info
 
-From ras-elbar-go `contacts/` — generic, no delivery logic.
+Generic contacts — Django Rapido V2.0, no domain logic.
 
 ### Models (contacts/models.py)
 
@@ -119,6 +136,43 @@ class ContactInfoViewSet(BaseViewSet):
     def get_queryset(): return ContactInfo.objects.all()[:1]  # singleton GET
 
 # contacts/urls.py + project/urls.py: path(f'{api_prefix}/contacts/', include('contacts.urls'))
+```
+
+## How to Use — FAQ/Contact/Hours
+
+### FAQ (copy-paste)
+```python
+# Create via admin or shell
+from compliance.models import FAQ, DocumentType
+FAQ.objects.create(question="How to reset password?", answer="Use /users/forgot...", sort_order=1)
+
+# Query in view (already wired)
+# GET /api/v1/compliance/faqs/ → only is_published unless staff
+# Search: GET /api/v1/compliance/faqs/?search=reset
+```
+
+### Legal docs (Markdown + i18n)
+```python
+from compliance.models import ComplianceDocument, DocumentType
+doc = ComplianceDocument.objects.create(
+    type=DocumentType.PRIVACY_POLICY, title="Privacy Policy",
+    content="# Privacy\nWe respect your data...", is_published=True
+)
+# Admin: ComplianceDocumentAdmin(MarkdownAdminMixin, TranslationBaseAdmin) → tabs en/ar + Markdown editor
+# API: GET /api/v1/compliance/documents/?type=PRIVACY_POLICY
+```
+
+### Contacts — gate checkout by hours (copy-paste)
+```python
+from contacts.services import is_ordering_open
+
+is_open, reason = is_ordering_open()
+if not is_open:
+    return Response({"error": "Ordering closed", "reason": reason}, status=403)
+
+# Serializer exposes it transparently:
+# GET /api/v1/contacts/info/ → {address, phone, ordering_open: true, site_inactive: false, ...}
+# POST /api/v1/contacts/messages/ → {name, email, subject, message} (AllowAny, public form)
 ```
 
 ---

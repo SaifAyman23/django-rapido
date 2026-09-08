@@ -16,6 +16,9 @@ class ContactMessageViewSet(BaseViewSet):
     permission_classes = [AllowAny]
     http_method_names = ["post", "head", "options"]
 
+    def get_permissions(self):
+        return [AllowAny()]
+
 
 class ContactInfoViewSet(BaseViewSet):
     """Singleton business info endpoint returning the first ContactInfo record."""

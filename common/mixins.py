@@ -434,7 +434,7 @@ class BaseViewSetMixin(ViewSetMixin):
     # Logging
     # ------------------------------------------------------------------
 
-    # REUSE: scrub sensitive keys before logging (from ras-elbar-go/backend/common/mixins.py)
+    # Django Rapido — scrub sensitive keys before logging.
     SENSITIVE_LOG_KEYS = {
         "password",
         "password_confirm",

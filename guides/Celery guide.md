@@ -1,5 +1,18 @@
 # Celery Guide — Tasks, Beat, Flower (REUSE)
 
+## Table of Contents
+
+1. [Setup](#setup)
+2. [Task Structure](#task-structure-bind--idempotent--should_notify-guard)
+3. [Accounts Tasks](#accounts-tasks-accountstaskspy)
+4. [Notifications Tasks](#notifications-tasks-notificationstaskspy)
+5. [Beat Schedule](#beat-schedule-projectsettingsbasepy)
+6. [How to Use — Create Your Own Task](#how-to-use--create-your-own-task)
+7. [Running Locally Without Docker](#running-locally-without-docker)
+8. [Removal](#removal--how-to-remove-this-feature)
+
+---
+
 ## Setup
 
 ```python
@@ -81,6 +94,57 @@ celery -A project worker -l info
 celery -A project beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 celery -A project flower --port=5555
 ```
+
+
+## How to Use — Create Your Own Task
+
+### 1. Create tasks.py (copy-paste)
+```python
+# myapp/tasks.py
+from celery import shared_task
+import logging
+logger = logging.getLogger(__name__)
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def my_task(self, arg1: str):
+    """Idempotent task — running twice same result."""
+    try:
+        # do work — import models inside task
+        from myapp.models import MyModel
+        obj = MyModel.objects.get(id=arg1)
+        obj.process()
+    except Exception as exc:
+        logger.warning("my_task failed, retrying: %s", exc)
+        raise self.retry(exc=exc)
+    return {"status": "done", "id": arg1}
+```
+
+### 2. Dispatch from view/service
+```python
+from myapp.tasks import my_task
+
+# From view — use delay()
+my_task.delay(str(obj.id))
+
+# With countdown / ETA
+my_task.apply_async(args=[str(obj.id)], countdown=60)
+
+# Eager in tests: CELERY_TASK_ALWAYS_EAGER=True (auto when TESTING=True)
+```
+
+### 3. Add to Beat (periodic)
+```python
+# project/settings/base.py
+CELERY_BEAT_SCHEDULE = {
+    "my-task-every-hour": {"task": "myapp.tasks.my_task", "schedule": 3600},
+}
+# Or via admin: /admin/django_celery_beat/periodictask/ (DatabaseScheduler)
+```
+
+### Rules (from guide)
+- `bind=True` for `self.retry`
+- Idempotent, small, import models inside
+- Every `notify_*` calls `should_notify(user)` first
 
 ---
 

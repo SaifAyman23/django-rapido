@@ -117,7 +117,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
-    # Live logs — in-memory SSE ring buffer (exact replica from ras-elbar-go)
+    # Live logs — in-memory SSE ring buffer
     "dashboard.live_logs.LiveLogsMiddleware",
     # Custom middleware — enable selectively
     "common.middleware.RequestLoggingMiddleware",

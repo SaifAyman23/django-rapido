@@ -20,6 +20,42 @@
 
 ---
 
+## How to Use — `common.exceptions` (copy-paste)
+
+This project already ships `common/exceptions.py` — import, don't redefine.
+
+```python
+from common.exceptions import (
+    ValidationError, FieldValidationError, RequiredFieldMissingError,
+    AuthenticationError, InvalidCredentialsError, TokenExpiredError, EmailNotVerifiedError,
+    PermissionError, InsufficientPermissionsError, AdminOnlyError, OwnerOnlyError, RateLimitExceededError,
+    ResourceNotFoundError, DuplicateError, DuplicateEmailError,
+    BusinessLogicError, InvalidStateTransitionError, OperationNotAllowedError,
+    ExternalServiceError, PaymentProcessingError,
+    validate_or_raise, validate_required_fields,
+)
+from common.exceptions import custom_exception_handler  # already wired in base.py REST_FRAMEWORK
+
+# In a view/service:
+def create_article(request):
+    validate_required_fields(request.data, ["title", "content"])
+    if Article.objects.filter(slug=slug).exists():
+        raise DuplicateError(detail="Slug already taken", context={"slug": slug})
+    if not request.user.is_staff:
+        raise AdminOnlyError()
+
+# In a state transition:
+if order.status != "submitted":
+    raise InvalidStateTransitionError(current_state=order.status, attempted_state="complete")
+
+# Helper:
+validate_or_raise(user.is_verified, EmailNotVerifiedError, "Verify email first")
+```
+
+Handler `custom_exception_handler` is already set in `project/settings/base.py: REST_FRAMEWORK["EXCEPTION_HANDLER"]`. Responses are envelope `{"error": {"code","message","status"}, "context"}` via `BaseViewSetMixin`.
+
+---
+
 ## Overview
 
 Custom exceptions provide standardized error handling across your Django REST Framework application. They ensure consistent error responses, proper logging, and better debugging.

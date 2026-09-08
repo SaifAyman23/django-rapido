@@ -297,7 +297,7 @@ class CustomPermissionRule(BasePermission):
 # =============================================================================
 # 8. Role-Based Permissions (generic)
 # REUSE: Generic role check — works with any CustomUser.role TextChoices.
-# Ras-elbar-go used: customer/deliveryman/ops. Replace roles for your domain.
+# Example roles: customer/deliveryman/ops — replace with your domain roles.
 # Example: create_role_permission("seller"), create_role_permission("admin")
 # =============================================================================
 

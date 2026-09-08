@@ -4,7 +4,7 @@ REUSE: Generic social login — Google/Facebook OAuth with JWT.
 - Supports PKCE code flow + SDK id_token/access_token fallback
 - Handles multiple Google clients (web/Android/iOS) via aud matching
 - Generic role handling: reads user.role, no hardcoded customer/ops
-- From ras-elbar-go/backend/accounts/auth/views.py — project-agnostic.
+Django Rapido — OAuth views. Reusable, project-agnostic.
 """
 
 import base64

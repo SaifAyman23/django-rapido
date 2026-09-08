@@ -7,7 +7,7 @@ Fixes two production bugs:
 2. Existing local account + social login with same email → UNIQUE violation
    → pre_social_login() auto-links via EmailAddress or CustomUser.email.
 
-From ras-elbar-go/backend/accounts/auth/adapters.py — project-agnostic.
+Django Rapido — Social auth adapter. Reusable, project-agnostic.
 Wire via: SOCIALACCOUNT_ADAPTER = "accounts.auth.adapters.SocialAccountAdapter"
 """
 

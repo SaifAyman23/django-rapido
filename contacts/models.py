@@ -1,7 +1,7 @@
 """
 REUSE: Generic contact models — public message + singleton info.
 
-From ras-elbar-go/backend/contacts/models.py — project-agnostic.
+Django Rapido — contacts models. Reusable, project-agnostic.
 ContactMessage: public POST no auth (AllowAny)
 ContactInfo: singleton with hours + socials + geo
 """
