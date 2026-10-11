@@ -1,0 +1,8 @@
+/* django-rapido admin companions — react-rapido theme.
+   Palette lives in project/settings/unfold_config.py (oklch tokens).
+   Keep overrides here minimal; Unfold generates colors from UNFOLD.COLORS. */
+
+/* Pre-Alpine guard: cloaked overlays stay hidden even if JS boots slowly. */
+[x-cloak] {
+  display: none !important;
+}

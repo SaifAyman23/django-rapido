@@ -6,7 +6,7 @@ sqlparse==0.5.2                  # [NEEDED] SQL parsing dependency
 # python-decouple==3.8           # [UNNEEDED] Unused. Python-dotenv is used instead.
 python-dotenv==1.0.1             # [NEEDED] Load environment variables
 gunicorn==23.0.0                 # [NEEDED] Production WSGI server
-gevent==24.11.1                  # [NEEDED] Async worker for SSE web-sse (live logs)
+gevent==26.9.0                  # [NEEDED] Async worker for SSE web-sse (live logs). Needs >=25.8 for Python 3.14 Windows wheels.
 whitenoise==6.8.2                # [NEEDED] Production static files serving
 firebase-admin==7.4.0            # [NEEDED] Firebase push notifications (for notification tasks)
 # pandas==2.2.3                  # [UNNEEDED] Unused. No pandas imports found in codebase.
@@ -81,7 +81,7 @@ urllib3==2.6.3                   # [NEEDED] Low-level HTTP client library (reque
 # Enhanced Django admin
 django-unfold==0.81.0            # [NEEDED] Clean modern admin theme
 django-modeltranslation==0.20.2  # REUSE: en/ar translatable fields
-pillow==11.0.0                   # [NEEDED] Required by Django models using CustomUser/UserProfile ImageFields
+pillow==12.3.0                   # [NEEDED] Required by Django models using CustomUser/UserProfile ImageFields. Needs >=12 for Python 3.14 Windows wheels.
 markdown==3.7                    # REUSE: Markdown parsing (compliance/legal docs)
 django-markdownx==4.0.1          # REUSE: Markdown editor for admin
 

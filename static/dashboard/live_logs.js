@@ -114,9 +114,8 @@
   }
   function roleColor(role) {
     const r = (role || '').toLowerCase();
-    if (r === 'customer') return 'border-blue-500';
-    if (r === 'deliveryman') return 'border-purple-500';
-    if (r === 'ops') return 'border-lime-500';
+    if (r === 'admin') return 'border-blue-500';
+    if (r === 'user') return 'border-purple-500';
     if (r === 'guest') return 'border-white';
     return 'border-base-700';
   }

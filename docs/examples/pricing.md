@@ -6,25 +6,25 @@
 from decimal import Decimal
 
 # REUSE: Core fee table — swap values per project
-DELIVERY_FEE_TABLE = {1: Decimal("30.00"), "2-5": Decimal("50.00"), "else": Decimal("75.00")}
+SERVICE_FEE_TABLE = {1: Decimal("30.00"), "2-5": Decimal("50.00"), "else": Decimal("75.00")}
 
-def calculate_delivery_fee(distinct_category_count: int) -> Decimal:
-    """REUSE: Tiered fee by distinct categories."""
-    if distinct_category_count == 1:
+def calculate_service_fee(distinct_item_count: int) -> Decimal:
+    """REUSE: Tiered fee by distinct item count."""
+    if distinct_item_count == 1:
         return Decimal("30.00")
-    if 2 <= distinct_category_count <= 5:
+    if 2 <= distinct_item_count <= 5:
         return Decimal("50.00")
     return Decimal("75.00")
 ```
 
-For coupons + auto-discounts, see `recalculate_discount()` — stacked product vs delivery caps:
+For vouchers + auto-discounts, see `recalculate_discount()` — stacked base vs add-on caps:
 
 ```python
-def calculate_stacked_discount(coupon, discounts, subtotal, fee):
-    """REUSE: Apply coupon + auto-discounts, capped by product vs delivery."""
-    product_discount = min(calculate_discount(coupon, subtotal, "products"), subtotal)
-    delivery_discount = min(calculate_discount(coupon, fee, "delivery"), fee)
+def calculate_stacked_discount(voucher, discounts, subtotal, fee):
+    """REUSE: Apply voucher + auto-discounts, capped by base vs add-on."""
+    base_discount = min(calculate_discount(voucher, subtotal, "base"), subtotal)
+    addon_discount = min(calculate_discount(voucher, fee, "addon"), fee)
     for d in discounts:
-        product_discount += min(calculate_discount(d, subtotal, "products"), subtotal - product_discount)
-    return product_discount + delivery_discount
+        base_discount += min(calculate_discount(d, subtotal, "base"), subtotal - base_discount)
+    return base_discount + addon_discount
 ```

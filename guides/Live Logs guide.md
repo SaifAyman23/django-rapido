@@ -47,7 +47,7 @@ Stack: Django 5.2 + DRF 3.16 + Gunicorn + Redis 7 + `gevent` + Nginx — all rea
 | **Status-family tabs** | `All / 2XX / 3XX / 4XX / 5XX` with live counts (`data-count`) |
 | **KPI stats** | 5 cards: `TOTAL / 2XX / 3XX / 4XX / 5XX` with percentages (`data-stat-*`) |
 | **Insights** | 4 cards: `ERROR RATE (4XX+5XX/Total) / TOP ERROR PATH / BUSIEST METHOD + avg+p95 / SUCCESS RATE (2XX/Total)` + burst detection (`BURST N/min` if ≥5 errors in 60s) |
-| **Role filter** | `All Roles / Customer / Deliveryman / Ops / Guest` — generic `user.role` lowercased, fallback `guest` |
+| **Role filter** | `All Roles / Admin / User / Guest` — generic `user.role` lowercased, fallback `guest` |
 | **Cause diagnostics (≥400)** | Full JWT/OAuth forensics without token leakage — scheme, base64, `eyJ` prefix, `alg`, payload metadata, `detail/code/messages`, `token_not_valid`, `expired`, `Origin`/`XHR` hints, exception traceback tail, body snippet |
 | **Search + highlight** | Live filter on `method/path/cause/msg/status/role` with `<mark>` highlight + debounce 150ms |
 | **Controls** | `Pause/Resume`, `Clear`, `Download` (visible lines → `live-logs-YYYY-MM-DDTHH:MM:SS.txt`), `Auto-scroll` checkbox |
@@ -110,7 +110,7 @@ project/settings/unfold_config.py
 dashboard/templates/admin/live_logs.html         # 73 lines — shell: header + tabs + roles + stats + insights + controls + terminal
   :14  <link live_logs.css>
   :31  {% include "_tabs.html" %}
-  :36-41  role filters (REUSE: Replace customer/deliveryman/ops with your Role)
+  :36-41  role filters (REUSE: change data-role + label to match your Role)
   :46  {% include "_stats.html" %}
   :51  {% include "_insights.html" %}
   :56  {% include "_controls.html" %}
@@ -582,7 +582,7 @@ Create `dashboard/templates/admin/live_logs.html` (`73` lines) — `extends admi
 {% block extrahead %}{{ block.super }}<link rel="stylesheet" href="{% static 'dashboard/live_logs.css' %}">{% endblock %}
 {% block content %}
   {% include "admin/live_logs/_tabs.html" %}
-  <div id="live-logs-role-filters"> ... buttons data-role="all/customer/deliveryman/ops/guest" ... </div>
+  <div id="live-logs-role-filters"> ... buttons data-role="all/admin/user/guest" ... </div>
   {% include "admin/live_logs/_stats.html" %}
   {% include "admin/live_logs/_insights.html" %}
   {% include "admin/live_logs/_controls.html" %}
@@ -959,7 +959,7 @@ path("admin/live-logs/stream/", live_logs_stream, name="admin-live-logs-stream")
 # + fallback nolang
 ```
 
-Visit `/en/admin/live-logs/` as `is_staff` → live terminal, tabs `All/2XX/3XX/4XX/5XX`, role pills `All Roles/Customer/Deliveryman/Ops/Guest`, stats + insights update live. `Pause/Clear/Download` + `Search` + `Auto-scroll` + status.
+Visit `/en/admin/live-logs/` as `is_staff` → live terminal, tabs `All/2XX/3XX/4XX/5XX`, role pills `All Roles/Admin/User/Guest`, stats + insights update live. `Pause/Clear/Download` + `Search` + `Auto-scroll` + status.
 
 ### 2. Read logs programmatically (copy-paste)
 
@@ -1005,7 +1005,7 @@ curl -X POST http://localhost:8000/api/v1/users/auth/social/google/ -H "Content-
 - Send `Authorization: Bearer bad.token` → `Malformed JWT: 2 parts` cause (`dashboard/live_logs.py:188`)
 - Trigger `500` (raise in shell) → `5XX red` with `ValueError | Trace: dashboard/live_logs.py:116`
 - Search `401` or `/users/me` → `<mark>` highlights, `No results for "q"` empty state if filtered
-- Roles: request as `customer` vs `guest` → left border `blue-500` vs `white` (`static/dashboard/live_logs.js:115-122`), role pills filter
+- Roles: request as `admin` vs `guest` → left border `blue-500` vs `white` (`static/dashboard/live_logs.js:115-121`), role pills filter
 - `Download` → `live-logs-YYYY-MM-DDTHH:MM:SS.txt` with `-----------` separators
 - Restart server or `redis-cli del live_logs:buffer live_logs:seq` → buffer clears (expected, ephemeral)
 - `TESTING=True python manage.py test` → fallback deque path, no Redis required

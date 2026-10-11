@@ -21,7 +21,7 @@ UNFOLD = {
     "SITE_HEADER": _("Django Rapido Dashboard"),
     "SITE_SUBHEADER": _("Django Rapido V2.0 — Production Starter"),
     "SITE_SYMBOL": "dashboard",
-    "SITE_ICON": lambda request: static("images/Icon-AI.svg"),
+    "SITE_ICON": lambda request: static("logo.svg"),
     # "SITE_URL": None,
     # "SITE_DROPDOWN": [
     #     {
@@ -49,7 +49,7 @@ UNFOLD = {
     "ENVIRONMENT": "dashboard.environment_callback",
     "DASHBOARD_CALLBACK": "dashboard.dashboard_callback",
     "LOGIN": {
-        "image": lambda request: static("dashboard/images/login-bg.jpg"),
+        "image": lambda request: static("images/login-bg.jpg"),
         "form": "dashboard.forms.LoginForm",
     },
     "STYLES": [
@@ -60,33 +60,33 @@ UNFOLD = {
     ],
     "COLORS": {
         "base": {
-            "50": "oklch(98.5% 0.015 145)",  # #f2ffe7 - Obsidian white */
-            "100": "oklch(96.5% 0.028 148)",  # #e0ffd0 - Obsidian light */
-            "200": "oklch(92.5% 0.042 151)",  # #c5ffb1 - Obsidian soft */
-            "300": "oklch(85.5% 0.055 154)",  # #a1f58a - Obsidian medium */
-            "400": "oklch(72.5% 0.06 157)",  # #72d458 - Obsidian green */
-            "500": "oklch(55.5% 0.065 160)",  # #46a735 - Obsidian forest */
-            "600": "oklch(38.5% 0.07 163)",  # #247b1f - Obsidian deep */
-            "700": "oklch(28.5% 0.075 166)",  # #115a16 - Obsidian dark */
-            "800": "oklch(20.5% 0.08 169)",  # #074110 - Obsidian deeper */
-            "850": "oklch(16.5% 0.085 172)",  # #03320b - Obsidian almost black */
-            "900": "oklch(13.5% 0.08 175)",  # #012308 - Obsidian black-green */
-            "925": "oklch(11.5% 0.07 178)",  # #001b06 - Dark obsidian */
-            "950": "oklch(9.5% 0.06 181)",  # #001304 - True obsidian black */
-            "975": "oklch(7.5% 0.05 184)",  # #000c02 - Pure obsidian */
+            "50": "oklch(0.985 0 0)",  # #fafafa - zinc-50 / card light */
+            "100": "oklch(0.967 0.001 286.375)",  # #f4f4f5 - secondary light token */
+            "200": "oklch(0.92 0.004 286.32)",  # #e4e4e7 - border light token */
+            "300": "oklch(0.87 0.006 286.32)",  # #d4d4d8 - zinc-300 */
+            "400": "oklch(0.705 0.015 286.067)",  # #a1a1aa - muted-fg dark token */
+            "500": "oklch(0.552 0.016 285.938)",  # #71717a - muted-fg light token */
+            "600": "oklch(0.442 0.017 285.786)",  # #52525b - zinc-600 */
+            "700": "oklch(0.37 0.013 285.805)",  # #3f3f46 - zinc-700 */
+            "800": "oklch(0.274 0.006 286.033)",  # #27272a - secondary dark token */
+            "850": "oklch(0.24 0.006 286)",  # #1f1f22 - between zinc-800/900 */
+            "900": "oklch(0.21 0.006 285.885)",  # #18181b - popover/sidebar dark token */
+            "925": "oklch(0.174 0.004 286)",  # #101012 - card dark token */
+            "950": "oklch(0.141 0.005 285.823)",  # #09090b - background dark token */
+            "975": "oklch(0.1 0.005 286)",  # #030304 - border dark token */
         },
         "primary": {
-            "50": "oklch(97% 0.025 145)",  # #f0faea - Obsidian mint */
-            "100": "oklch(92% 0.045 148)",  # #d3f0ce - Obsidian seafoam */
-            "200": "oklch(85% 0.065 151)",  # #ade0a4 - Obsidian sage */
-            "300": "oklch(75% 0.085 154)",  # #80c77a - Obsidian medium */
-            "400": "oklch(65% 0.095 157)",  # #56aa53 - Obsidian forest */
-            "500": "oklch(45% 0.09 160)",  # #2a822b - Obsidian deep green */
-            "600": "oklch(38% 0.085 163)",  # #1b691f - Obsidian pine */
-            "700": "oklch(31% 0.08 166)",  # #0f5117 - Obsidian dark forest */
-            "800": "oklch(24% 0.075 169)",  # #073c11 - Obsidian deeper */
-            "900": "oklch(18% 0.07 172)",  # #022b0b - Obsidian almost black */
-            "950": "oklch(13% 0.06 175)",  # #011d07 - Obsidian black-green */
+            "50": "oklch(0.977 0.014 308.299)",  # #f5f3ff - violet-50 */
+            "100": "oklch(0.946 0.033 307.174)",  # #ede9fe - violet-100 */
+            "200": "oklch(0.894 0.057 293.283)",  # #ddd6fe - violet-200 */
+            "300": "oklch(0.812 0.101 294.588)",  # #c4b5fd - violet-300 */
+            "400": "oklch(0.714 0.143 293.571)",  # #a78bfa - violet-400 */
+            "500": "oklch(0.606 0.25 292.717)",  # #8b5cf6 - BRAND VIOLET */
+            "600": "oklch(0.542 0.281 293.009)",  # #7c3aed - violet-600 */
+            "700": "oklch(0.496 0.265 301.924)",  # #6d28d9 - violet-700 */
+            "800": "oklch(0.438 0.218 303.089)",  # #5b21b6 - violet-800 */
+            "900": "oklch(0.381 0.176 304.987)",  # #4c1d95 - violet-900 */
+            "950": "oklch(0.291 0.149 302.717)",  # #2e1065 - violet-950 */
         },
         "blue": {
             "50": "oklch(97% 0.014 254.604)",
@@ -193,64 +193,64 @@ UNFOLD = {
             "950": "oklch(27.4% 0.072 132.109)",
         },
         "font": {
-            "subtle-light": "var(--color-base-500)",  # #46a735 - Obsidian forest */
-            "subtle-dark": "var(--color-base-400)",  # #72d458 - Obsidian green */
-            "default-light": "var(--color-base-700)",  # #115a16 - Obsidian dark */
-            "default-dark": "var(--color-base-300)",  # #a1f58a - Obsidian medium */
-            "important-light": "var(--color-base-900)",  # #012308 - Obsidian black-green */
-            "important-dark": "var(--color-base-100)",  # #e0ffd0 - Obsidian light */
+            "subtle-light": "var(--color-base-500)",  # #71717a - muted-fg light token */
+            "subtle-dark": "var(--color-base-400)",  # #a1a1aa - muted-fg dark token */
+            "default-light": "var(--color-base-950)",  # #09090b - foreground light token */
+            "default-dark": "var(--color-base-50)",  # #fafafa - foreground dark token */
+            "important-light": "var(--color-base-950)",  # #09090b - foreground light token */
+            "important-dark": "var(--color-base-50)",  # #fafafa - foreground dark token */
         },
         "semantic": {
-            "accent": "var(--color-primary-500)",  # #2a822b - Obsidian deep green */
-            "accent-light": "var(--color-primary-300)",  # #80c77a - Obsidian medium */
-            "accent-dark": "var(--color-primary-700)",  # #0f5117 - Obsidian dark forest */
-            "accent-bright": "oklch(75% 0.18 145)",  # #8fe080 - Bright obsidian */
-            "accent-dim": "oklch(45% 0.09 160 / 0.08)",  # #2a822b with 8% opacity */
-            "accent-glow": "oklch(65% 0.095 157 / 0.25)",  # #56aa53 with 25% opacity */
-            "blue": "oklch(55% 0.15 250)",  # #3a7eb0 - Muted tech blue */
-            "blue-light": "oklch(92% 0.02 250)",  # #e1ecf9 - Pale blue */
-            "blue-dim": "oklch(55% 0.15 250 / 0.12)",  # #3a7eb0 with 12% opacity */
-            "green": "var(--color-primary-500)",  # #2a822b - Obsidian deep green */
-            "green-light": "var(--color-primary-100)",  # #d3f0ce - Obsidian seafoam */
-            "green-dim": "var(--color-primary-500 / 0.12)",  # #2a822b with 12% opacity */
-            "amber": "oklch(70% 0.15 75)",  # #c98a2b - Warm amber */
-            "amber-light": "oklch(95% 0.03 75)",  # #fff1d6 - Pale amber */
-            "amber-dim": "oklch(70% 0.15 75 / 0.12)",  # #c98a2b with 12% opacity */
-            "red": "oklch(55% 0.18 25)",  # #c43a4b - Muted crimson */
-            "red-light": "oklch(95% 0.02 25)",  # #ffe6e8 - Pale pink */
-            "red-dim": "oklch(55% 0.18 25 / 0.12)",  # #c43a4b with 12% opacity */
-            "purple": "oklch(55% 0.15 290)",  # #7a5fb0 - Muted purple */
-            "purple-light": "oklch(95% 0.02 290)",  # #f0e8ff - Lavender */
-            "purple-dim": "oklch(55% 0.15 290 / 0.12)",  # #7a5fb0 with 12% opacity */
-            "electric": "oklch(75% 0.15 195)",  # #4dc9c9 - Electric teal */
-            "navy": "var(--color-base-850)",  # #03320b - Obsidian almost black */
-            "ink": "var(--color-base-950)",  # #001304 - True obsidian black */
+            "accent": "var(--color-primary-700)",  # #6d28d9 - violet-700 */
+            "accent-light": "var(--color-primary-300)",  # #c4b5fd - violet-300 */
+            "accent-dark": "var(--color-primary-800)",  # #5b21b6 - violet-800 */
+            "accent-bright": "oklch(0.714 0.143 293.571)",  # #a78bfa - violet-400 */
+            "accent-dim": "oklch(0.606 0.25 292.717 / 0.08)",  # brand violet with 8% opacity */
+            "accent-glow": "oklch(0.606 0.25 292.717 / 0.25)",  # brand violet with 25% opacity */
+            "blue": "var(--color-blue-500)",  # chart-2 token */
+            "blue-light": "var(--color-blue-100)",  # #eff6ff-ish pale blue */
+            "blue-dim": "oklch(0.623 0.214 259.815 / 0.12)",  # chart-2 with 12% opacity */
+            "green": "var(--color-green-600)",  # standard green */
+            "green-light": "var(--color-green-100)",  # pale green */
+            "green-dim": "oklch(0.627 0.194 149.214 / 0.12)",  # green-600 with 12% opacity */
+            "amber": "var(--color-amber-500)",  # standard amber */
+            "amber-light": "var(--color-amber-100)",  # pale amber */
+            "amber-dim": "oklch(0.769 0.188 70.08 / 0.12)",  # amber-500 with 12% opacity */
+            "red": "var(--color-red-600)",  # #e7000b - destructive light token */
+            "red-light": "var(--color-red-100)",  # pale red */
+            "red-dim": "oklch(0.577 0.245 27.325 / 0.12)",  # destructive with 12% opacity */
+            "purple": "var(--color-primary-600)",  # #7c3aed - violet-600 */
+            "purple-light": "var(--color-primary-100)",  # #ede9fe - violet-100 */
+            "purple-dim": "oklch(0.542 0.281 293.009 / 0.12)",  # violet-600 with 12% opacity */
+            "electric": "oklch(0.766 0.112 238)",  # #68bdf2 - accent-sky token */
+            "navy": "var(--color-base-900)",  # #18181b - popover dark token */
+            "ink": "var(--color-base-950)",  # #09090b - background dark token */
         },
         "background": {
-            "primary-light": "var(--color-base-50)",  # #f2ffe7 - Obsidian white */
-            "primary-dark": "var(--color-base-950)",  # #001304 - True obsidian black */
-            "secondary-light": "var(--color-base-100)",  # #e0ffd0 - Obsidian light */
-            "secondary-dark": "var(--color-base-900)",  # #012308 - Obsidian black-green */
-            "tertiary-light": "var(--color-base-200)",  # #c5ffb1 - Obsidian soft */
-            "tertiary-dark": "var(--color-base-850)",  # #03320b - Obsidian almost black */
-            "elevated-light": "oklch(100% 0 0)",  # #ffffff - Pure white */
-            "elevated-dark": "var(--color-base-800)",  # #074110 - Obsidian deeper */
+            "primary-light": "var(--color-base-50)",  # #fafafa - card light */
+            "primary-dark": "var(--color-base-950)",  # #09090b - background dark token */
+            "secondary-light": "var(--color-base-100)",  # #f4f4f5 - secondary light token */
+            "secondary-dark": "var(--color-base-900)",  # #18181b - popover dark token */
+            "tertiary-light": "var(--color-base-200)",  # #e4e4e7 - border light token */
+            "tertiary-dark": "var(--color-base-800)",  # #27272a - secondary dark token */
+            "elevated-light": "oklch(1 0 0)",  # #ffffff - card light token */
+            "elevated-dark": "var(--color-base-925)",  # #101012 - card dark token */
         },
         "border": {
-            "light-light": "var(--color-base-200)",  # #c5ffb1 - Obsidian soft */
-            "light-dark": "var(--color-base-700)",  # #115a16 - Obsidian dark */
-            "strong-light": "var(--color-base-400)",  # #72d458 - Obsidian green */
-            "strong-dark": "var(--color-base-600)",  # #247b1f - Obsidian deep */
+            "light-light": "var(--color-base-200)",  # #e4e4e7 - border light token */
+            "light-dark": "var(--color-base-800)",  # #27272a - subtle dark border */
+            "strong-light": "var(--color-base-300)",  # #d4d4d8 - zinc-300 */
+            "strong-dark": "var(--color-base-700)",  # #3f3f46 - zinc-700 */
         },
         "text": {
-            "primary-light": "var(--color-base-900)",  # #012308 - Obsidian black-green */
-            "primary-dark": "var(--color-base-100)",  # #e0ffd0 - Obsidian light */
-            "secondary-light": "var(--color-base-700)",  # #115a16 - Obsidian dark */
-            "secondary-dark": "var(--color-base-300)",  # #a1f58a - Obsidian medium */
-            "tertiary-light": "var(--color-base-500)",  # #46a735 - Obsidian forest */
-            "tertiary-dark": "var(--color-base-400)",  # #72d458 - Obsidian green */
-            "inverse-light": "var(--color-base-950)",  # #001304 - True obsidian black */
-            "inverse-dark": "var(--color-base-50)",  # #f2ffe7 - Obsidian white */
+            "primary-light": "var(--color-base-950)",  # #09090b - foreground light token */
+            "primary-dark": "var(--color-base-50)",  # #fafafa - foreground dark token */
+            "secondary-light": "var(--color-base-500)",  # #71717a - muted-fg light token */
+            "secondary-dark": "var(--color-base-400)",  # #a1a1aa - muted-fg dark token */
+            "tertiary-light": "var(--color-base-500)",  # #71717a - muted-fg light token */
+            "tertiary-dark": "var(--color-base-400)",  # #a1a1aa - muted-fg dark token */
+            "inverse-light": "var(--color-base-50)",  # #fafafa - light text for dark surfaces */
+            "inverse-dark": "var(--color-base-950)",  # #09090b - dark text for light surfaces */
         },
     },
     "SIDEBAR": {
@@ -341,28 +341,6 @@ UNFOLD = {
                 ],
             },
             {
-                "title": _("Operations"),
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Deliverymen"),
-                        "icon": "local_shipping",
-                        "link": reverse_lazy("admin:ops_deliveryman_changelist"),
-                    },
-                ],
-            },
-            {
-                "title": _("Addresses"),
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Locations"),
-                        "icon": "location_on",
-                        "link": reverse_lazy("admin:addresses_location_changelist"),
-                    },
-                ],
-            },
-            {
                 "title": _("Notifications"),
                 "collapsible": True,
                 "items": [
@@ -375,65 +353,6 @@ UNFOLD = {
                         "title": _("Devices"),
                         "icon": "devices",
                         "link": reverse_lazy("admin:notifications_device_changelist"),
-                    },
-                ],
-            },
-            {
-                "title": _("Marketing"),
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Email Campaigns"),
-                        "icon": "campaign",
-                        "link": reverse_lazy("admin:email_marketing_emailcampaign_changelist"),
-                    },
-                ],
-            },
-            {
-                "title": _("Stores"),
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Stores"),
-                        "icon": "store",
-                        "link": reverse_lazy("admin:stores_store_changelist"),
-                    },
-                ],
-            },
-            {
-                "title": _("Catalog"),
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Categories"),
-                        "icon": "category",
-                        "link": reverse_lazy("admin:catalog_category_changelist"),
-                    },
-                    {
-                        "title": _("Pills"),
-                        "icon": "medication",
-                        "link": reverse_lazy("admin:catalog_pills_changelist"),
-                    },
-                    {
-                        "title": _("Products"),
-                        "icon": "inventory_2",
-                        "link": reverse_lazy("admin:catalog_product_changelist"),
-                    },
-                    {
-                        "title": _("Favorites"),
-                        "icon": "favorite",
-                        "link": reverse_lazy("admin:catalog_productfavorite_changelist"),
-                    },
-                ],
-            },
-            {
-                "title": _("Ratings"),
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Ratings"),
-                        "icon": "star",
-                        "link": reverse_lazy("admin:orders_rating_changelist"),
                     },
                 ],
             },
@@ -453,62 +372,20 @@ UNFOLD = {
                     },
                 ],
             },
-            {
-                "title": _("Orders"),
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": _("Orders"),
-                        "icon": "receipt_long",
-                        "link": reverse_lazy("admin:orders_order_changelist"),
-                    },
-                    {
-                        "title": _("Order Items"),
-                        "icon": "list_alt",
-                        "link": reverse_lazy("admin:orders_orderitem_changelist"),
-                    },
-                    {
-                        "title": _("Cart"),
-                        "icon": "shopping_cart",
-                        "link": reverse_lazy("admin:orders_cart_changelist"),
-                    },
-                    {
-                        "title": _("Coupons"),
-                        "icon": "confirmation_number",
-                        "link": reverse_lazy("admin:orders_coupon_changelist"),
-                    },
-                    {
-                        "title": _("Discounts"),
-                        "icon": "percent",
-                        "link": reverse_lazy("admin:orders_discount_changelist"),
-                    },
-                    {
-                        "title": _("Delivery Snapshots"),
-                        "icon": "location_on",
-                        "link": reverse_lazy("admin:orders_orderdeliverysnapshot_changelist"),
-                    },
-                    {
-                        "title": _("Preparation Photos"),
-                        "icon": "camera_alt",
-                        "link": reverse_lazy("admin:orders_orderpreparationphoto_changelist"),
-                    },
-                    {
-                        "title": _("Status Events"),
-                        "icon": "timeline",
-                        "link": reverse_lazy("admin:orders_orderstatusevent_changelist"),
-                    },
-                    {
-                        "title": _("Assignment Logs"),
-                        "icon": "swap_horiz",
-                        "link": reverse_lazy("admin:orders_driverassignmentlog_changelist"),
-                    },
-                    {
-                        "title": _("Pricing Config"),
-                        "icon": "price_change",
-                        "link": reverse_lazy("admin:orders_pricingconfig_changelist"),
-                    },
-                ],
-            },
+            # ── Project sections go here (template rule: only reference
+            #    installed apps with registered ModelAdmins, or /admin/ 500s
+            #    on NoReverseMatch). Example:
+            #    {
+            #        "title": _("Shop"),
+            #        "collapsible": True,
+            #        "items": [
+            #            {
+            #                "title": _("Products"),
+            #                "icon": "inventory_2",
+            #                "link": reverse_lazy("admin:shop_product_changelist"),
+            #            },
+            #        ],
+            #    },
             {
                 "title": _("Celery Tasks"),
                 "collapsible": True,

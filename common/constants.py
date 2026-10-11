@@ -48,68 +48,6 @@ class UserStatusChoice(str, Enum):
         return [item.value for item in cls]
 
 
-class PaymentStatusChoice(str, Enum):
-    """Payment status."""
-
-    PENDING = "pending"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    REFUNDED = "refunded"
-    CANCELLED = "cancelled"
-
-    @classmethod
-    def choices(cls) -> List[Tuple[str, str]]:
-        return [(item.value, _(item.name.title())) for item in cls]
-
-    @classmethod
-    def values(cls) -> List[str]:
-        return [item.value for item in cls]
-
-
-class OrderStatusChoice(str, Enum):
-    """Order fulfillment status.
-
-    Workflow:
-        PENDING -> CONFIRMED -> PROCESSING -> SHIPPED -> DELIVERED
-    Can cancel from: PENDING, CONFIRMED, PROCESSING
-    Can return from: DELIVERED
-    """
-
-    PENDING = "pending"
-    CONFIRMED = "confirmed"
-    PROCESSING = "processing"
-    SHIPPED = "shipped"
-    DELIVERED = "delivered"
-    CANCELLED = "cancelled"
-    RETURNED = "returned"
-
-    @classmethod
-    def choices(cls) -> List[Tuple[str, str]]:
-        return [(item.value, _(item.name.title())) for item in cls]
-
-    @classmethod
-    def values(cls) -> List[str]:
-        return [item.value for item in cls]
-
-
-class SubscriptionStatusChoice(str, Enum):
-    """Subscription lifecycle status."""
-
-    ACTIVE = "active"
-    PAUSED = "paused"
-    CANCELLED = "cancelled"
-    EXPIRED = "expired"
-
-    @classmethod
-    def choices(cls) -> List[Tuple[str, str]]:
-        return [(item.value, _(item.name.title())) for item in cls]
-
-    @classmethod
-    def values(cls) -> List[str]:
-        return [item.value for item in cls]
-
-
 class PriorityChoice(IntEnum):
     """Priority levels."""
 

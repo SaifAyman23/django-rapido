@@ -139,13 +139,27 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
         "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
     }
 
+    # Unfold admin runs standard Alpine.js, which compiles x-data/x-show/@click
+    # expressions at runtime and needs 'unsafe-eval'; admin markup also uses
+    # inline styles. Public pages keep the strict policy above.
+    ADMIN_CSP = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-eval'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "font-src 'self' data:"
+    )
+
     def __init__(self, get_response):
         super().__init__(get_response)
         self.headers = dict(self.SECURITY_HEADERS)
 
     def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
         """Add security headers that are not already present"""
-        for header, value in self.headers.items():
+        headers = dict(self.headers)
+        if "/admin/" in request.path:
+            headers["Content-Security-Policy"] = self.ADMIN_CSP
+        for header, value in headers.items():
             if header not in response:
                 response[header] = value
         return response

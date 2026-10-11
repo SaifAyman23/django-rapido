@@ -147,6 +147,8 @@ make init   # deps, .env, SECRET_KEY, migrate, collectstatic, superuser admin/ad
 make run    # http://localhost:8000
 ```
 
+> **Windows shortcut:** double-click `OPEN SESAME.exe` in the project root — it opens this project in VS Code instantly, no terminal needed.
+
 ---
 
 ## Project Structure
