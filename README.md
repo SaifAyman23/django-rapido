@@ -80,7 +80,7 @@ You clone, you ship. No boilerplate archaeology.
 | **Auth** | Multi-account identity: `User` (person) + `Account` (role client/coach, per-account login email, JWT-bound via `AccountJWTAuthentication` + RLS context) + `EmailOTP` (HMAC-hashed 6 digits, multi-purpose, attempt-locked) + `PasswordResetToken` 15m (`F()` guard, anti-enumeration) + `SocialAccountLink` + `SocialAccountAdapter` dedupe |
 | **Push** | `notifications` — `Device` (`unique user+device_uuid`, account-aware) + `Notification` (delivery status, read_at, scheduled_at, data) + `CustomReminder` (recurring, translatable), `should_notify` guard, multicast 500, push device + reminder endpoints |
 | **CMS** | `compliance` (FAQ + legal docs + versioned `PolicyDocument` + `PolicyAcceptance` consent proof, `TranslationBaseAdmin` + `MarkdownAdminMixin`) + `contacts` (`is_ordering_open()` via `BUSINESS_TIME_ZONE`, bilingual address) |
-| **i18n** | `modeltranslation` en/ar + `TranslationBaseAdmin`, `LocaleMiddleware`, `BUSINESS_TIME_ZONE` |
+| **i18n** | `modeltranslation` en/ar + `TranslationBaseAdmin`, `LocaleMiddleware` (`Accept-Language`), `TimezoneMiddleware` (`X-Timezone`) |
 | **Tasks** | Celery 5.4 + Beat + Flower, `CELERY_BEAT_SCHEDULE` example, Flower `:5555` |
 | **Ops** | `docker-compose.yml` (dev) + `docker-compose.prod.yml` (`!reset []`, `gunicorn 4`, `443` + certbot `12h`), `nginx.prod.conf` (`ACME`), `.dockerignore` |
 | **Live Logs** | Staff-only `/admin/live-logs/` — Redis list `live_logs:buffer` (fallback `deque 500`), `web-sse` gevent `2×1000` timeout 0, SSE `retry:3000` + heartbeat, `LiveLogsMiddleware` JWT diagnostics, `JetBrains Mono` 92KB |
@@ -157,7 +157,7 @@ make run    # http://localhost:8000
 project-root/
 ├── project/                    # Django project
 │   ├── settings/               # base.py + local.py + production.py + unfold_config.py
-│   ├── urls.py                 # SchemaView(exclude=True), HomeView, users/notifications/contacts/compliance
+│   ├── urls.py                 # SchemaView(exclude=True), HomeView, auth/notifications/push-devices/custom-reminders/contacts/compliance
 │   └── celery.py, asgi.py, wsgi.py, routing.py
 │
 ├── accounts/                   # Multi-account auth: Account + EmailOTP + SocialAccountLink + AccountJWTAuthentication (RLS) + services (register/login/verify/reset/change/avatar/add-account/social) + JWT + SocialAccountAdapter
@@ -167,7 +167,7 @@ project-root/
 │
 ├── common/                     # Shared infra — UUIDModel, BaseViewSetMixin (scrubbing), AuthRateThrottle, TranslationBaseAdmin
 ├── dashboard/                  # Unfold + Live Logs (live_logs.py: Redis list + fallback deque, middleware + SSE gevent, tabs/stats/insights, JetBrains Mono 92KB)
-├── guides/                     # 18 docs — Settings, Auth, Notifications, Celery, Docker, i18n, common/*
+├── guides/                     # 19 guides - Settings, Auth, Notifications, Celery, Docker, i18n, common/*
 │
 ├── docker-compose.yml          # Dev (runserver, ports open, nginx SSE no-buffer 3600s)
 ├── docker-compose.prod.yml     # Prod (gunicorn 4, web-sse gevent 2×1000 timeout 0, !reset ports, 443 + certbot)
@@ -189,6 +189,7 @@ project-root/
 |-----|---------|
 | `SECRET_KEY` | Fail-fast `ImproperlyConfigured` if missing |
 | `BUSINESS_TIME_ZONE` | `Africa/Cairo` for `is_ordering_open()` |
+| `SITE_NAME` | Brand used in email subjects and greetings (OTP verification, reset) |
 | `JWT_SECRET_KEY` | `or SECRET_KEY` fallback |
 | `GOOGLE_OAUTH_*` / `FACEBOOK_*` | Opt-in allauth `ADAPTER` |
 | `GOOGLE_APPLICATION_CREDENTIALS` | `./firebase-adminsdk.json` for FCM |
@@ -224,8 +225,8 @@ Then set `DJANGO_ENVIRONMENT=production`, `DEBUG=False`, `ALLOWED_HOSTS`, strong
 
 ```text
 10:12:07  POST  /api/orders/checkout/  400  amber  15ms  ValidationError: address_id missing — cause: detail=address_id is required
-10:12:08  POST  /api/users/login/      401  amber  8ms   Missing Authorization (expected 'Bearer <access>') | code=not_authenticated
-10:12:09  POST  /api/users/token/refresh/ 401 amber  Malformed JWT: 2 parts (expected 3 header.payload.signature)
+10:12:08  POST  /api/v1/auth/login/   401  amber  8ms   Missing Authorization (expected 'Bearer <access>') | code=not_authenticated
+10:12:09  POST  /api/v1/auth/token/refresh/ 401 amber  Malformed JWT: 2 parts (expected 3 header.payload.signature)
 10:12:10  POST  /auth/social/google/   401  amber  Wrong scheme 'bearer' (must be 'Bearer' capital B) — got 'bearer eyJ...' | OAuth path /auth/social/google/ failed
 10:12:11  GET   /api/orders/history/  500  red    30ms  IntegrityError: null value in column "address_id" | Trace: orders/views.py:88
 ```
@@ -242,10 +243,11 @@ See `guides/Live Logs guide.md` for architecture, wiring, and tradeoffs.
 ## Testing
 
 ```bash
-make test           # pytest (auto SQLite via TESTING flag)
+make test           # pytest (auto SQLite via TESTING flag), 15 tests
 make test-coverage
 ```
 
+Covers health, register + OTP, compliance, notifications, security scrubbing and `X-Timezone`.
 No `testing.py` — `base.py:24` detects `test` in `sys.argv`.
 
 ---
