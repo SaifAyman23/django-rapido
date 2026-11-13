@@ -51,3 +51,52 @@ class ComplianceDocument(TimestampedModel, UUIDModel):
 
     def __str__(self):
         return self.title
+
+
+from django.conf import settings
+
+class PolicyDocument(TimestampedModel, UUIDModel):
+    """Published legal text such as the privacy policy (QOOT-012 §2.2)."""
+
+    slug = models.SlugField(max_length=60, unique=True)
+    title = models.CharField(max_length=200)
+    content = models.TextField(max_length=50000)
+    version = models.CharField(max_length=20, default="1.0")
+    sort_order = models.PositiveIntegerField(default=0, db_index=True)
+    is_published = models.BooleanField(default=False, db_index=True)
+
+    class Meta:
+        verbose_name = _("Policy Document")
+        verbose_name_plural = _("Policy Documents")
+        ordering = ["sort_order", "slug"]
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.version})"
+
+class PolicyAcceptance(TimestampedModel, UUIDModel):
+    """Proof that a person accepted one policy version (PDPL / store review)."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="policy_acceptances",
+    )
+    policy_slug = models.CharField(max_length=60, db_index=True)
+    version = models.CharField(max_length=20)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        verbose_name = _("Policy Acceptance")
+        verbose_name_plural = _("Policy Acceptances")
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "policy_slug", "version"],
+                name="unique_policy_acceptance_per_version",
+            )
+        ]
+        indexes = [models.Index(fields=["user", "policy_slug"])]
+
+    def __str__(self) -> str:
+        return f"{self.policy_slug} {self.version} — {self.user_id}"

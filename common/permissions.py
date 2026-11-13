@@ -386,3 +386,94 @@ def combine_permissions(*permission_classes: Type[BasePermission]) -> type:
     CombinedPermission.__name__ = class_name
     CombinedPermission.__qualname__ = class_name
     return CombinedPermission
+
+
+# =============================================================================
+# Account permissions (multi-account identity)
+#
+# Role lives on Account, never on User. `request.user.active_account` is set
+# by AccountJWTAuthentication from the account_id claim in the access token.
+# =============================================================================
+
+
+def get_active_account(request):
+    """Return the Account bound to this request, or None."""
+    account = getattr(request, "active_account", None)
+    if account is not None:
+        return account
+    user = getattr(request, "user", None)
+    if user is not None and getattr(user, "is_authenticated", False):
+        return getattr(user, "active_account", None)
+    return None
+
+
+class _AccountRolePermission(BasePermission):
+    """Base permission matching the active Account's role."""
+
+    allowed_role = None
+    message = "This action is not available for your account role."
+
+    def has_permission(self, request, view):
+        account = get_active_account(request)
+        if account is None:
+            return False
+        if account.role != self.allowed_role:
+            raise ForbiddenRoleError()
+        return True
+
+
+class IsClient(_AccountRolePermission):
+    """Active account must be a Client account."""
+
+    allowed_role = "client"
+
+
+class IsCoach(_AccountRolePermission):
+    """Active account must be a Coach account."""
+
+    allowed_role = "coach"
+
+
+class IsClientOrCoach(BasePermission):
+    """Active account may be Client or Coach - for role-agnostic reference data."""
+
+    message = "This action is not available for your account role."
+
+    def has_permission(self, request, view):
+        account = get_active_account(request)
+        if account is None:
+            return False
+        if account.role not in ("client", "coach"):
+            raise ForbiddenRoleError()
+        return True
+
+
+class IsEmailVerified(BasePermission):
+    """The active Account must have a verified email."""
+
+    message = "Please verify your email first."
+
+    def has_permission(self, request, view):
+        user = getattr(request, "user", None)
+        if user is None or not getattr(user, "is_authenticated", False):
+            return False
+
+        account = get_active_account(request)
+        verified = (
+            account.is_email_verified
+            if account is not None
+            else bool(getattr(user, "is_verified", False))
+        )
+        if not verified:
+            raise EmailNotVerifiedError()
+        return True
+
+
+class HasCompletedOnboarding(BasePermission):
+    """The active Account must have completed onboarding."""
+
+    message = "Onboarding not completed."
+
+    def has_permission(self, request, view):
+        account = get_active_account(request)
+        return bool(account and getattr(account, "has_profile", True))

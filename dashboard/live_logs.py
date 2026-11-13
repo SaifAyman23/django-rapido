@@ -1,22 +1,24 @@
 """
-REUSE: Generic live logs — Redis-shared (fallback deque), SSE, JWT diagnostics.
+REUSE: Generic live logs â€” Redis-shared (fallback deque), SSE, JWT diagnostics.
 
 - MAX_LINES 1000 easy global to tune, ~300KB RAM, no env needed
-- Roles: generic — reads user.role lowercased, fallback "guest" (change role filters in templates to match your Role)
+- Roles: generic â€” reads user.role lowercased, fallback "guest" (change role filters in templates to match your Role)
 - JWT diagnostics: generic, no token leakage, safe metadata only
-- Django Rapido — decoupled, reusable live logs.
+- Django Rapido â€” decoupled, reusable live logs.
 """
 
 import json
+import logging
 import time
-import traceback
 from collections import deque
-from threading import Lock
+from threading import Lock, local
 
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import StreamingHttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from django.shortcuts import render
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 MAX_LINES = 1000  # REUSE: easy global to tune, ~300KB RAM max for 1000 lines
 REDIS_KEY = "live_logs:buffer"
@@ -26,16 +28,17 @@ REDIS_SEQ = "live_logs:seq"
 _buffer: deque = deque(maxlen=MAX_LINES)
 _lock = Lock()
 _seq = 0
+_tls = local()
 
 
 def _next_id() -> int:
     try:
-        from django.core.cache import cache
         from django_redis import get_redis_connection
 
         conn = get_redis_connection("default")
         return int(conn.incr(REDIS_SEQ))
     except Exception:
+        logger.debug("Redis sequence unavailable; using local live-log sequence", exc_info=True)
         global _seq
         with _lock:
             _seq += 1
@@ -50,22 +53,126 @@ def _redis_available() -> bool:
         conn.ping()
         return True
     except Exception:
+        logger.debug("Redis is unavailable for live logs", exc_info=True)
         return False
 
 
 def append_log(entry: dict) -> None:
-    entry = {**entry, "id": _next_id()}
-    try:
-        from django_redis import get_redis_connection
-
-        conn = get_redis_connection("default")
-        conn.lpush(REDIS_KEY, json.dumps(entry, ensure_ascii=False))
-        conn.ltrim(REDIS_KEY, 0, MAX_LINES - 1)
+    if getattr(_tls, "in_append", False):
         return
-    except Exception:
-        pass
-    with _lock:
-        _buffer.append(entry)
+    _tls.in_append = True
+    try:
+        entry = {**entry, "id": _next_id()}
+        try:
+            from django_redis import get_redis_connection
+
+            conn = get_redis_connection("default")
+            conn.lpush(REDIS_KEY, json.dumps(entry, ensure_ascii=False))
+            conn.ltrim(REDIS_KEY, 0, MAX_LINES - 1)
+            return
+        except Exception:
+            logger.debug("Redis append unavailable; using local live-log buffer", exc_info=True)
+        with _lock:
+            _buffer.append(entry)
+    finally:
+        _tls.in_append = False
+
+
+class LiveLogsHandler(logging.Handler):
+    """Python logging handler that mirrors every log record into the live-logs buffer."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if getattr(_tls, "in_append", False):
+            return
+        # The LiveLogsMiddleware already records HTTP requests with richer
+        # details; skip its logger to avoid duplicate entries.
+        if (
+            record.name == __name__
+            or record.name.startswith(f"{__name__}.")
+            or record.name == "common.middleware"
+            or record.name.startswith("common.middleware.")
+        ):
+            return
+        try:
+            msg = self.format(record) if self.formatter else record.getMessage()
+            append_log(
+                {
+                    "ts": timezone.now().isoformat(),
+                    "method": getattr(record, "method", "LOG"),
+                    "path": getattr(record, "path", record.name),
+                    "status": getattr(record, "status_code", 200),
+                    "level": record.levelname,
+                    "user": (
+                        getattr(record, "user", "")[:24]
+                        if isinstance(getattr(record, "user", ""), str)
+                        else ""
+                    ),
+                    "role": "system",
+                    "duration": getattr(record, "duration_ms", 0),
+                    "msg": f"[{record.name}] {msg}",
+                    "cause": "",
+                }
+            )
+        except Exception:
+            logger.debug("Live log handler failed to emit a record", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# stdout/stderr tee -> live logs (captures prints, Django startup, etc.)
+# ---------------------------------------------------------------------------
+
+
+class _LiveLogsTee:
+    def __init__(self, stream) -> None:
+        self._stream = stream
+        self._buf = ""
+
+    def write(self, data) -> int:
+        try:
+            self._stream.write(data)
+        except Exception:
+            logger.debug("Live-log tee could not write to the wrapped stream", exc_info=True)
+        try:
+            self._buf += data
+            while "\n" in self._buf:
+                line, self._buf = self._buf.split("\n", 1)
+                line = line.strip()
+                if line:
+                    append_log(
+                        {
+                            "ts": timezone.now().isoformat(),
+                            "method": "PRINT",
+                            "path": "stdout",
+                            "status": 200,
+                            "level": "INFO",
+                            "user": "",
+                            "role": "system",
+                            "duration": 0,
+                            "msg": line,
+                            "cause": "",
+                        }
+                    )
+        except Exception:
+            logger.debug("Live-log tee could not append a line", exc_info=True)
+        return len(data) if data else 0
+
+    def flush(self) -> None:
+        try:
+            self._stream.flush()
+        except Exception:
+            logger.debug("Live-log tee could not flush the wrapped stream", exc_info=True)
+
+    def __getattr__(self, name):
+        return getattr(self._stream, name)
+
+
+def install_live_logs_tee() -> None:
+    import sys as _sys
+
+    if not isinstance(_sys.stdout, _LiveLogsTee):
+        _sys.stdout = _LiveLogsTee(_sys.stdout)
+    if not isinstance(_sys.stderr, _LiveLogsTee):
+        _sys.stderr = _LiveLogsTee(_sys.stderr)
 
 
 def get_snapshot(last_id: int = 0) -> list[dict]:
@@ -77,12 +184,12 @@ def get_snapshot(last_id: int = 0) -> list[dict]:
         raw = conn.lrange(REDIS_KEY, 0, MAX_LINES - 1)
         if raw:
             entries = [json.loads(x) for x in raw]
-            entries.reverse()  # lpush → reverse to chronological
+            entries.reverse()  # lpush â†’ reverse to chronological
             if last_id == 0:
                 return entries
             return [e for e in entries if e["id"] > last_id]
     except Exception:
-        pass
+        logger.debug("Redis snapshot unavailable; using local live-log buffer", exc_info=True)
     with _lock:
         if last_id == 0:
             return list(_buffer)
@@ -90,7 +197,7 @@ def get_snapshot(last_id: int = 0) -> list[dict]:
 
 
 class LiveLogsMiddleware:
-    def __init__(self, get_response):
+    def __init__(self, get_response) -> None:
         self.get_response = get_response
 
     def __call__(self, request):
@@ -113,11 +220,8 @@ class LiveLogsMiddleware:
                 cause = ""
                 if status >= 400:
                     if exc_info is not None:
-                        tb = traceback.format_exception(
-                            type(exc_info), exc_info, exc_info.__traceback__
-                        )
-                        tail = "".join(tb[-5:])
-                        cause = f"{type(exc_info).__name__}: {exc_info} | {tail}"
+                        # Do not persist traceback text: it can contain secrets or user input.
+                        cause = f"{type(exc_info).__name__}: request raised an exception"
                     else:
                         cause = getattr(response, "reason_phrase", "") or (
                             response.reason_phrase if response else ""
@@ -141,7 +245,7 @@ class LiveLogsMiddleware:
                             )
                             if is_jwt_path or is_oauth_path or status in (401, 403):
                                 details = []
-                                # Low-level header diagnostics (no token leakage) — the juice for JWT/OAuth
+                                # Low-level header diagnostics (no token leakage) â€” the juice for JWT/OAuth
                                 raw_header = header
                                 header_stripped = header.strip() if header else ""
                                 if not header:
@@ -157,9 +261,9 @@ class LiveLogsMiddleware:
                                     # Multiple values (comma)
                                     if "," in header_stripped:
                                         details.append(
-                                            "Multiple Authorization values (comma-separated) — only first will be used"
+                                            "Multiple Authorization values (comma-separated) â€” only first will be used"
                                         )
-                                    # Scheme check — case-sensitive per RFC 6750
+                                    # Scheme check â€” case-sensitive per RFC 6750
                                     scheme = (
                                         header_stripped.split(" ", 1)[0]
                                         if " " in header_stripped
@@ -167,7 +271,7 @@ class LiveLogsMiddleware:
                                     )
                                     if scheme != "Bearer":
                                         details.append(
-                                            f"Wrong scheme '{scheme}' (must be 'Bearer' capital B) — got '{header_stripped[:24]}...'"
+                                            f"Wrong scheme '{scheme}' (must be 'Bearer' capital B)"
                                         )
                                     elif header_stripped == "Bearer":
                                         details.append(
@@ -202,7 +306,7 @@ class LiveLogsMiddleware:
                                                         )
                                                 if not token.startswith("eyJ"):
                                                     details.append(
-                                                        "Token doesn't start with 'eyJ' — likely not a JWT access token (maybe refresh token or truncated)"
+                                                        "Token doesn't start with 'eyJ' â€” likely not a JWT access token (maybe refresh token or truncated)"
                                                     )
                                                 # Quick header decode peek (no verify)
                                                 try:
@@ -246,9 +350,9 @@ class LiveLogsMiddleware:
                                     and request.headers.get("X-Requested-With")
                                 ):
                                     details.append(
-                                        "XHR without Authorization — ensure Flutter/Dio attaches Bearer on retries"
+                                        "XHR without Authorization â€” ensure Flutter/Dio attaches Bearer on retries"
                                     )
-                                # ── Received JWT metadata (for /users/me/ etc.) — safe, no token ──
+                                # â”€â”€ Received JWT metadata (for /users/me/ etc.) â€” safe, no token â”€â”€
                                 if (
                                     header
                                     and status in (401, 403)
@@ -310,11 +414,14 @@ class LiveLogsMiddleware:
                                                         f"recv payload type={token_type} iss={iss} aud={aud} exp={exp} iat={iat}"
                                                     )
                                             except Exception:
-                                                pass
+                                                logger.debug(
+                                                    "JWT payload metadata could not be decoded",
+                                                    exc_info=True,
+                                                )
                                         # Check for quoted token
                                         if '"' in header or "'" in header:
                                             details.append(
-                                                "Authorization header contains quotes — Flutter may be storing token with extra quotes"
+                                                "Authorization header contains quotes â€” Flutter may be storing token with extra quotes"
                                             )
                                         # Check for Bearer duplication
                                         if header_stripped.lower().count("bearer") > 1:
@@ -322,7 +429,10 @@ class LiveLogsMiddleware:
                                                 "Multiple Bearer prefixes (e.g. 'Bearer Bearer ...')"
                                             )
                                     except Exception:
-                                        pass
+                                        logger.debug(
+                                            "JWT diagnostics failed for the request",
+                                            exc_info=True,
+                                        )
 
                                 # Response payload details (DRF)
                                 if isinstance(data, dict):
@@ -352,26 +462,21 @@ class LiveLogsMiddleware:
                                         det
                                     ):
                                         details.append(
-                                            "JWT invalid/expired — check ACCESS_TOKEN_LIFETIME, SECRET_KEY, or refresh flow"
+                                            "JWT invalid/expired â€” check ACCESS_TOKEN_LIFETIME, SECRET_KEY, or refresh flow"
                                         )
                                     if "expired" in str(det).lower():
                                         details.append(
-                                            "JWT expired — client should refresh via /users/token/refresh/"
+                                            "JWT expired â€” client should refresh via /users/token/refresh/"
                                         )
                                     if is_oauth_path and status >= 400:
                                         details.append(f"OAuth path {request.path} failed")
-                                # Fallback to response body snippet if no data
-                                if not details and hasattr(response, "content"):
-                                    try:
-                                        snippet = response.content[:2000].decode(errors="ignore")
-                                        if snippet:
-                                            details.append(f"body={snippet}")
-                                    except Exception:
-                                        pass
                                 if details:
                                     cause = " | ".join(details)
                         except Exception:
-                            pass
+                            logger.debug(
+                                "Authentication diagnostics failed for the request",
+                                exc_info=True,
+                            )
                 user_id = ""
                 user_role = ""
                 try:
@@ -383,7 +488,7 @@ class LiveLogsMiddleware:
                         )
                         user_role = str(getattr(request.user, "role", "")).lower()
                 except Exception:
-                    pass
+                    logger.debug("Could not resolve request user metadata", exc_info=True)
                 if not user_role:
                     # Keep sequential flow, just mark role for vertical line + filters
                     user_role = "guest"
@@ -402,11 +507,11 @@ class LiveLogsMiddleware:
                     }
                 )
             except Exception:
-                pass
+                logger.exception("Live-log request recording failed")
 
 
 @staff_member_required
-def live_logs_page(request):
+def live_logs_page(request) -> HttpResponse:
     from django.contrib import admin
 
     context = admin.site.each_context(request)
@@ -415,8 +520,12 @@ def live_logs_page(request):
 
 
 @staff_member_required
-def live_logs_stream(request):
-    last_id = int(request.GET.get("last_id", "0") or 0)
+def live_logs_stream(request) -> StreamingHttpResponse:
+    raw_last_id = request.GET.get("last_id", "0") or "0"
+    try:
+        last_id = max(0, int(raw_last_id))
+    except (TypeError, ValueError):
+        return HttpResponse("last_id must be a non-negative integer", status=400)
 
     def event_stream():
         nonlocal last_id

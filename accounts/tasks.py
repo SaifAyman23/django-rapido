@@ -1,4 +1,8 @@
-"""Django Rapido — Accounts tasks. Celery OTP email, welcome & session cleanup — reusable.
+"""Accounts Celery tasks — OTP delivery, welcome email, session cleanup.
+
+``send_otp_email(otp_id, code)`` receives the plaintext code as an argument
+because only the HMAC hash is persisted. Retries use exponential backoff
+(3 attempts), so a transient mail failure does not lose the code (QOOT-001 §2.5).
 """
 
 import logging
@@ -7,60 +11,83 @@ from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import EmailMultiAlternatives
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+OTP_SUBJECTS = {
+    "verify_email": _("Your Qoot verification code"),
+    "reset_password": _("Your Qoot password reset code"),
+    "change_email": _("Confirm your new Qoot email"),
+    "add_account": _("Confirm your new Qoot account email"),
+}
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_verification_email(self, user_id: str, email: str, otp: str):
-    """Send OTP verification email with retry.
 
-    REUSE: Call via send_verification_email.delay(user.id, user.email, otp)
-    or directly for eager mode. HTML is generic — replace branding as needed.
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+    max_retries=3,
+)
+def send_otp_email(self, otp_id: str, code: str) -> dict:
+    """Send one 6-digit code. Idempotent: skips consumed or expired rows."""
+    from accounts.models import EmailOTP
+
+    otp = EmailOTP.objects.select_related("user").filter(pk=otp_id).first()
+    if otp is None:
+        logger.warning("OTP %s not found; nothing to send", otp_id)
+        return {"status": "missing"}
+    if otp.consumed_at is not None or otp.expires_at <= timezone.now():
+        logger.info("OTP %s is no longer valid; skipping send", otp_id)
+        return {"status": "stale"}
+
+    user = otp.user
+    subject = OTP_SUBJECTS.get(otp.purpose, _("Your Qoot code"))
+    minutes = settings.OTP_TTL_MINUTES
+    expiry_note = _("Use this code to continue. It expires in %(minutes)s minutes.") % {
+        "minutes": minutes
+    }
+    html_content = f"""
+        <!DOCTYPE html>
+        <html lang="ar" dir="rtl">
+        <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8fafc;">
+          <div style="max-width:480px;margin:32px auto;padding:24px;
+                      background:#fff;border-radius:12px;">
+            <h2 style="margin:0 0 12px;color:#14532d;">{_("Qoot")}</h2>
+            <p style="font-size:16px;color:#1f2937;">
+              {expiry_note}
+            </p>
+            <p style="font-size:32px;letter-spacing:8px;font-weight:700;
+                      color:#166534;text-align:center;margin:24px 0;">{code}</p>
+            <p style="font-size:13px;color:#6b7280;">
+              {_("If you did not request this code, you can ignore this email.")}
+            </p>
+          </div>
+        </body>
+        </html>
     """
-    try:
-        user = User.objects.get(id=user_id)
-        to_email = user.email
-        fullname = f"{user.username}"
-        if user.first_name and user.last_name:
-            fullname = f"{user.first_name} {user.last_name}"
+    message = EmailMultiAlternatives(
+        subject=str(subject),
+        body=f"{code}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[otp.email or user.email],
+    )
+    message.attach_alternative(html_content, "text/html")
+    message.send()
 
-        html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
-            <p style="font-size: 18px; text-align: center;">{_("Dear %(fullname)s,") % {"fullname": fullname}}</p>
-            <p style="font-size: 16px; text-align: center;">{_("You are receiving this email because you requested to verify your account.")}</p>
-            <center>
-                <p style="font-size: 16px; text-align: center;">{_("Your OTP is: %(otp)s") % {"otp": otp}}</p>
-            </center>
-            </body>
-            </html>
-            """
-        subject = _("Verify Your Account")
-        msg = EmailMultiAlternatives(
-            subject, html_content, settings.EMAIL_HOST_USER, [to_email], [to_email]
-        )
-        msg.attach_alternative(html_content, "text/html")
-        msg.send()
-        logger.info(f"Verification email sent to {email}")
-        return {"status": "success"}
-    except User.DoesNotExist:
-        logger.error(f"User {user_id} not found")
-        return {"status": "error"}
-    except Exception as exc:
-        logger.error(f"Error sending email: {str(exc)}")
-        raise self.retry(exc=exc)
+    logger.info("OTP email sent otp=%s user=%s purpose=%s", otp_id, user.pk, otp.purpose)
+    return {"status": "sent"}
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def notify_welcome_email(self, user_id: str) -> None:
-    """REUSE: Welcome email after verification — uses should_notify guard if available."""
+    """Welcome email after verification — guarded by notification preferences."""
     try:
         user = User.objects.get(id=user_id, is_active=True)
-        # REUSE: optional guard — skip if notifications app exists
         try:
             from accounts.notifications import should_notify
 
@@ -88,9 +115,8 @@ def notify_welcome_email(self, user_id: str) -> None:
 
 @shared_task
 def cleanup_expired_sessions() -> int:
-    """REUSE: Beat task — purge expired sessions."""
+    """Beat task — purge expired sessions."""
     from django.contrib.sessions.models import Session
-    from django.utils import timezone
 
     expired = Session.objects.filter(expire_date__lt=timezone.now())
     count, _ = expired.delete()

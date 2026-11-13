@@ -589,3 +589,9 @@ def deserialize_arg(arg):
         return [deserialize_arg(item) for item in arg]
     else:
         return arg
+
+
+def generate_otp_code(length: int = 6) -> str:
+    """Return a zero-padded numeric OTP code."""
+    import secrets
+    return f"{secrets.randbelow(10 ** length):0{length}d}"

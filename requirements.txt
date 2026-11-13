@@ -137,7 +137,6 @@ virtualenv==21.0.0               # [DEV/HOOKS] Virtual python environment creato
 
 # ===== DEVELOPMENT & DEBUGGING =====
 # Development tools and utilities
-django-debug-toolbar==6.2.0      # [DEV/DEBUG] Real-time resource usage panel in browse views
 # python-json-logger==2.0.7      # [UNNEEDED] Unused formatting log utility.
 # python-discovery==1.0.0        # [UNNEEDED] Unused discovery utility.
 

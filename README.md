@@ -77,9 +77,9 @@ You clone, you ship. No boilerplate archaeology.
 |------|--------------|
 | **Core** | Django 5.2 + Python 3.13, `CONN_MAX_AGE 600`, `TESTING` auto-detection |
 | **API** | DRF 3.16 + SimpleJWT (`ACCESS 30m / REFRESH 30d` HttpOnly), `AuthRateThrottle 30/m`, `ENUM_NAME_OVERRIDES` |
-| **Auth** | `OTPRecord` 6 digits 10m + `PasswordResetToken` 15m (`F()` guard, anti-enumeration), `SocialAccountAdapter` dedupe |
-| **Push** | `notifications` — `Device` (`unique user+device_uuid`) + `Notification`, `should_notify` guard, multicast 500 |
-| **CMS** | `compliance` (FAQ + legal docs, `TranslationBaseAdmin` + `MarkdownAdminMixin`) + `contacts` (`is_ordering_open()` via `BUSINESS_TIME_ZONE`) |
+| **Auth** | Multi-account identity: `User` (person) + `Account` (role client/coach, per-account login email, JWT-bound via `AccountJWTAuthentication` + RLS context) + `EmailOTP` (HMAC-hashed 6 digits, multi-purpose, attempt-locked) + `PasswordResetToken` 15m (`F()` guard, anti-enumeration) + `SocialAccountLink` + `SocialAccountAdapter` dedupe |
+| **Push** | `notifications` — `Device` (`unique user+device_uuid`, account-aware) + `Notification` (delivery status, read_at, scheduled_at, data) + `CustomReminder` (recurring, translatable), `should_notify` guard, multicast 500, push device + reminder endpoints |
+| **CMS** | `compliance` (FAQ + legal docs + versioned `PolicyDocument` + `PolicyAcceptance` consent proof, `TranslationBaseAdmin` + `MarkdownAdminMixin`) + `contacts` (`is_ordering_open()` via `BUSINESS_TIME_ZONE`, bilingual address) |
 | **i18n** | `modeltranslation` en/ar + `TranslationBaseAdmin`, `LocaleMiddleware`, `BUSINESS_TIME_ZONE` |
 | **Tasks** | Celery 5.4 + Beat + Flower, `CELERY_BEAT_SCHEDULE` example, Flower `:5555` |
 | **Ops** | `docker-compose.yml` (dev) + `docker-compose.prod.yml` (`!reset []`, `gunicorn 4`, `443` + certbot `12h`), `nginx.prod.conf` (`ACME`), `.dockerignore` |
@@ -97,7 +97,7 @@ Rapido is **documented like a product**, not a gist. Every reusable module has a
 | Guide | Covers |
 |-------|--------|
 | `guides/Settings guide.md` | `base/local/production`, `TESTING` flag, `SECRET_KEY` guard, `BUSINESS_TIME_ZONE`, `JWT` fallback |
-| `guides/Authentication guide.md` | OTP engine, `validate_credentials`, 3 view actions, social adapter |
+| `guides/Authentication guide.md` | Multi-account OTP engine, `validate_credentials`, account/social/add-account actions, social adapter, RLS |
 | `guides/Notifications guide.md` | `Device` registry, `should_notify`, multicast 500, inbox cache |
 | `guides/Compliance and Contacts guide.md` | FAQ/legal Markdown, `ContactInfo` singleton, hours gate |
 | `guides/Celery guide.md` | Task structure `bind+retry`, Beat, Flower, `idempotent` rule |
@@ -160,10 +160,10 @@ project-root/
 │   ├── urls.py                 # SchemaView(exclude=True), HomeView, users/notifications/contacts/compliance
 │   └── celery.py, asgi.py, wsgi.py, routing.py
 │
-├── accounts/                   # OTP (OTPRecord/PasswordResetToken) + JWT + SocialAccountAdapter
-├── notifications/              # Device (user+device_uuid) + Notification, should_notify, batch 500
-├── compliance/                 # FAQ + ComplianceDocument (TranslationBaseAdmin + Markdown)
-├── contacts/                   # ContactMessage + ContactInfo (is_ordering_open via BUSINESS_TIME_ZONE)
+├── accounts/                   # Multi-account auth: Account + EmailOTP + SocialAccountLink + AccountJWTAuthentication (RLS) + services (register/login/verify/reset/change/avatar/add-account/social) + JWT + SocialAccountAdapter
+├── notifications/              # Device (account-aware) + Notification (delivery status) + CustomReminder, should_notify, batch 500, push + reminder endpoints
+├── compliance/                 # FAQ + ComplianceDocument + PolicyDocument + PolicyAcceptance (TranslationBaseAdmin + Markdown)
+├── contacts/                   # ContactMessage + ContactInfo (is_ordering_open via BUSINESS_TIME_ZONE, bilingual address)
 │
 ├── common/                     # Shared infra — UUIDModel, BaseViewSetMixin (scrubbing), AuthRateThrottle, TranslationBaseAdmin
 ├── dashboard/                  # Unfold + Live Logs (live_logs.py: Redis list + fallback deque, middleware + SSE gevent, tabs/stats/insights, JetBrains Mono 92KB)

@@ -24,8 +24,25 @@ from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 
 from common.models import AuditLog
+from common.rls import clear_context, set_system_context
 
 logger = logging.getLogger(__name__)
+
+
+class RLSContextMiddleware(MiddlewareMixin):
+    """Clear database RLS state after each request and allow trusted admin access."""
+
+    def process_request(self, request):
+        if getattr(request, "user", None) is not None and getattr(request.user, "is_staff", False):
+            set_system_context()
+
+    def process_response(self, request, response):
+        clear_context()
+        return response
+
+    def process_exception(self, request, exception):
+        clear_context()
+        return None
 
 
 class RequestLoggingMiddleware(MiddlewareMixin):

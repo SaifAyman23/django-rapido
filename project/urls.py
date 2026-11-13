@@ -42,11 +42,22 @@ urlpatterns = [
         f"{api_prefix}/notifications/", include("notifications.urls"), name="notifications"
     ),  # REUSE: FCM inbox + devices
     path(
+        f"{api_prefix}/push-devices/", include("notifications.push_urls"), name="push-devices"
+    ),
+    path(
+        f"{api_prefix}/custom-reminders/",
+        include("notifications.reminder_urls"),
+        name="custom-reminders",
+    ),
+    path(
         f"{api_prefix}/contacts/", include("contacts.urls"), name="contacts"
     ),  # REUSE: public contact form
     path(
         f"{api_prefix}/compliance/", include("compliance.urls"), name="compliance"
     ),  # REUSE: FAQ + legal docs
+    path(
+        f"{api_prefix}/policies/", include("compliance.policy_urls"), name="policies"
+    ),  # REUSE: versioned policy documents
     # REUSE: Add your app routes here:
     # path(f'{api_prefix}/catalog/', include('catalog.urls'), name='catalog'),
     # path(f'{api_prefix}/orders/', include('orders.urls'), name='orders'),
@@ -83,7 +94,4 @@ urlpatterns += [
     ),
 ]
 
-if settings.DEBUG:
-    import debug_toolbar
-
-    urlpatterns += [path("__debug__/", include(debug_toolbar.urls))]
+# Debug toolbar removed.

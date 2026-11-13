@@ -172,10 +172,10 @@ $ make run</code></pre></div>
 │   ├── urls.py                 # users/notifications/contacts/compliance + live-logs SSE
 │   ├── asgi.py / wsgi.py / routing.py
 │
-├── accounts/                   # OTP (OTPRecord) + JWT + SocialAdapter
-├── notifications/              # Device + Notification (FCM)
-├── compliance/                 # FAQ + ComplianceDocument
-├── contacts/                   # ContactMessage + ContactInfo (hours gate)
+├── accounts/                   # Multi-account auth: Account + EmailOTP + JWT + SocialAdapter
+├── notifications/              # Device + Notification + CustomReminder (FCM)
+├── compliance/                 # FAQ + ComplianceDocument + PolicyDocument
+├── contacts/                   # ContactMessage + ContactInfo (hours gate, bilingual)
 ├── common/                     # UUIDModel, BaseViewSetMixin (scrubbing), TranslationBaseAdmin
 ├── dashboard/                  # Unfold + Live Logs (live_logs.py: Redis + SSE, JetBrains Mono)
 │   ├── live_logs.py            # Middleware + SSE views

@@ -65,3 +65,22 @@ def validate_image_type(value):
     if hasattr(value, "content_type") and value.content_type not in allowed_types:
         raise ValidationError(_("Invalid image type. Allowed types: JPEG, PNG, GIF, WebP"))
     return value
+
+
+class StrictSerializer(serializers.Serializer):
+    """Serializer that rejects unknown request keys (QOOT-014 §2.1.2).
+
+    DRF silently drops undeclared fields by default; Qoot requires
+    ``400 UNKNOWN_FIELD`` so a client typo can never be ignored.
+    """
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            unknown = sorted(set(data.keys()) - set(self.fields.keys()))
+            if unknown:
+                from common.exceptions import UnknownFieldError
+
+                raise UnknownFieldError(
+                    detail=_("Unknown field(s): %(fields)s") % {"fields": ", ".join(unknown)}
+                )
+        return super().to_internal_value(data)

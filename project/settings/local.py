@@ -27,11 +27,7 @@ if _cors_trusted_env is not None:
 # Execute tasks synchronously
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
+if not os.getenv("EMAIL_BACKEND"):
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-# Enable Django Debug Toolbar (if installed)
-try:
-    INSTALLED_APPS += ["debug_toolbar"]
-    # MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
-    INTERNAL_IPS = ["127.0.0.1", "localhost"]
-except ImportError:
-    pass
+# Debug toolbar removed (not used).

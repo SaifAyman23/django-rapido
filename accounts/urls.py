@@ -8,11 +8,13 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenBlacklistView, TokenVerifyView
 
 from .views import CookieTokenRefreshView, CustomTokenObtainPairView, UserViewSet
+from .multi_account_views import AuthViewSet, RefreshTokenView, RemoveAccountView
 
 app_name = "accounts"
 
 router = DefaultRouter()
 router.register(r"users", UserViewSet, basename="user")
+router.register(r"", AuthViewSet, basename="auth")
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -20,6 +22,7 @@ urlpatterns = [
     path("token/refresh/", CookieTokenRefreshView.as_view(), name="token_refresh"),
     path("token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     path("token/blacklist/", TokenBlacklistView.as_view(), name="token_blacklist"),
+    path("accounts/<uuid:account_id>/", RemoveAccountView.as_view(), name="account_remove"),
     # REUSE: Uncomment to enable OTP verification flow (requires OTPRecord + helpers)
     # path("verify/", UserVerifyView.as_view(), name="verify"),
     # path("send-verification-code/", SendVerificationCodeView.as_view(), name="send_code"),

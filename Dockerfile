@@ -36,9 +36,6 @@ COPY . .
 # Create directories
 RUN mkdir -p /app/logs /app/staticfiles /app/media
 
-# Collect static files (before changing user)
-RUN python manage.py collectstatic --noinput
-
 # Copy entrypoint and set permissions
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

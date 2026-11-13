@@ -60,6 +60,7 @@ def _decode_id_token_aud(id_token):
         data = json.loads(base64.urlsafe_b64decode(payload.encode("utf-8")))
         return data.get("aud")
     except Exception:
+        logger.debug("Failed to decode token aud claim", exc_info=True)
         return None
 
 
@@ -474,11 +475,13 @@ class SocialLoginJWTView(APIView):
         try:
             user = login.user
         except Exception:
+            logger.debug("SocialAccount has no .user", exc_info=True)
             user = None
         if user is None or not user.pk:
             try:
                 user = login.account.user
             except Exception:
+                logger.debug("SocialAccount has no .account.user", exc_info=True)
                 user = None
         if user is None or not user.pk:
             # Signup never completed (provider returned no verified email, e.g.

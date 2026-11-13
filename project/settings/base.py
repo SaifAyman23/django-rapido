@@ -95,6 +95,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     # "allauth.socialaccount.providers.google",
+    # "allauth.socialaccount.providers.apple",
     # "allauth.socialaccount.providers.facebook",
 ]
 
@@ -114,6 +115,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "common.middleware.RLSContextMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
@@ -260,7 +262,7 @@ SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 SOCIALACCOUNT_STORE_TOKENS = True
-# SOCIALACCOUNT_ADAPTER = "accounts.auth.adapters.SocialAccountAdapter"  # REUSE: enable with social login
+SOCIALACCOUNT_ADAPTER = "accounts.auth.adapters.SocialAccountAdapter"
 # SOCIALACCOUNT_PROVIDERS = {
 #     "google": {
 #         "SCOPE": ["openid", "profile", "email"],
@@ -355,7 +357,7 @@ JWT / REST / Spectacular
 """
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "accounts.authentication.AccountJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticatedOrReadOnly",),
     "DEFAULT_PAGINATION_CLASS": "common.pagination.StandardPagination",
@@ -375,6 +377,8 @@ REST_FRAMEWORK = {
         "anon": "100/hour",
         "user": "1000/hour",
         "auth": "30/minute",
+        "otp": "5/hour",
+        "account_link": "10/hour",
     },
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
@@ -493,21 +497,33 @@ LOGGING = {
         },
         "simple": {"format": "{levelname} {asctime} {message}", "style": "{"},
     },
-    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "verbose"}},
-    "root": {"handlers": ["console"], "level": os.getenv("LOG_LEVEL", "INFO")},
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "verbose"},
+        "live_logs": {"class": "dashboard.live_logs.LiveLogsHandler", "formatter": "verbose"},
+    },
+    "root": {"handlers": ["console", "live_logs"], "level": os.getenv("LOG_LEVEL", "INFO")},
     "loggers": {
         "django": {
-            "handlers": ["console"],
+            "handlers": ["console", "live_logs"],
             "level": os.getenv("LOG_LEVEL", "INFO"),
             "propagate": False,
         },
         "celery": {
-            "handlers": ["console"],
+            "handlers": ["console", "live_logs"],
             "level": os.getenv("LOG_LEVEL", "INFO"),
             "propagate": False,
         },
     },
 }
+
+# Tee stdout/stderr into the admin live-logs buffer (guarded: off under pytest).
+if "pytest" not in (sys.argv[0] if sys.argv else ""):
+    try:
+        from dashboard.live_logs import install_live_logs_tee
+
+        install_live_logs_tee()
+    except Exception:
+        pass
 
 # Docker helpers
 DOCKER_ENVIRONMENT = os.getenv("DOCKER_ENVIRONMENT", "local")
@@ -519,3 +535,33 @@ DOCKER_ENVIRONMENT = os.getenv("DOCKER_ENVIRONMENT", "local")
 # )
 
 ASGI_APPLICATION = "project.asgi.application"
+
+
+# ---------------------------------------------------------------------------
+# Multi-account auth (ported from qoot)
+# ---------------------------------------------------------------------------
+MAX_LINKED_ACCOUNTS = int(os.getenv("MAX_LINKED_ACCOUNTS", "5"))
+OTP_TTL_MINUTES = int(os.getenv("OTP_TTL_MINUTES", "10"))
+OTP_MAX_ATTEMPTS = int(os.getenv("OTP_MAX_ATTEMPTS", "5"))
+OTP_RESEND_COOLDOWN_SECONDS = int(os.getenv("OTP_RESEND_COOLDOWN_SECONDS", "60"))
+OTP_MAX_PER_HOUR = int(os.getenv("OTP_MAX_PER_HOUR", "5"))
+TRIAL_DAYS = int(os.getenv("TRIAL_DAYS", "7"))
+CURRENT_STAGE = os.getenv("CURRENT_STAGE", "v1")
+PLAN_EXEMPT_ROLES = ["coach"]
+DEFAULT_COUNTRY = os.getenv("DEFAULT_COUNTRY", "EG")
+TRIAL_PLAN_SLUG = os.getenv("TRIAL_PLAN_SLUG", "pro-monthly")
+SOCIAL_HTTP_TIMEOUT_SECONDS = int(os.getenv("SOCIAL_HTTP_TIMEOUT_SECONDS", "10"))
+
+# Social auth (ported from qoot)
+GOOGLE_OAUTH_CLIENT_IDS = [
+    client_id.strip()
+    for client_id in os.getenv("GOOGLE_OAUTH_CLIENT_IDS", "").split(",")
+    if client_id.strip()
+]
+GOOGLE_OAUTH_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET", "")
+APPLE_BUNDLE_ID = os.getenv("APPLE_BUNDLE_ID", "")
+FACEBOOK_APP_ID = os.getenv("FACEBOOK_APP_ID") or os.getenv("FACEBOOK_OAUTH_CLIENT_ID", "")
+FACEBOOK_APP_SECRET = os.getenv("FACEBOOK_APP_SECRET") or os.getenv(
+    "FACEBOOK_OAUTH_CLIENT_SECRET", ""
+)
+FACEBOOK_GRAPH_API_VERSION = os.getenv("FACEBOOK_GRAPH_API_VERSION", "v21.0")
