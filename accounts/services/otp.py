@@ -10,7 +10,6 @@ Rules encoded here (never in views):
 
 import hmac
 import logging
-import secrets
 from datetime import timedelta
 from hashlib import sha256
 
@@ -18,11 +17,9 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
+from django.utils.translation import get_language
 
 from accounts.models import EmailOTP
-from common.helpers import generate_otp_code
-
-generate_code = generate_otp_code
 from accounts.services.guards import normalize_email
 from common.exceptions import (
     CodeExpiredError,
@@ -30,6 +27,9 @@ from common.exceptions import (
     ThrottledError,
     TooManyAttemptsError,
 )
+from common.helpers import generate_otp_code
+
+generate_code = generate_otp_code
 
 logger = logging.getLogger(__name__)
 
@@ -172,11 +172,13 @@ def queue_otp_email(otp: EmailOTP) -> None:
 
     Delivery problems are logged, never raised: the account already exists by
     the time this runs, so a mail outage must not turn a successful signup into
-    a 500.
+    a 500. The caller's request language rides along so the async worker can
+    render the email the way the caller expects it.
     """
     from accounts.tasks import send_otp_email
 
+    language = get_language() or settings.LANGUAGE_CODE
     try:
-        send_otp_email.delay(str(otp.pk), otp.plaintext_code)
+        send_otp_email.delay(str(otp.pk), otp.plaintext_code, language=language)
     except Exception:
         logger.exception("Could not queue the OTP email otp=%s", otp.pk)

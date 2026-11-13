@@ -849,66 +849,45 @@ class APIVersionMiddleware(MiddlewareMixin):
 
 ## Timezone Handling
 
-### Timezone Middleware
+### Timezone Middleware (wired by default)
+
+The template ships one canonical timezone middleware and wires it by default —
+no project setup needed. `common.middleware.TimezoneMiddleware` activates the
+timezone per request and deactivates it in `process_response`, so there is no
+leakage between requests on the same thread.
 
 ```python
-from django.utils.deprecation import MiddlewareMixin
-from django.utils import timezone
-import pytz
-import logging
-
-logger = logging.getLogger(__name__)
-
-
 class TimezoneMiddleware(MiddlewareMixin):
-    """Set timezone based on user preference or header"""
-    
+    """Activate the request's timezone from the ``X-Timezone`` header."""
+
     def process_request(self, request):
-        """Activate timezone for request"""
-        # Try to get timezone from header
-        tz_header = request.META.get("HTTP_X_TIMEZONE")
-        
-        # Or from authenticated user
-        if not tz_header and request.user.is_authenticated:
-            tz_header = getattr(request.user, "timezone", None)
-        
-        # Activate timezone if valid
-        if tz_header:
-            try:
-                timezone.activate(pytz.timezone(tz_header))
-            except pytz.exceptions.UnknownTimeZoneError:
-                logger.warning(f"Invalid timezone: {tz_header}")
-                timezone.deactivate()
-        else:
+        tz_name = request.META.get("HTTP_X_TIMEZONE")
+        if not tz_name and getattr(request.user, "is_authenticated", False):
+            tz_name = getattr(request.user, "timezone", None)
+        if not tz_name:
             timezone.deactivate()
-        
+            return None
+        try:
+            timezone.activate(pytz.timezone(tz_name))
+        except pytz.exceptions.UnknownTimeZoneError:
+            logger.warning("X-Timezone ignored, unknown zone: %s", tz_name)
+            timezone.deactivate()
         return None
-```
 
-**User Preference Version:**
-
-```python
-class UserTimezoneMiddleware(MiddlewareMixin):
-    """Set timezone from user profile"""
-    
-    DEFAULT_TIMEZONE = "UTC"
-    
-    def process_request(self, request):
-        if request.user.is_authenticated:
-            user_tz = getattr(request.user, "timezone", self.DEFAULT_TIMEZONE)
-            try:
-                timezone.activate(pytz.timezone(user_tz))
-            except:
-                timezone.activate(pytz.timezone(self.DEFAULT_TIMEZONE))
-        else:
-            timezone.activate(pytz.timezone(self.DEFAULT_TIMEZONE))
-        
-        return None
-    
     def process_response(self, request, response):
         timezone.deactivate()
         return response
 ```
+
+Resolution order: `X-Timezone` header → an authenticated user's `timezone`
+attribute (when the project adds one) → `settings.TIME_ZONE`. Unknown names are
+logged and ignored, never a 500.
+
+The header is the contract the front ends honor: web sends it via
+`Intl.DateTimeFormat().resolvedOptions().timeZone` (see `src/api/axiosInstance.ts`
+in react-rapido) and the mobile client sends its device zone. The template does
+not add a `timezone` field to the user model — wire it yourself if your project
+wants per-user zones.
 
 **Use Cases:**
 - Multi-timezone applications

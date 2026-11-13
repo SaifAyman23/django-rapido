@@ -119,6 +119,8 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "common.middleware.RLSContextMiddleware",
+    # Honors the X-Timezone header sent by the web/mobile clients
+    "common.middleware.TimezoneMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",

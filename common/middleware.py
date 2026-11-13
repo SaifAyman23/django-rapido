@@ -416,53 +416,45 @@ class APIVersionMiddleware(MiddlewareMixin):
 
 
 class TimezoneMiddleware(MiddlewareMixin):
-    """Set timezone based on request header or user preference"""
+    """Activate the request's timezone from the ``X-Timezone`` header.
+
+    The front ends send the browser/device IANA timezone as ``X-Timezone:
+    Africa/Cairo`` on every API call. The middleware honors it, so views,
+    model ``auto_now`` timestamps' rendered output and any ``timezone.now()``
+    call in business logic see the caller's local date when combined with
+    template formatting.
+
+    Resolution order:
+    1. ``X-Timezone`` header (IANA name, e.g. ``Europe/Berlin``).
+    2. An authenticated user's ``timezone`` attribute, when the project adds
+       one to its user model.
+    3. Otherwise the settings default timezone (``TIME_ZONE``) is used.
+
+    Unknown zone names are logged and ignored — the request proceeds under the
+    default timezone instead of failing.
+    """
 
     def __init__(self, get_response):
         super().__init__(get_response)
 
     def process_request(self, request: HttpRequest) -> None:
-        """Activate timezone for the current request"""
-        tz_header = request.META.get("HTTP_X_TIMEZONE")
+        tz_name = request.META.get("HTTP_X_TIMEZONE")
 
-        if not tz_header and request.user.is_authenticated:
-            tz_header = getattr(request.user, "timezone", None)
+        if not tz_name and getattr(request.user, "is_authenticated", False):
+            tz_name = getattr(request.user, "timezone", None)
 
-        if tz_header:
-            try:
-                timezone.activate(pytz.timezone(tz_header))
-            except pytz.exceptions.UnknownTimeZoneError:
-                logger.warning(f"Invalid timezone: {tz_header}")
-                timezone.deactivate()
-        else:
+        if not tz_name:
             timezone.deactivate()
+            return None
 
-        return None
-
-
-class UserTimezoneMiddleware(MiddlewareMixin):
-    """Set timezone from authenticated user profile"""
-
-    DEFAULT_TIMEZONE = "UTC"
-
-    def __init__(self, get_response):
-        super().__init__(get_response)
-
-    def process_request(self, request: HttpRequest) -> None:
-        """Activate user's preferred timezone"""
-        if request.user.is_authenticated:
-            user_tz = getattr(request.user, "timezone", self.DEFAULT_TIMEZONE)
-            try:
-                timezone.activate(pytz.timezone(user_tz))
-            except Exception:
-                timezone.activate(pytz.timezone(self.DEFAULT_TIMEZONE))
-        else:
-            timezone.activate(pytz.timezone(self.DEFAULT_TIMEZONE))
-
+        try:
+            timezone.activate(pytz.timezone(tz_name))
+        except pytz.exceptions.UnknownTimeZoneError:
+            logger.warning("X-Timezone ignored, unknown zone: %s", tz_name)
+            timezone.deactivate()
         return None
 
     def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
-        """Deactivate custom timezone after request completes"""
         timezone.deactivate()
         return response
 

@@ -34,8 +34,14 @@ OTP_SUBJECTS = {
     retry_jitter=True,
     max_retries=3,
 )
-def send_otp_email(self, otp_id: str, code: str) -> dict:
-    """Send one 6-digit code. Idempotent: skips consumed or expired rows."""
+def send_otp_email(self, otp_id: str, code: str, language: str | None = None) -> dict:
+    """Send one 6-digit code. Idempotent: skips consumed or expired rows.
+
+    ``language`` is the requester's language captured at dispatch time; the
+    worker may run in a different locale than the request thread.
+    """
+    from django.utils import translation
+
     from accounts.models import EmailOTP
 
     otp = EmailOTP.objects.select_related("user").filter(pk=otp_id).first()
@@ -48,33 +54,34 @@ def send_otp_email(self, otp_id: str, code: str) -> dict:
 
     user = otp.user
     site_name = settings.SITE_NAME
-    subject_template = OTP_SUBJECTS.get(otp.purpose, _("Your %(site)s code"))
-    subject = subject_template % {"site": site_name}
-    language = get_language() or settings.LANGUAGE_CODE
-    direction = "rtl" if language.split("-")[0] in {"ar", "he", "fa", "ur"} else "ltr"
-    minutes = settings.OTP_TTL_MINUTES
-    expiry_note = _("Use this code to continue. It expires in %(minutes)s minutes.") % {
-        "minutes": minutes
-    }
-    html_content = f"""
-        <!DOCTYPE html>
-        <html lang="{language}" dir="{direction}">
-        <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8fafc;">
-          <div style="max-width:480px;margin:32px auto;padding:24px;
-                      background:#fff;border-radius:12px;">
-            <h2 style="margin:0 0 12px;color:#14532d;">{site_name}</h2>
-            <p style="font-size:16px;color:#1f2937;">
-              {expiry_note}
-            </p>
-            <p style="font-size:32px;letter-spacing:8px;font-weight:700;
-                      color:#166534;text-align:center;margin:24px 0;">{code}</p>
-            <p style="font-size:13px;color:#6b7280;">
-              {_("If you did not request this code, you can ignore this email.")}
-            </p>
-          </div>
-        </body>
-        </html>
-    """
+    language = language or get_language() or settings.LANGUAGE_CODE
+    with translation.override(language):
+        subject_template = OTP_SUBJECTS.get(otp.purpose, _("Your %(site)s code"))
+        subject = subject_template % {"site": site_name}
+        direction = "rtl" if language.split("-")[0] in {"ar", "he", "fa", "ur"} else "ltr"
+        minutes = settings.OTP_TTL_MINUTES
+        expiry_note = _("Use this code to continue. It expires in %(minutes)s minutes.") % {
+            "minutes": minutes
+        }
+        html_content = f"""
+            <!DOCTYPE html>
+            <html lang="{language}" dir="{direction}">
+            <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8fafc;">
+              <div style="max-width:480px;margin:32px auto;padding:24px;
+                          background:#fff;border-radius:12px;">
+                <h2 style="margin:0 0 12px;color:#14532d;">{site_name}</h2>
+                <p style="font-size:16px;color:#1f2937;">
+                  {expiry_note}
+                </p>
+                <p style="font-size:32px;letter-spacing:8px;font-weight:700;
+                          color:#166534;text-align:center;margin:24px 0;">{code}</p>
+                <p style="font-size:13px;color:#6b7280;">
+                  {_("If you did not request this code, you can ignore this email.")}
+                </p>
+              </div>
+            </body>
+            </html>
+        """
     message = EmailMultiAlternatives(
         subject=str(subject),
         body=f"{code}",
