@@ -1,8 +1,8 @@
-"""Auth API — thin ViewSet over the accounts services (QOOT-001 / QOOT-002).
+"""Auth API — thin ViewSet over the accounts services.
 
 No business logic here: views validate input, call one service, and shape the
 response. Errors are raised as ``ApplicationException`` subclasses so the global
-handler returns the single Qoot envelope (QOOT-014 §2.1.1).
+handler returns the single response envelope.
 """
 
 import logging
@@ -471,7 +471,7 @@ class AuthViewSet(viewsets.ViewSet):
 
         candidate, resolved = check_credentials(email=data["email"], password=data["password"])
         if candidate.pk != request.user.pk:
-            # Credentials cannot merge two person identities (QOOT-001 §1.5).
+            # Credentials cannot merge two person identities.
             raise AccountOwnershipConflictError()
 
         target_id = data.get("account_id") or (resolved.pk if resolved is not None else None)

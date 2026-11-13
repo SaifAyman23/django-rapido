@@ -1,4 +1,4 @@
-"""Registration service — QOOT-001 email sign up.
+"""Registration service — email sign up.
 
 Register never issues a JWT. It creates (or reuses an unverified) User +
 Account, issues a verification code for that email, and returns a pending state

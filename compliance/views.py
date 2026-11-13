@@ -83,9 +83,7 @@ class PolicyViewSet(viewsets.ReadOnlyModelViewSet):
             body = self._combined_markdown(self.get_queryset())
             return HttpResponse(body, content_type="text/markdown; charset=utf-8")
         if wanted != "json":
-            return HttpResponseBadRequest(
-                'Query parameter "type" must be one of: json, markdown'
-            )
+            return HttpResponseBadRequest('Query parameter "type" must be one of: json, markdown')
         return super().list(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
@@ -94,21 +92,16 @@ class PolicyViewSet(viewsets.ReadOnlyModelViewSet):
             policy = self.get_object()
             return HttpResponse(policy.content, content_type="text/markdown; charset=utf-8")
         if wanted != "json":
-            return HttpResponseBadRequest(
-                'Query parameter "type" must be one of: json, markdown'
-            )
+            return HttpResponseBadRequest('Query parameter "type" must be one of: json, markdown')
         return super().retrieve(request, *args, **kwargs)
 
     def _combined_markdown(self, documents):
         sections = []
         for policy in documents:
             sections.append(
-                f"# {policy.title}\n\n"
-                f"*Version {policy.version}*\n\n"
-                f"{policy.content}\n"
+                f"# {policy.title}\n\n" f"*Version {policy.version}*\n\n" f"{policy.content}\n"
             )
         return "\n---\n\n".join(sections)
-
 
     queryset = PolicyDocument.objects.filter(is_published=True).order_by("sort_order", "slug")
     serializer_class = PolicyDetailSerializer
@@ -133,9 +126,7 @@ class PolicyViewSet(viewsets.ReadOnlyModelViewSet):
                 .order_by("-created_at")
                 .values("policy_slug", "version", "created_at")
             )
-            context["acceptances"] = {
-                row["policy_slug"]: row for row in rows
-            }
+            context["acceptances"] = {row["policy_slug"]: row for row in rows}
         return context
 
     @extend_schema(

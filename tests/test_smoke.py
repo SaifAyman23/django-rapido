@@ -7,7 +7,6 @@ Run: pytest --cov=. --cov-report=term-missing
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 from rest_framework.test import APIClient
 
 User = get_user_model()
@@ -25,8 +24,8 @@ def test_health_endpoint():
 def test_register_creates_user():
     client = APIClient()
     response = client.post(
-        "/api/v1/users/users/register/",
-        {"email": "smoke@example.com", "password": "Test1234!", "password_confirm": "Test1234!"},
+        "/api/v1/auth/register/",
+        {"email": "smoke@example.com", "password": "Test1234!", "role": "client"},
         format="json",
     )
     assert response.status_code in (201, 400)  # 201 on first run, 400 if already exists

@@ -1,4 +1,4 @@
-"""Pre-flight guards shared by the auth and social flows (QOOT-001 / QOOT-002).
+"""Pre-flight guards shared by the auth and social flows.
 
 Each guard answers one question *before* a flow spends real effort — creates a
 User or Account, issues an OTP and sends an email, or burns a provider token
@@ -112,7 +112,7 @@ def ensure_email_available_for_new_account(user, email) -> None:
 
 
 def ensure_email_available_for_change(user, email, *, account) -> None:
-    """Raise when ``email`` cannot replace ``account``'s login email (QOOT-012)."""
+    """Raise when ``email`` cannot replace ``account``'s login email."""
     owner = resolve_email_owner(email, active_only=False)
     if owner.user is None:
         return

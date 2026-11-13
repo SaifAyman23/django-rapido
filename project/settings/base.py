@@ -101,6 +101,9 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
+# Brand name used in emails and other user-facing copy.
+SITE_NAME = os.getenv("SITE_NAME", "Rapido")
+
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     # "allauth.account.auth_backends.AuthenticationBackend",  # REUSE: enable when using social login
@@ -285,7 +288,7 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Email Configuration
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
@@ -356,9 +359,7 @@ CELERY_BEAT_SCHEDULE = {
 JWT / REST / Spectacular
 """
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "accounts.authentication.AccountJWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("accounts.authentication.AccountJWTAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticatedOrReadOnly",),
     "DEFAULT_PAGINATION_CLASS": "common.pagination.StandardPagination",
     "PAGE_SIZE": 10,
@@ -538,7 +539,7 @@ ASGI_APPLICATION = "project.asgi.application"
 
 
 # ---------------------------------------------------------------------------
-# Multi-account auth (ported from qoot)
+# Multi-account auth
 # ---------------------------------------------------------------------------
 MAX_LINKED_ACCOUNTS = int(os.getenv("MAX_LINKED_ACCOUNTS", "5"))
 OTP_TTL_MINUTES = int(os.getenv("OTP_TTL_MINUTES", "10"))
@@ -552,7 +553,7 @@ DEFAULT_COUNTRY = os.getenv("DEFAULT_COUNTRY", "EG")
 TRIAL_PLAN_SLUG = os.getenv("TRIAL_PLAN_SLUG", "pro-monthly")
 SOCIAL_HTTP_TIMEOUT_SECONDS = int(os.getenv("SOCIAL_HTTP_TIMEOUT_SECONDS", "10"))
 
-# Social auth (ported from qoot)
+# Social auth
 GOOGLE_OAUTH_CLIENT_IDS = [
     client_id.strip()
     for client_id in os.getenv("GOOGLE_OAUTH_CLIENT_IDS", "").split(",")

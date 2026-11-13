@@ -1,4 +1,4 @@
-"""Custom reminder routes (QOOT-010) - mounted at /api/v1/custom-reminders/."""
+"""Custom reminder routes - mounted at /api/v1/custom-reminders/."""
 
 from django.urls import path
 

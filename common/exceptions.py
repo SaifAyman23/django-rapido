@@ -340,52 +340,62 @@ class AccountAlreadyAddedError(ApplicationException):
     default_detail = "This account is already available on this device."
     default_code = "ACCOUNT_ALREADY_ADDED"
 
+
 class AccountDisabledError(ApplicationException):
     status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = "This account is disabled."
     default_code = "ACCOUNT_DISABLED"
+
 
 class AccountLimitReachedError(ApplicationException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = "You have reached the linked account limit."
     default_code = "ACCOUNT_LIMIT_REACHED"
 
+
 class AccountNotFoundError(ApplicationException):
     status_code = status.HTTP_404_NOT_FOUND
     default_detail = "Account not found."
     default_code = "ACCOUNT_NOT_FOUND"
+
 
 class AccountOwnershipConflictError(ApplicationException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = "This account belongs to another person."
     default_code = "ACCOUNT_OWNERSHIP_CONFLICT"
 
+
 class CodeExpiredError(ApplicationException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "This code has expired. Request a new one."
     default_code = "CODE_EXPIRED"
+
 
 class EmailAlreadyRegisteredError(ApplicationException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = "An account with this email already exists."
     default_code = "EMAIL_ALREADY_REGISTERED"
 
+
 class InvalidCodeError(ApplicationException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Invalid verification code."
     default_code = "INVALID_CODE"
 
+
 class InvalidCurrentPasswordError(ApplicationException):
-    """Current password verification failed during in-app change (QOOT-012)."""
+    """Current password verification failed during in-app change."""
 
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Your current password is incorrect."
     default_code = "INVALID_CURRENT_PASSWORD"
 
+
 class InvalidSocialTokenError(ApplicationException):
     status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = "Sign in failed. Try again."
     default_code = "INVALID_SOCIAL_TOKEN"
+
 
 class PasswordNotSetError(ApplicationException):
     """The account has no usable password (social-only); use the reset flow."""
@@ -394,15 +404,18 @@ class PasswordNotSetError(ApplicationException):
     default_detail = "Set a password with the reset flow first."
     default_code = "PASSWORD_NOT_SET"
 
+
 class RoleRequiredError(ApplicationException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_detail = "Select Client or Coach to continue."
     default_code = "ROLE_REQUIRED"
 
+
 class ThrottledError(ApplicationException):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     default_detail = "Too many requests. Try again later."
     default_code = "THROTTLED"
+
 
 class TooManyAttemptsError(ApplicationException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY

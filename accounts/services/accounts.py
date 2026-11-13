@@ -3,7 +3,7 @@
 One Django User owns many Account rows, including several with the same role.
 Each Account has its own login email. The account limit comes from
 ``settings.MAX_LINKED_ACCOUNTS`` and is enforced under a row lock on the
-User so two parallel adds cannot exceed it (QOOT-001 §2.3).
+User so two parallel adds cannot exceed it.
 
 Pre-flight checks (email ownership, account limit, role) live in
 ``accounts.services.guards`` so register, add-account, social, and email-change
@@ -204,12 +204,8 @@ def resend_add_account(user, *, email: str):
 
 
 def list_for_user(user):
-    """Return the caller's own Account rows (QOOT-001 §1.5 Account visibility)."""
-    return (
-        Account.objects.filter(user=user)
-        .select_related("user", "client_profile", "coach_profile")
-        .order_by("created_at")
-    )
+    """Return the caller's own Account rows."""
+    return Account.objects.filter(user=user).select_related("user").order_by("created_at")
 
 
 def delete_account(user, account_id) -> dict:

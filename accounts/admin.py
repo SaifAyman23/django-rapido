@@ -83,7 +83,7 @@ class EmailOTPAdmin(ReadOnlyAdmin):
 
 @admin.register(SocialAccountLink)
 class SocialAccountLinkAdmin(ReadOnlyAdmin):
-    """Provider identity → Qoot Account binding (Apple later logins rely on it)."""
+    """Provider identity mapping to an Account (Apple later logins rely on it)."""
 
     list_display = ["social_account", "account", "created_at"]
     list_filter = ["social_account__provider"]

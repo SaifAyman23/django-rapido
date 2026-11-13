@@ -1,4 +1,4 @@
-"""OTP engine — issue, hash, and verify 6-digit email codes (QOOT-001 §2.5).
+"""OTP engine — issue, hash, and verify 6-digit email codes.
 
 Rules encoded here (never in views):
 - Codes are 6 digits generated with ``secrets.randbelow``.
@@ -9,6 +9,7 @@ Rules encoded here (never in views):
 """
 
 import hmac
+import logging
 import secrets
 from datetime import timedelta
 from hashlib import sha256
@@ -29,6 +30,8 @@ from common.exceptions import (
     ThrottledError,
     TooManyAttemptsError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _target_email(user, email) -> str:
@@ -147,9 +150,7 @@ def verify_otp(user, purpose: str, code: str, *, email=None) -> EmailOTP:
         if attempts >= settings.OTP_MAX_ATTEMPTS:
             EmailOTP.objects.filter(pk=otp.pk).update(consumed_at=timezone.now())
             raise TooManyAttemptsError()
-        raise InvalidCodeError(
-            context={"attempts_remaining": settings.OTP_MAX_ATTEMPTS - attempts}
-        )
+        raise InvalidCodeError(context={"attempts_remaining": settings.OTP_MAX_ATTEMPTS - attempts})
 
     with transaction.atomic():
         locked = EmailOTP.objects.select_for_update().get(pk=otp.pk)
@@ -167,7 +168,15 @@ def verify_otp(user, purpose: str, code: str, *, email=None) -> EmailOTP:
 
 
 def queue_otp_email(otp: EmailOTP) -> None:
-    """Send the plaintext code through the Celery task (retries 3× with backoff)."""
+    """Dispatch the code through Celery, retrying delivery separately.
+
+    Delivery problems are logged, never raised: the account already exists by
+    the time this runs, so a mail outage must not turn a successful signup into
+    a 500.
+    """
     from accounts.tasks import send_otp_email
 
-    send_otp_email.delay(str(otp.pk), otp.plaintext_code)
+    try:
+        send_otp_email.delay(str(otp.pk), otp.plaintext_code)
+    except Exception:
+        logger.exception("Could not queue the OTP email otp=%s", otp.pk)

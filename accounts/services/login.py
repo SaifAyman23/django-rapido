@@ -1,4 +1,4 @@
-"""Login and email-verification services (QOOT-001).
+"""Login and email-verification services.
 
 - Login resolves ``Account.email`` first, then falls back to ``User.email`` plus
   the primary Account, and issues tokens for exactly one Account.
@@ -16,6 +16,7 @@ from accounts.models import EmailOTP
 from accounts.services.accounts import get_account_for_user, resolve_login_identity
 from accounts.services.guards import ensure_account_enabled, ensure_user_enabled
 from accounts.services.otp import verify_otp
+from accounts.services.subscriptions_hook import on_account_verified
 from accounts.services.tokens import build_token_pair
 from common.exceptions import AccountNotFoundError, EmailNotVerifiedError, InvalidCredentialsError
 
@@ -102,10 +103,7 @@ def verify_email(user, code: str, account_id=None, email=None) -> dict:
             user.is_active = True
             user.save(update_fields=["is_verified", "verified_at", "status", "is_active"])
 
-        if account.role == "client":
-            from subscriptions.services import assign_trial
-
-            assign_trial(account, user)
+        on_account_verified(account, user)
 
         tokens = build_token_pair(user, account)
 

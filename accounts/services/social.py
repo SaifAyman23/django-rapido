@@ -1,10 +1,10 @@
-"""Google, Apple, and Facebook sign-in (QOOT-001 §2.4).
+"""Google, Apple, and Facebook sign-in.
 
 Verification is provider-native: Google ID tokens are checked against every
 configured ``GOOGLE_OAUTH_CLIENT_IDS`` audience, Apple identity tokens against
 ``APPLE_BUNDLE_ID`` and Apple's JWKS, and Facebook access tokens against the
 Graph API ``debug_token`` endpoint plus ``/me``. allauth keeps the provider
-identity (``SocialAccount``); ``SocialAccountLink`` remembers the Qoot Account
+identity (``SocialAccount``); ``SocialAccountLink`` remembers the Account
 that identity signs in to, which is required because Apple only returns the email
 on the first consent.
 

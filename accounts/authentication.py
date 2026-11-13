@@ -3,7 +3,7 @@
 Every access token carries an ``account_id`` claim (see ``services.tokens``).
 This class resolves it into ``request.active_account`` and ``user.active_account``
 so permissions (``IsClient`` / ``IsCoach`` / ``HasCompletedOnboarding``) never
-read a role from the User (QOOT-001 §1.5).
+read a role from the User.
 """
 
 from rest_framework.exceptions import AuthenticationFailed
@@ -31,9 +31,7 @@ class AccountJWTAuthentication(JWTAuthentication):
 
     @staticmethod
     def _resolve_account(user, account_id):
-        accounts = Account.objects.filter(user=user, is_active=True).select_related(
-            "client_profile", "coach_profile"
-        )
+        accounts = Account.objects.filter(user=user, is_active=True).select_related("user")
 
         if account_id:
             account = accounts.filter(pk=account_id).first()

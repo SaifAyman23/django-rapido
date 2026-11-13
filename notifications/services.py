@@ -24,13 +24,13 @@ from django.db import transaction
 
 
 def notify(user, *, type, title, body, data=None, scheduled_at=None, account=None) -> Notification:
-    """Sole entry point for creating notifications (QOOT-010).
+    """Sole entry point for creating notifications.
 
     Inserts the in-app row and, when ``scheduled_at`` is empty/due, queues
     ``send_push`` via ``transaction.on_commit``. Other apps must call this and
     nothing else. Push sending is a placeholder until Expo credentials land
     (see TODO below). ``account`` (if given) is recorded in ``data`` so the
-    app can route the push to the right account context (QOOT-001).
+    app can route the push to the right account context.
     """
     from .models import Notification
     from .tasks import send_push

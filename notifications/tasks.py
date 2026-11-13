@@ -17,8 +17,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from celery import shared_task
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -189,7 +189,7 @@ def get_unread_count(user_id: str) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Expo Push delivery (QOOT-010) - placeholders with TODO for credentials.
+# Expo Push delivery - placeholders with TODO for credentials.
 # TODO(creds): set EXPO_ACCESS_TOKEN env var and upload FCM/APNs credentials
 # via EAS before enabling real push. Until then send_push is a no-op that
 # marks the notification SENT so in-app flow keeps working.
@@ -261,77 +261,6 @@ def check_push_receipts() -> dict:
 
 
 @shared_task
-def schedule_meal_reminders() -> dict:
-    """Hourly beat: create MEAL_REMINDER notifications for slots with default_time.
-
-    Idempotent per (source=meal:{slot_id}, user, local_date): a beat restart
-    never double-sends. Skips slots that already have a logged entry today.
-    """
-    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-
-    from django.utils import timezone
-
-    from meals.models import Meal, MealSlot
-    from notifications.models import Notification
-    from notifications.services import notify
-
-    created = 0
-    slots = MealSlot.objects.filter(is_active=True, default_time__isnull=False).select_related(
-        "account", "account__user"
-    )
-    for slot in slots.iterator():
-        account = slot.account
-        if account is None or not account.is_active:
-            continue
-        user = account.user
-        if not user.is_active:
-            continue
-        # timezone from client profile (fallback Cairo)
-        tz_name = "Africa/Cairo"
-        try:
-            tz_name = account.client_profile.timezone
-        except ObjectDoesNotExist:
-            import logging
-
-            logging.getLogger(__name__).debug("client profile timezone unavailable", exc_info=True)
-            try:
-                tz_name = account.coach_profile.timezone
-            except ObjectDoesNotExist:
-                logging.getLogger(__name__).debug(
-                    "coach profile timezone unavailable", exc_info=True
-                )
-        try:
-            tz = ZoneInfo(tz_name)
-        except (ZoneInfoNotFoundError, ValueError):
-            tz = ZoneInfo("Africa/Cairo")
-        now_local = timezone.now().astimezone(tz)
-        today = now_local.date()
-        scheduled = datetime.combine(today, slot.default_time, tzinfo=tz)
-        # only materialize reminders whose time falls in the coming hour
-        if scheduled < now_local or scheduled > now_local + timedelta(hours=1):
-            continue
-        # skip if slot already logged today
-        if Meal.objects.filter(account=account, slot=slot, logged_date=today).exists():
-            continue
-        source = f"meal:{slot.id}"
-        # idempotency
-        if Notification.objects.filter(
-            user=user, type="MEAL_REMINDER", scheduled_at__date=today, data__source=source
-        ).exists():
-            continue
-        notify(
-            user,
-            type="MEAL_REMINDER",
-            title=slot.name or "Meal reminder",
-            body=f"Time for {slot.name}",
-            data={"slot_id": str(slot.id), "source": source},
-            scheduled_at=scheduled,
-        )
-        created += 1
-    return {"created": created}
-
-
-@shared_task
 def schedule_custom_reminders() -> dict:
     """Hourly beat: create CUSTOM_REMINDER notifications for due reminders."""
     from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -348,27 +277,12 @@ def schedule_custom_reminders() -> dict:
         user = reminder.user
         if not user.is_active:
             continue
-        account = reminder.account
-        tz_name = "Africa/Cairo"
-        if account is not None:
-            try:
-                tz_name = account.client_profile.timezone
-            except ObjectDoesNotExist:
-                import logging
-
-                logging.getLogger(__name__).debug(
-                    "client profile timezone unavailable", exc_info=True
-                )
-                try:
-                    tz_name = account.coach_profile.timezone
-                except ObjectDoesNotExist:
-                    logging.getLogger(__name__).debug(
-                        "coach profile timezone unavailable", exc_info=True
-                    )
+        tz_name = getattr(getattr(reminder.account, "profile", None), "timezone", None)
+        tz_name = tz_name or settings.TIME_ZONE
         try:
             tz = ZoneInfo(tz_name)
         except (ZoneInfoNotFoundError, ValueError):
-            tz = ZoneInfo("Africa/Cairo")
+            tz = ZoneInfo(settings.TIME_ZONE)
         now_local = timezone.now().astimezone(tz)
         today = now_local.date()
         # weekday index 0=Sat..6=Fri
@@ -394,60 +308,3 @@ def schedule_custom_reminders() -> dict:
         )
         created += 1
     return {"created": created}
-
-
-@shared_task
-def schedule_ramadan_water(user_id: str, target_date: str) -> dict:
-    """Create one local sunset reminder for a Ramadan day."""
-    from datetime import date
-    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-
-    from astral import LocationInfo
-    from astral.sun import sun
-
-    from accounts.models import Account
-    from notifications.models import Notification
-    from notifications.services import notify
-
-    try:
-        user = User.objects.get(pk=user_id, is_active=True)
-        day = date.fromisoformat(target_date)
-    except (User.DoesNotExist, ValueError):
-        return {"status": "skipped", "reason": "invalid_user_or_date"}
-
-    account = Account.objects.filter(user=user, is_active=True).first()
-    if account is None:
-        return {"status": "skipped", "reason": "account_not_found"}
-    profile = account.profile
-    if getattr(profile, "fasting_mode", None) != "ramadan":
-        return {"status": "skipped", "reason": "ramadan_disabled"}
-    if profile.fasting_lat is None or profile.fasting_lon is None:
-        return {"status": "skipped", "reason": "location_missing"}
-
-    tz_name = getattr(profile, "timezone", "Africa/Cairo")
-    try:
-        tz = ZoneInfo(tz_name)
-    except (ZoneInfoNotFoundError, ValueError):
-        tz = ZoneInfo("Africa/Cairo")
-        tz_name = "Africa/Cairo"
-    location = LocationInfo(
-        name=profile.fasting_city or "Qoot",
-        region="",
-        timezone=tz_name,
-        latitude=float(profile.fasting_lat),
-        longitude=float(profile.fasting_lon),
-    )
-    sunset = sun(location.observer, date=day, tzinfo=tz)["sunset"]
-    source = f"ramadan:{account.id}:{day.isoformat()}"
-    if Notification.objects.filter(user=user, type="REMINDER", data__source=source).exists():
-        return {"status": "duplicate"}
-    notify(
-        user,
-        type="REMINDER",
-        title="Sunset reminder",
-        body="Iftar time is near. Remember to hydrate after sunset.",
-        data={"source": source, "account_id": str(account.id)},
-        scheduled_at=sunset,
-        account=account,
-    )
-    return {"status": "created", "scheduled_at": sunset.isoformat()}

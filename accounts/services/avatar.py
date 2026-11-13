@@ -1,4 +1,4 @@
-"""Account profile image writes (QOOT-012 profile and settings)."""
+"""Account profile image writes."""
 
 from accounts.models import Account
 

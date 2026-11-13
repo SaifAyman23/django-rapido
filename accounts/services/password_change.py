@@ -1,4 +1,4 @@
-"""In-app password change (QOOT-012) — signed-in flow, not the reset flow."""
+"""In-app password change — signed-in flow, not the reset flow."""
 
 import logging
 

@@ -216,7 +216,7 @@ class Migration(migrations.Migration):
                     "social_account",
                     models.OneToOneField(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name="qoot_link",
+                        related_name="account_link",
                         to="socialaccount.socialaccount",
                     ),
                 ),

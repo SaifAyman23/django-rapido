@@ -1,4 +1,4 @@
-"""Password reset (QOOT-002) — OTP request + confirm, no tokens involved."""
+"""Password reset — OTP request + confirm, no tokens involved."""
 
 import logging
 
@@ -53,7 +53,7 @@ def confirm_password_reset(*, email: str, code: str, new_password: str) -> None:
     with transaction.atomic():
         user = User.objects.select_for_update().get(pk=user.pk)
         user.set_password(new_password)
-        # Proving mailbox control also verifies the email (QOOT-002 §2.6).
+        # Proving mailbox control also verifies the email.
         if not user.is_verified:
             user.is_verified = True
             user.verified_at = timezone.now()

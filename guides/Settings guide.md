@@ -113,7 +113,7 @@ DJANGO_ENVIRONMENT=production gunicorn project.wsgi:application
 
 | Endpoint | Purpose | REUSE |
 |----------|---------|-------|
-| `api/v1/users/` | `accounts.urls` — login/register/verify/OTP/social | generic |
+| `api/v1/auth/` | `accounts.urls` — login/register/verify/OTP/social | generic |
 | `api/v1/notifications/` | `notifications.urls` — inbox + devices FCM | generic |
 | `api/v1/contacts/` | `contacts.urls` — public message + singleton info | generic |
 | `api/v1/compliance/` | `compliance.urls` — FAQ + legal docs | generic |

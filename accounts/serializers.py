@@ -1,8 +1,8 @@
 """Accounts serializers — strict request validation and read models.
 
 Every request serializer extends ``StrictSerializer`` so an unknown key returns
-``400 UNKNOWN_FIELD`` instead of being silently dropped (QOOT-014 §2.1.2).
-Response shapes follow QOOT-001 §2.4: ``{user, account, access, refresh}``.
+``400 UNKNOWN_FIELD`` instead of being silently dropped.
+Response shapes are ``{user, account, access, refresh}``.
 """
 
 from django.contrib.auth import get_user_model
@@ -21,7 +21,7 @@ CODE_PATTERN = r"^\d{6}$"
 
 
 class LowercaseEmailField(serializers.EmailField):
-    """Email field that trims and lowercases input (QOOT-001 §1.5)."""
+    """Email field that trims and lowercases input."""
 
     def to_internal_value(self, data):
         if isinstance(data, str):
@@ -271,7 +271,7 @@ class AccountSummarySerializer(serializers.ModelSerializer):
 
     def get_unread_count(self, obj):
         # Notifications.Device is keyed by User, not Account, so a per-account
-        # unread count is not possible yet (QOOT-010 owns the real counter).
+        # unread count is not possible yet; the notifications app owns the real counter.
         return 0
 
     def get_needs_setup(self, obj):
@@ -297,7 +297,7 @@ class VerificationPendingSerializer(serializers.Serializer):
 
 
 class MeSerializer(serializers.Serializer):
-    """Current active-account state used by the app router (QOOT-001 §2.4)."""
+    """Current active-account state used by the app router."""
 
     user = UserSummarySerializer(read_only=True)
     account = AccountSummarySerializer(read_only=True)
@@ -362,6 +362,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # REUSE: add custom claims if needed ??? e.g. token["role"] = getattr(user, "role", "")
         return token
 
+
 class UserRegistrationSerializer(serializers.Serializer):
     """Generic registration ??? REUSE: creates user + handles social-only reuse."""
 
@@ -419,6 +420,7 @@ class UserRegistrationSerializer(serializers.Serializer):
 # Django Rapido ??? project-agnostic serializers.
 # ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
 
+
 class UserVerifyAccountSerializer(serializers.Serializer):
     """Verify OTP code. REUSE: POST {code, purpose?} to /verify/"""
 
@@ -433,6 +435,7 @@ class UserVerifyAccountSerializer(serializers.Serializer):
         otp_record = validate_otp(code, purpose=purpose)
         attrs["otp_record"] = otp_record
         return attrs
+
 
 class UserResetPasswordSerializer(serializers.Serializer):
     """Reset password via token. REUSE: POST {token, password, password_confirm}"""
@@ -452,6 +455,7 @@ class UserResetPasswordSerializer(serializers.Serializer):
         attrs["reset_token"] = token
         return attrs
 
+
 class UserEmailSerializer(serializers.Serializer):
     """Request OTP email. REUSE: POST {email, type} to /send-verification-code/"""
 
@@ -466,6 +470,7 @@ class UserEmailSerializer(serializers.Serializer):
         if otp_type not in OTPRecord.OTPType.values:
             raise serializers.ValidationError({"type": _("Invalid type")})
         return attrs
+
 
 class UserDetailSerializer(serializers.ModelSerializer):
     """Serializer for user profile read/update."""

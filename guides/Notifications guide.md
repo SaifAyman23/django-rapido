@@ -505,7 +505,7 @@ App install
   │     → Device.objects.filter(user, device_uuid).update(is_active=False)  views.py:110
   │
   └─ logout
-        → POST /api/v1/users/logout/  accounts/views.py:292-306  (currently does NOT deactivate devices)
+        → POST /api/v1/auth/logout/  accounts/views.py:292-306  (currently does NOT deactivate devices)
         → optionally add: Device.objects.filter(user=request.user).update(is_active=False)
         → also clear local token + device_uuid? Keep device_uuid for re-login on same install.
 ```
@@ -1498,7 +1498,7 @@ celery -A project beat --dry-run  # or check admin:django_celery_beat_periodicta
 | `unread_count` stale | Cache 300s `tasks.py:186` | Normal — invalidated on writes `tasks.py:170,173`. For immediate consistency, call `_invalidate_unread_count_cache` manually or reduce TTL |
 | `unique_user_device` constraint error | Duplicate `(user, device_uuid)` `models.py:110` | Use `update_or_create` `views.py:87` — never raw `create`. Ensure `device_uuid` is stable per install |
 | `ModuleNotFoundError: notifications` after removal | Forgot to remove `INSTALLED_APPS` `base.py:68` or `project/urls.py:41` | Remove both + `unfold_config.py:366-379` |
-| `ImproperlyConfigured: Token has wrong type` | Using refresh token as access | Refresh via `POST /api/v1/users/token/refresh/` with `refresh_token` cookie `accounts/views.py:52-70` |
+| `ImproperlyConfigured: Token has wrong type` | Using refresh token as access | Refresh via `POST /api/v1/auth/token/refresh/` with `refresh_token` cookie `accounts/views.py:52-70` |
 
 ### Where to look
 

@@ -101,7 +101,7 @@ accounts/
     views.py:297                 def _get_provider_apps(self, provider) → list[SocialApp]  # DB first, settings fallback
     views.py:314                 def _find_app_by_id_token_aud(self, apps, id_token)      # Google aud==client_id match
     views.py:324                 def _exchange_code(self, request, adapter, apps, code, verifier, redirect_uri) # fan-out
-    views.py:355                 def post(self, request, provider)      # entry point POST /api/v1/users/api/auth/social/<provider>/
+    views.py:355                 def post(self, request, provider)      # entry point POST /api/v1/auth/social/<provider>/
     views.py:396-425             Google id_token aud matching + 401 No matching client
     views.py:442                 adapter.complete_login(request, app, token, response=token_data)
     views.py:459                 complete_social_login(request, login)  # may raise ImmediateHttpResponse
@@ -159,7 +159,7 @@ project/settings/base.py:356     REST_FRAMEWORK DEFAULT_AUTHENTICATION_CLASSES J
 project/settings/base.py:369-378 DEFAULT_THROTTLE_RATES anon 100/h, user 1000/h, auth 30/m
 project/settings/base.py:390     SIMPLE_JWT ACCESS 30m / REFRESH 30d / BLACKLIST_AFTER_ROTATION True / ALGORITHM HS256
 project/settings/base.py:398     SIGNING_KEY = os.getenv("JWT_SECRET_KEY") or SECRET_KEY
-project/urls.py:40               path("api/v1/users/", include("accounts.urls"))
+project/urls.py:40               path("api/v1/auth/", include("accounts.urls"))
 project/urls.py:75               path("accounts/social/signup/", lambda ... 404) # HTML stub, prevents 500 when auto_signup blocked
 project/urls.py:40-72            i18n_patterns admin/live-logs + admin/ + schema/swagger
 project/settings/unfold_config.py:277 navigation Users & Accounts → Social Apps/Accounts/Tokens (3 items)
@@ -187,7 +187,7 @@ Web (PKCE)                               Mobile SDK (id_token/access_token)
 ─────────                                ─────────────────────────────────
 FE → GET provider authorize?             FE → google_sign_in / flutter_facebook_auth
        code_challenge=S256                 → id_token (Google) / access_token (Facebook)
-FE ←  provider?code=...                  FE → POST /api/v1/users/api/auth/social/<provider>/
+FE ←  provider?code=...                  FE → POST /api/v1/auth/social/<provider>/
 FE → POST /api/v1/.../social/<p>/        {id_token: "eyJ..."} (+ device_uuid)
        {code, redirect_uri,               │
         code_verifier}                    │
@@ -538,7 +538,7 @@ urlpatterns = [
 
 # HTML stub — prevents 500 when auto_signup blocked (already in project/urls.py:75)
 urlpatterns += [path("accounts/social/signup/",
-    lambda r: HttpResponse("Social signup via HTML not supported. Use POST /api/v1/users/api/auth/social/<provider>/", status=404),
+    lambda r: HttpResponse("Social signup via HTML not supported. Use POST /api/v1/auth/social/<provider>/", status=404),
     name="socialaccount_signup")]
 ```
 
@@ -589,30 +589,30 @@ make check-format && make test
 
 ```bash
 # SDK flow — Google id_token (mobile)
-curl -X POST http://localhost:8000/api/v1/users/api/auth/social/google/ \
+curl -X POST http://localhost:8000/api/v1/auth/social/google/ \
   -H "Content-Type: application/json" \
   -d '{"id_token":"eyJhbGciOiJSUzI1NiIs...","device_uuid":"a3f1c2d4-0000-4000-8000-000000000000"}'
 # → 200 {"access":"eyJ...","refresh":"eyJ...","onboarding_required": false}
 
 # SDK flow — Facebook access_token
-curl -X POST http://localhost:8000/api/v1/users/api/auth/social/facebook/ \
+curl -X POST http://localhost:8000/api/v1/auth/social/facebook/ \
   -H "Content-Type: application/json" \
   -d '{"access_token":"EAA...ZCw"}'
 # → 200
 
 # PKCE Code flow — Google (web)
-curl -X POST http://localhost:8000/api/v1/users/api/auth/social/google/ \
+curl -X POST http://localhost:8000/api/v1/auth/social/google/ \
   -H "Content-Type: application/json" \
   -d '{"code":"4/0Aea...","code_verifier":"dBjft...","redirect_uri":"http://localhost:5173/auth/callback"}'
 # → 200
 
 # Wrong audience → 401
-curl -X POST http://localhost:8000/api/v1/users/api/auth/social/google/ \
+curl -X POST http://localhost:8000/api/v1/auth/social/google/ \
   -d '{"id_token":"<token with aud not in SocialApp>"}'
 # → 401 {"detail":"No matching Google OAuth client for this ID token."}
 
 # Use JWT
-curl http://localhost:8000/api/v1/users/users/me/ -H "Authorization: Bearer <access>"
+curl http://localhost:8000/api/v1/auth/me/ -H "Authorization: Bearer <access>"
 ```
 
 ---
@@ -641,7 +641,7 @@ location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 // 3. Callback handler /auth/callback?code=...
 const code = new URLSearchParams(location.search).get("code");
 const verifier2 = sessionStorage.getItem("pkce_verifier");
-const { data } = await axios.post("/api/v1/users/api/auth/social/google/", {
+const { data } = await axios.post("/api/v1/auth/social/google/", {
   code, code_verifier: verifier2, redirect_uri: "http://localhost:5173/auth/callback",
 });
 localStorage.setItem("access", data.access);
@@ -669,7 +669,7 @@ final account = await google.signIn();
 final auth = await account!.authentication;
 final idToken = auth.idToken; // ← send this, NOT accessToken
 
-final res = await dio.post('/api/v1/users/api/auth/social/google/', data: {
+final res = await dio.post('/api/v1/auth/social/google/', data: {
   'id_token': idToken,
   'device_uuid': deviceUuid, // optional, from notifications Device
 });
@@ -684,7 +684,7 @@ Facebook Flutter: `flutter_facebook_auth` → `accessToken.token` → `POST {acc
 ### Token refresh (both)
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/users/token/refresh/ \
+curl -X POST http://localhost:8000/api/v1/auth/token/refresh/ \
   -H "Content-Type: application/json" -d '{"refresh":"<refresh>"}'
 # or via cookie: --cookie "refresh_token=..."
 ```
@@ -755,31 +755,28 @@ class PasswordResetToken(TimestampedModel, UUIDModel):
 ### Curl — Register → Verify → Login
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/users/users/register/ \
+curl -X POST http://localhost:8000/api/v1/auth/register/ \
   -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"Pass123!","password_confirm":"Pass123!"}'
-# → 201 {detail: "OTP sent to email"}
+  -d '{"email":"user@example.com","password":"Pass123!","role":"client"}'
+# → 201 {user, account, verification_required: true, message}
 
-curl -X POST http://localhost:8000/api/v1/users/users/verify/ \
+curl -X POST http://localhost:8000/api/v1/auth/verify-email/ \
   -H "Content-Type: application/json" \
-  -d '{"code":"123456","purpose":"email_verification"}'
-# → 200 {refresh, access}
+  -d '{"email":"user@example.com","code":"123456"}'
+# → 200 {user, account, access, refresh}
 
-curl -X POST http://localhost:8000/api/v1/users/login/ \
+curl -X POST http://localhost:8000/api/v1/auth/login/ \
   -H "Content-Type: application/json" \
-  -d '{"username":"user@example.com","password":"Pass123!"}'
-# → 200 {refresh, access} + Set-Cookie: refresh_token=...
-
-curl -X POST http://localhost:8000/api/v1/users/token/refresh/ \
+  -d '{"email":"user@example.com","password":"Pass123!"}'
+# → 200 {user, account, access, refresh}
+curl -X POST http://localhost:8000/api/v1/auth/token/refresh/ \
   -H "Content-Type: application/json" -d '{"refresh":"<refresh>"}'
 
 # Password reset
-curl -X POST http://localhost:8000/api/v1/users/users/send-verification-code/ \
-  -d '{"email":"user@example.com","type":"password_reset"}' # → 200 always
-curl -X POST http://localhost:8000/api/v1/users/users/verify/ \
-  -d '{"code":"123456","purpose":"password_reset"}' # → 200 {token:"abc..."}
-curl -X POST http://localhost:8000/api/v1/users/users/reset-password/ \
-  -d '{"token":"abc...","password":"NewPass123!","password_confirm":"NewPass123!"}'
+curl -X POST http://localhost:8000/api/v1/auth/password-reset/request/ \
+  -d '{"email":"user@example.com"}' # → 200 always
+curl -X POST http://localhost:8000/api/v1/auth/password-reset/confirm/ \
+  -d '{"email":"user@example.com","code":"123456","new_password":"NewPass123!"}'
 ```
 
 ---
@@ -825,7 +822,7 @@ path("token/refresh/", CookieTokenRefreshView.as_view())
 path("api/auth/social/<str:provider>/", SocialLoginJWTView.as_view())  # wire as in §6 Step 4
 
 # project/urls.py:40 — root
-path("api/v1/users/", include("accounts.urls"))
+path("api/v1/auth/", include("accounts.urls"))
 path("accounts/social/signup/", lambda r: HttpResponse(..., status=404))  # :75 HTML stub
 
 # project/settings/base.py:60 — apps
@@ -870,7 +867,7 @@ PROVIDER_ADAPTERS["apple"] = AppleOAuth2Adapter
 # GitHub: from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 ```
 
-Seed `SocialApp` for `apple`/`github` via admin `/admin/socialaccount/socialapp/add/` with `Sites=1`, then test `POST /api/v1/users/api/auth/social/apple/` same contract. Apple id_token uses same `aud==client_id` logic as Google — extend `_find_app_by_id_token_aud:314` to `if provider in ("google","apple"):` or add separate branch.
+Seed `SocialApp` for `apple`/`github` via admin `/admin/socialaccount/socialapp/add/` with `Sites=1`, then test `POST /api/v1/auth/social/apple/` same contract. Apple id_token uses same `aud==client_id` logic as Google — extend `_find_app_by_id_token_aud:314` to `if provider in ("google","apple"):` or add separate branch.
 
 ### Add custom JWT claims
 
@@ -1001,7 +998,7 @@ def test_pre_social_login_links_by_email(db, rf, user_factory):
 def test_social_login_google_id_token(client, mocker):
     mocker.patch("accounts.auth.views.GoogleOAuth2Adapter.complete_login", return_value=MockLogin(user=user))
     mocker.patch("accounts.auth.views.complete_social_login", return_value=None)
-    resp = client.post("/api/v1/users/api/auth/social/google/", {"id_token": fake_jwt_with_aud(CID)}, format="json")
+    resp = client.post("/api/v1/auth/social/google/", {"id_token": fake_jwt_with_aud(CID)}, format="json")
     assert resp.status_code == 200 and "access" in resp.json()
 ```
 

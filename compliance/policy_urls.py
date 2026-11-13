@@ -1,4 +1,4 @@
-"""Policy routes — mounted at ``/api/v1/policies/`` (QOOT-012)."""
+"""Policy routes — mounted at ``/api/v1/policies/``."""
 
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter

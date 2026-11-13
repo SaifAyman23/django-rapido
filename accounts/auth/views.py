@@ -255,7 +255,7 @@ On error: HTTP 400 (bad request), 401 (invalid/fraudulent code), or 500 (server 
     examples=[
         OpenApiExample(
             name="Google login (PKCE code flow)",
-            summary="POST to /api/v1/users/api/auth/social/google/ with authorization code + PKCE verifier",
+            summary="POST to /api/v1/auth/social/google/ with authorization code + PKCE verifier",
             value={
                 "code": "4/0AeaYSHB...",
                 "code_verifier": "aB3dEfGhIjKlMnOpQrStUvWxYz1234567890ABCDEF",
@@ -265,7 +265,7 @@ On error: HTTP 400 (bad request), 401 (invalid/fraudulent code), or 500 (server 
         ),
         OpenApiExample(
             name="Facebook login (code flow, no PKCE)",
-            summary="POST to /api/v1/users/api/auth/social/facebook/ with authorization code only",
+            summary="POST to /api/v1/auth/social/facebook/ with authorization code only",
             value={
                 "code": "AQB...abc123",
                 "redirect_uri": "http://localhost:5173/auth/callback",
@@ -274,7 +274,7 @@ On error: HTTP 400 (bad request), 401 (invalid/fraudulent code), or 500 (server 
         ),
         OpenApiExample(
             name="Google login (SDK fallback)",
-            summary="POST to /api/v1/users/api/auth/social/google/ with Google ID token",
+            summary="POST to /api/v1/auth/social/google/ with Google ID token",
             value={
                 "id_token": "eyJhbGciOiJSUzI1NiIs...",
                 "device_uuid": "a3f1c2d4-0000-4000-8000-000000000000",
@@ -283,7 +283,7 @@ On error: HTTP 400 (bad request), 401 (invalid/fraudulent code), or 500 (server 
         ),
         OpenApiExample(
             name="Facebook login (SDK fallback)",
-            summary="POST to /api/v1/users/api/auth/social/facebook/ with Facebook access token",
+            summary="POST to /api/v1/auth/social/facebook/ with Facebook access token",
             value={
                 "access_token": "EAA...ZCw",
             },

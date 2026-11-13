@@ -37,13 +37,11 @@ urlpatterns = [
     path("api/schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     path("health/", lambda request: HttpResponse("healthy"), name="health"),
     path("", HomeView.as_view(), name="home"),  # REUSE: Dashboard landing → admin redirect
-    path(f"{api_prefix}/users/", include("accounts.urls"), name="users"),
+    path(f"{api_prefix}/auth/", include("accounts.urls"), name="auth"),
     path(
         f"{api_prefix}/notifications/", include("notifications.urls"), name="notifications"
     ),  # REUSE: FCM inbox + devices
-    path(
-        f"{api_prefix}/push-devices/", include("notifications.push_urls"), name="push-devices"
-    ),
+    path(f"{api_prefix}/push-devices/", include("notifications.push_urls"), name="push-devices"),
     path(
         f"{api_prefix}/custom-reminders/",
         include("notifications.reminder_urls"),
@@ -87,7 +85,7 @@ urlpatterns += [
     path(
         "accounts/social/signup/",
         lambda request: HttpResponse(
-            "Social signup via HTML not supported. Use POST /api/v1/users/auth/social/<provider>/",
+            "Social signup via HTML not supported. Use POST /api/v1/auth/social/<provider>/",
             status=404,
         ),
         name="socialaccount_signup",

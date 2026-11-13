@@ -82,7 +82,7 @@ class Account(TimestampedModel, UUIDModel):
 
     The Account — not the User — is the authorization and data boundary.
     Role is immutable after creation; creating another role means creating
-    another Account for the same User (QOOT-001 §2.3). The same role may be
+    another Account for the same User. The same role may be
     created more than once; each Account has its own login email.
     """
 
@@ -229,7 +229,7 @@ class EmailOTP(TimestampedModel, UUIDModel):
 class SocialAccountLink(TimestampedModel, UUIDModel):
     """Remember which Account a provider identity signs in to.
 
-    allauth's ``SocialAccount`` is person-wide (``User``); Qoot authenticates a
+    allauth's ``SocialAccount`` is person-wide (``User``); this API authenticates a
     specific Account, and Apple only returns the email on the first consent.
     This binding gives every later provider login a stable Account.
     """
@@ -237,7 +237,7 @@ class SocialAccountLink(TimestampedModel, UUIDModel):
     social_account = models.OneToOneField(
         "socialaccount.SocialAccount",
         on_delete=models.CASCADE,
-        related_name="qoot_link",
+        related_name="account_link",
     )
     account = models.ForeignKey(
         Account,

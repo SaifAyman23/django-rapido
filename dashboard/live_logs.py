@@ -237,7 +237,7 @@ class LiveLogsMiddleware:
                             )
                             is_jwt_path = any(
                                 k in path_lc
-                                for k in ["/users/", "/token", "/jwt", "/auth/social", "/accounts/"]
+                                for k in ["/auth/", "/token", "/jwt", "/auth/social", "/accounts/"]
                             )
                             is_oauth_path = any(
                                 k in path_lc
@@ -352,11 +352,11 @@ class LiveLogsMiddleware:
                                     details.append(
                                         "XHR without Authorization â€” ensure Flutter/Dio attaches Bearer on retries"
                                     )
-                                # â”€â”€ Received JWT metadata (for /users/me/ etc.) â€” safe, no token â”€â”€
+                                # â”€â”€ Received JWT metadata (for /auth/me/ etc.) â€” safe, no token â”€â”€
                                 if (
                                     header
                                     and status in (401, 403)
-                                    and any(k in path_lc for k in ["/users/me", "/users/users/me"])
+                                    and any(k in path_lc for k in ["/auth/me/", "/users/me"])
                                 ):
                                     try:
                                         import base64
@@ -466,7 +466,7 @@ class LiveLogsMiddleware:
                                         )
                                     if "expired" in str(det).lower():
                                         details.append(
-                                            "JWT expired â€” client should refresh via /users/token/refresh/"
+                                            "JWT expired â€” client should refresh via /auth/token/refresh/"
                                         )
                                     if is_oauth_path and status >= 400:
                                         details.append(f"OAuth path {request.path} failed")

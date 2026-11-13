@@ -25,26 +25,9 @@ class NotificationViewSet(BaseViewSet):
     pagination_class = None
 
     def get_serializer_context(self):
-        context = super().get_serializer_context()
-        if self.action in {"list", "retrieve"}:
-            from coaching.models import CoachClientLink
-
-            notification_queryset = self.get_queryset()
-            if self.action == "retrieve":
-                notification_queryset = Notification.objects.filter(
-                    pk=self.kwargs.get("pk"), user=self.request.user
-                )
-            link_ids = [
-                str(link_id)
-                for data in notification_queryset.values_list("data", flat=True)
-                for link_id in [(data or {}).get("link_id")]
-                if link_id
-            ]
-            context["link_status_by_id"] = {
-                str(link.pk): link.status
-                for link in CoachClientLink.objects.filter(pk__in=link_ids).only("id", "status")
-            }
-        return context
+        # Projects that model a linked object can inject its status here under
+        # ``link_status_by_id``; the base template ships no such relation.
+        return super().get_serializer_context()
 
     def get_queryset(self) -> Any:
         """Return notifications for the current user ordered newest first."""
@@ -183,7 +166,7 @@ from .models import CustomReminder
 
 
 class CustomReminderViewSet(BaseViewSet):
-    """CRUD for user-defined reminders (QOOT-010)."""
+    """CRUD for user-defined reminders."""
 
     serializer_class = CustomReminderSerializer
     permission_classes = [IsAuthenticated, IsEmailVerified, IsClient]
@@ -194,11 +177,8 @@ class CustomReminderViewSet(BaseViewSet):
         return queryset[:50] if self.action == "list" else queryset
 
     def perform_create(self, serializer):
-        from subscriptions.services import check_limit
-
+        # Extend here with plan/limit checks; the base ships no billing app.
         account = getattr(self.request, "active_account", None)
-        current = CustomReminder.objects.filter(user=self.request.user, is_active=True).count()
-        check_limit(account, "CUSTOM_REMINDERS", current_count=current)
         serializer.save(user=self.request.user, account=account)
 
     def perform_update(self, serializer):

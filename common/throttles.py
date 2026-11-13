@@ -39,7 +39,11 @@ class OTPThrottle(SimpleRateThrottle):
             ident = (data.get("email") or "").strip().lower()
         if not ident:
             user = getattr(request, "user", None)
-            ident = getattr(user, "email", "") if user and getattr(user, "is_authenticated", False) else ""
+            ident = (
+                getattr(user, "email", "")
+                if user and getattr(user, "is_authenticated", False)
+                else ""
+            )
         if not ident:
             ident = self.get_ident(request)
         return self.cache_format % {"scope": self.scope, "ident": ident}

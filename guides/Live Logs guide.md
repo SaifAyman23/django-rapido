@@ -174,7 +174,7 @@ requirements.txt:9  gevent==24.11.1  # only consumer is web-sse
 ### End-to-End Flow
 
 ```
-Browser /api/v1/users/me/  (Authorization: Bearer eyJ…)
+Browser /api/v1/auth/me/  (Authorization: Bearer eyJ…)
   │
   ▼
 Nginx ( :80 dev / :443 prod ) ── /static,/media bypass ──► Django
@@ -697,7 +697,7 @@ Install: `pip install -r requirements.txt` then `docker compose -f docker-compos
 python manage.py check
 python manage.py collectstatic --noinput
 curl -i http://localhost:8000/health/           # 200 healthy
-curl -i http://localhost:8000/api/v1/users/me/  # 401 → see cause Missing Authorization
+curl -i http://localhost:8000/api/v1/auth/me/  # 401 → see cause Missing Authorization
 # Open http://localhost:8000/en/admin/live-logs/ as is_staff → lines appear live
 docker compose config > /dev/null
 docker compose -f docker-compose.yml -f docker-compose.prod.yml config > /dev/null
@@ -768,7 +768,7 @@ And include in `visible()` haystack (`static/dashboard/live_logs.js:112`) + stat
 ### Filter by user / role / path
 
 - **Per-user filter** — already has `e.user` and `e.role`. Add controls like roles: duplicate `dashboard/templates/admin/live_logs.html:35-41` buttons with `data-role="myemail"` or add a `<select>` populated from `buffer` unique users (JS: `[...new Set(buffer.map(e=>e.user))]`). Filter already in `visible()` (`static/dashboard/live_logs.js:106`).
-- **Path filter** — search box already covers it (`static/dashboard/live_logs.js:194-199` + `visible()` haystack). For dedicated path pills, add buttons `data-path="/api/v1/users/"` and extend `visible()` with `if (activePath!=='all' && !e.path.includes(activePath)) return false`.
+- **Path filter** — search box already covers it (`static/dashboard/live_logs.js:194-199` + `visible()` haystack). For dedicated path pills, add buttons `data-path="/api/v1/auth/"` and extend `visible()` with `if (activePath!=='all' && !e.path.includes(activePath)) return false`.
 - **Exclude health/static** — in middleware early-return before `append_log`:
 
   ```python
@@ -983,16 +983,16 @@ new_logs = get_snapshot(last_id=123)
 ### 3. Trigger and verify JWT diagnostics
 
 ```bash
-curl -i http://localhost:8000/api/v1/users/me/  # no Authorization
+curl -i http://localhost:8000/api/v1/auth/me/  # no Authorization
 # → terminal shows amber 401: Missing Authorization (expected 'Bearer <access>')
 
-curl -i http://localhost:8000/api/v1/users/me/ -H "Authorization: Bearer bad.token"
+curl -i http://localhost:8000/api/v1/auth/me/ -H "Authorization: Bearer bad.token"
 # → amber 401: Malformed JWT: 2 parts (expected 3 header.payload.signature)
 
-curl -i http://localhost:8000/api/v1/users/me/ -H "Authorization: bearer eyJ..."
+curl -i http://localhost:8000/api/v1/auth/me/ -H "Authorization: bearer eyJ..."
 # → amber 401: Wrong scheme 'bearer' (must be 'Bearer' capital B)
 
-curl -X POST http://localhost:8000/api/v1/users/auth/social/google/ -H "Content-Type: application/json" -d '{}'
+curl -X POST http://localhost:8000/api/v1/auth/auth/social/google/ -H "Content-Type: application/json" -d '{}'
 # → if missing Origin: Missing Origin header on OAuth POST (CORS may block)
 ```
 
@@ -1001,7 +1001,7 @@ curl -X POST http://localhost:8000/api/v1/users/auth/social/google/ -H "Content-
 ## Verification
 
 - Open `/en/admin/live-logs/` as `is_staff` → lines appear live, no DB query in debug-toolbar (`__debug__/`)
-- Trigger `POST /api/v1/users/token/refresh/` with missing `Bearer` → `4XX amber` with `Missing Authorization` cause + `JWT invalid/expired — check ACCESS_TOKEN_LIFETIME`
+- Trigger `POST /api/v1/auth/token/refresh/` with missing `Bearer` → `4XX amber` with `Missing Authorization` cause + `JWT invalid/expired — check ACCESS_TOKEN_LIFETIME`
 - Send `Authorization: Bearer bad.token` → `Malformed JWT: 2 parts` cause (`dashboard/live_logs.py:188`)
 - Trigger `500` (raise in shell) → `5XX red` with `ValueError | Trace: dashboard/live_logs.py:116`
 - Search `401` or `/users/me` → `<mark>` highlights, `No results for "q"` empty state if filtered

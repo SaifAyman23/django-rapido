@@ -26,7 +26,7 @@ class DeliveryStatus(models.TextChoices):
 
 
 class NotificationType(models.TextChoices):
-    """Notification event types (QOOT-010)."""
+    """Notification event types."""
 
     SYSTEM = "SYSTEM", _("System")
     WELCOME = "welcome", _("Welcome")
@@ -143,7 +143,7 @@ class Device(TimestampedModel, UUIDModel):
 
 
 class CustomReminder(TimestampedModel, UUIDModel):
-    """A user-defined reminder not tied to a meal slot (QOOT-010)."""
+    """A user-defined reminder not tied to a meal slot."""
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_reminders")
     account = models.ForeignKey(

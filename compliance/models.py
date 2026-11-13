@@ -55,8 +55,9 @@ class ComplianceDocument(TimestampedModel, UUIDModel):
 
 from django.conf import settings
 
+
 class PolicyDocument(TimestampedModel, UUIDModel):
-    """Published legal text such as the privacy policy (QOOT-012 §2.2)."""
+    """Published legal text such as the privacy policy."""
 
     slug = models.SlugField(max_length=60, unique=True)
     title = models.CharField(max_length=200)
@@ -72,6 +73,7 @@ class PolicyDocument(TimestampedModel, UUIDModel):
 
     def __str__(self) -> str:
         return f"{self.title} ({self.version})"
+
 
 class PolicyAcceptance(TimestampedModel, UUIDModel):
     """Proof that a person accepted one policy version (PDPL / store review)."""

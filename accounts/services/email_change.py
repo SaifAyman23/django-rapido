@@ -1,4 +1,4 @@
-"""Email change with OTP proof of control (QOOT-012, service only for now)."""
+"""Email change with OTP proof of control (service only for now)."""
 
 import logging
 

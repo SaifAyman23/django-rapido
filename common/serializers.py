@@ -68,9 +68,9 @@ def validate_image_type(value):
 
 
 class StrictSerializer(serializers.Serializer):
-    """Serializer that rejects unknown request keys (QOOT-014 §2.1.2).
+    """Serializer that rejects unknown request keys.
 
-    DRF silently drops undeclared fields by default; Qoot requires
+    DRF silently drops undeclared fields by default; the API requires
     ``400 UNKNOWN_FIELD`` so a client typo can never be ignored.
     """
 

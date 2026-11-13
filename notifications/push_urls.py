@@ -1,4 +1,4 @@
-"""Push device routes (QOOT-010) - mounted at /api/v1/push-devices/."""
+"""Push device routes - mounted at /api/v1/push-devices/."""
 
 from django.urls import path
 

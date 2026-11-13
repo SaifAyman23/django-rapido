@@ -2,7 +2,7 @@
 
 ``send_otp_email(otp_id, code)`` receives the plaintext code as an argument
 because only the HMAC hash is persisted. Retries use exponential backoff
-(3 attempts), so a transient mail failure does not lose the code (QOOT-001 §2.5).
+(3 attempts), so a transient mail failure does not lose the code.
 """
 
 import logging
@@ -12,16 +12,17 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
+from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 OTP_SUBJECTS = {
-    "verify_email": _("Your Qoot verification code"),
-    "reset_password": _("Your Qoot password reset code"),
-    "change_email": _("Confirm your new Qoot email"),
-    "add_account": _("Confirm your new Qoot account email"),
+    "verify_email": _("Your %(site)s verification code"),
+    "reset_password": _("Your %(site)s password reset code"),
+    "change_email": _("Confirm your new %(site)s email"),
+    "add_account": _("Confirm your new %(site)s account email"),
 }
 
 
@@ -46,18 +47,22 @@ def send_otp_email(self, otp_id: str, code: str) -> dict:
         return {"status": "stale"}
 
     user = otp.user
-    subject = OTP_SUBJECTS.get(otp.purpose, _("Your Qoot code"))
+    site_name = settings.SITE_NAME
+    subject_template = OTP_SUBJECTS.get(otp.purpose, _("Your %(site)s code"))
+    subject = subject_template % {"site": site_name}
+    language = get_language() or settings.LANGUAGE_CODE
+    direction = "rtl" if language.split("-")[0] in {"ar", "he", "fa", "ur"} else "ltr"
     minutes = settings.OTP_TTL_MINUTES
     expiry_note = _("Use this code to continue. It expires in %(minutes)s minutes.") % {
         "minutes": minutes
     }
     html_content = f"""
         <!DOCTYPE html>
-        <html lang="ar" dir="rtl">
+        <html lang="{language}" dir="{direction}">
         <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8fafc;">
           <div style="max-width:480px;margin:32px auto;padding:24px;
                       background:#fff;border-radius:12px;">
-            <h2 style="margin:0 0 12px;color:#14532d;">{_("Qoot")}</h2>
+            <h2 style="margin:0 0 12px;color:#14532d;">{site_name}</h2>
             <p style="font-size:16px;color:#1f2937;">
               {expiry_note}
             </p>

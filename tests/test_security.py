@@ -2,9 +2,6 @@
 REUSE: Security gates — scrubbing, throttling, fail-fast.
 """
 
-import pytest
-
-
 def test_mixins_scrub_sensitive_keys():
     from common.mixins import BaseViewSetMixin
 
